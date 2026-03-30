@@ -1,0 +1,119 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Design Tokens ───────────────────────────── */
+:root {
+  --cream:    #FAF7F2;
+  --ivory:    #F0EBE1;
+  --gold:     #C9A96E;
+  --gold-dark:#8A6520;
+  --forest:   #0A1F14;
+  --ink:      #1A2E22;
+  --ink-muted:#7A9080;
+}
+
+/* ── Base ────────────────────────────────────── */
+* { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+body {
+  background-color: var(--cream);
+  color: var(--ink);
+}
+
+/* ── Scrollbar ───────────────────────────────── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: #F0EBE1; }
+::-webkit-scrollbar-thumb { background: #D4C4A8; border-radius: 3px; }
+
+/* ── Typography helpers ──────────────────────── */
+.text-gold-gradient {
+  background: linear-gradient(135deg, #C9A96E 0%, #E0BC6A 50%, #C9A96E 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Card helpers ────────────────────────────── */
+.card {
+  @apply bg-white border border-cream-300 rounded-2xl shadow-card;
+}
+.card-hover {
+  @apply transition-all duration-200;
+}
+.card-hover:hover {
+  box-shadow: 0 4px 20px rgba(26,46,34,0.10), 0 1px 4px rgba(26,46,34,0.06);
+  transform: translateY(-2px);
+  border-color: rgba(201,169,110,0.35);
+}
+
+/* ── Form: LIGHT background ──────────────────── */
+.input-field {
+  @apply w-full bg-white border border-cream-300 rounded-xl px-4 py-3
+         text-ink placeholder-ink-muted
+         focus:outline-none focus:ring-2
+         transition-all duration-200 shadow-sm;
+  --tw-ring-color: rgba(201, 169, 110, 0.15);
+}
+.input-field:focus {
+  border-color: rgba(201, 169, 110, 0.6);
+}
+
+.label-text {
+  @apply block text-sm text-ink-light mb-1.5 font-medium;
+}
+
+/* ── Form: DARK background ───────────────────── */
+.input-dark {
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  color: #FAF7F2;
+  outline: none;
+  transition: all 0.2s;
+}
+.input-dark::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+.input-dark:focus {
+  border-color: rgba(201, 169, 110, 0.5);
+  box-shadow: 0 0 0 2px rgba(201, 169, 110, 0.15);
+}
+
+/* ── Buttons ─────────────────────────────────── */
+.btn-gold {
+  @apply bg-gold text-forest-900 font-semibold px-6 py-3 rounded-xl
+         shadow-gold-sm hover:shadow-gold-md hover:bg-gold-300
+         active:bg-gold-400 transition-all duration-200
+         disabled:opacity-50 disabled:cursor-not-allowed;
+}
+.btn-ghost-dark {
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  color: #FAF7F2;
+  font-weight: 500;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  transition: all 0.2s;
+  display: inline-block;
+}
+.btn-ghost-dark:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+.btn-ghost-light {
+  @apply border border-cream-300 text-ink font-medium px-6 py-3 rounded-xl
+         hover:border-gold-300 hover:text-gold-dark transition-all duration-200;
+}
+.btn-outline-gold {
+  @apply border border-gold-400 border-opacity-40 text-gold-dark font-medium px-6 py-3 rounded-xl
+         hover:bg-gold-400 hover:bg-opacity-10 transition-all duration-200;
+}
+
+/* ── Divider ─────────────────────────────────── */
+.divider { @apply border-t border-cream-300; }
+
+/* ── Section label ───────────────────────────── */
+.section-eyebrow {
+  @apply text-[11px] tracking-[4px] uppercase font-semibold;
+}

@@ -1,0 +1,113 @@
+"use client";
+
+import Link from "next/link";
+import { useAuth } from "@/lib/auth-context";
+import { MOCK_PRIVILEGES, MOCK_COMMUNITY } from "@/lib/mock-data";
+import { CreditCard, Gift, Image, ChevronRight } from "lucide-react";
+import { categoryLabel, categoryColor } from "@/lib/utils";
+
+export default function DashboardPage() {
+  const { member } = useAuth();
+  const featuredPrivileges = MOCK_PRIVILEGES.filter((p) => p.isActive).slice(0, 3);
+  const latestCommunity    = MOCK_COMMUNITY.filter((c) => c.isPublished).slice(0, 3);
+
+  return (
+    <div className="p-6 lg:p-10 max-w-5xl mx-auto">
+
+      {/* ── Welcome banner ── */}
+      <div className="bg-forest-900 rounded-2xl p-7 mb-8 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_80%_50%,#163B2B_0%,#0A1F14_70%)]" />
+        <div className="absolute top-0 right-8 w-48 h-48 bg-gold/6 rounded-full blur-2xl" />
+        <div className="relative">
+          <p className="text-white/40 text-sm">Good day,</p>
+          <h1 className="text-2xl font-light text-white mt-1">
+            {member?.fullName.split(" ")[0]}{" "}
+            <span className="text-gold text-lg">✦</span>
+          </h1>
+          <div className="flex flex-wrap items-center gap-3 mt-3">
+            <span className="text-[11px] bg-gold/20 text-gold border border-gold/30 px-3 py-1 rounded-full font-mono tracking-wider">
+              {member?.memberId}
+            </span>
+            <span className="text-white/30 text-xs capitalize">
+              {member?.residentStatus} · {member?.projectName}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Quick Actions ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
+        {[
+          { href: "/card",       icon: CreditCard, label: "My Membership Card", desc: "Show QR to redeem", color: "bg-forest-50 text-forest-700" },
+          { href: "/privileges", icon: Gift,        label: "Explore Privileges",  desc: `${MOCK_PRIVILEGES.length} benefits available`, color: "bg-gold/10 text-gold-dark" },
+          { href: "/community",  icon: Image,       label: "Community Moments",   desc: "Latest events & activities", color: "bg-forest-50 text-forest-700" },
+        ].map(({ href, icon: Icon, label, desc, color }) => (
+          <Link key={href} href={href}
+            className="group bg-white border border-cream-300 rounded-2xl p-5 flex items-start gap-4 card-hover shadow-card">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}>
+              <Icon size={18} strokeWidth={1.5} />
+            </div>
+            <div className="flex-1">
+              <p className="text-forest font-medium text-sm">{label}</p>
+              <p className="text-ink-muted text-xs mt-0.5">{desc}</p>
+            </div>
+            <ChevronRight size={14} className="text-ink-muted group-hover:text-gold-dark transition-colors mt-0.5" />
+          </Link>
+        ))}
+      </div>
+
+      {/* ── Featured Privileges ── */}
+      <div className="mb-10">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-forest font-semibold">Featured Privileges</h2>
+          <Link href="/privileges" className="text-gold-dark text-xs hover:text-gold flex items-center gap-1 font-medium">
+            View all <ChevronRight size={12} />
+          </Link>
+        </div>
+        <div className="space-y-3">
+          {featuredPrivileges.map((priv) => (
+            <Link key={priv.id} href={`/privileges/${priv.id}`}
+              className="flex items-center gap-4 bg-white border border-cream-300 rounded-2xl p-4 card-hover group shadow-card">
+              <img src={priv.partnerLogo} alt={priv.partnerName}
+                className="w-16 h-10 object-contain rounded-lg bg-cream-200 p-1 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-forest text-sm font-medium truncate">{priv.title}</p>
+                <p className="text-ink-muted text-xs truncate">{priv.summary}</p>
+              </div>
+              <div className="flex items-center gap-3 flex-shrink-0">
+                <span className={`text-xs px-2 py-0.5 rounded border hidden sm:block ${categoryColor(priv.category)}`}>
+                  {categoryLabel(priv.category)}
+                </span>
+                <span className="bg-gold/15 text-gold-dark text-xs font-bold px-2.5 py-1 rounded-lg border border-gold/20">
+                  {priv.discountLabel}
+                </span>
+                <ChevronRight size={14} className="text-cream-400 group-hover:text-gold-dark transition-colors" />
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Community ── */}
+      <div>
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-forest font-semibold">Community Moments</h2>
+          <Link href="/community" className="text-gold-dark text-xs hover:text-gold flex items-center gap-1 font-medium">
+            View all <ChevronRight size={12} />
+          </Link>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          {latestCommunity.map((item) => (
+            <div key={item.id} className="relative aspect-video overflow-hidden rounded-2xl group shadow-card border border-cream-300">
+              <img src={item.imageUrl} alt={item.caption}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+              <div className="absolute inset-0 bg-gradient-to-t from-forest-900/55 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
+                <p className="text-white text-xs font-medium">{item.caption}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
