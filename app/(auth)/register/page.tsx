@@ -3,16 +3,131 @@
 import { useState } from "react";
 import Link from "next/link";
 import { CheckCircle, ArrowRight } from "lucide-react";
+import Select, { StylesConfig, GroupBase } from "react-select";
 
-const PROJECTS = [
-  "The Title Rawai Phase 3", "The Title Rawai Phase 4",
-  "The Title Serenity Bangtao", "The Title Signature", "Other",
-];
-const NATIONALITIES = [
-  "Thai", "British", "American", "German", "Australian",
-  "Chinese", "Russian", "French", "Scandinavian", "Other",
+/* ── react-select luxury theme ── */
+type Opt = { value: string; label: string };
+
+const selectStyles: StylesConfig<Opt, false, GroupBase<Opt>> = {
+  control: (base, state) => ({
+    ...base,
+    backgroundColor: "#ffffff",
+    borderColor: state.isFocused
+      ? "rgba(201, 169, 110, 0.6)"
+      : state.menuIsOpen
+        ? "rgba(201, 169, 110, 0.6)"
+        : "#E4D9C8",
+    borderRadius: "0.75rem",
+    padding: "0.125rem 0.25rem",
+    boxShadow: state.isFocused
+      ? "0 0 0 2px rgba(201, 169, 110, 0.15)"
+      : "0 1px 2px rgba(26,46,34,0.04)",
+    minHeight: "48px",
+    cursor: "pointer",
+    transition: "all 0.2s",
+    "&:hover": {
+      borderColor: "rgba(201, 169, 110, 0.6)",
+    },
+  }),
+  placeholder: (base) => ({
+    ...base,
+    color: "#7A9080",
+    fontSize: "0.875rem",
+  }),
+  singleValue: (base) => ({
+    ...base,
+    color: "#1A2E22",
+    fontSize: "0.875rem",
+  }),
+  input: (base) => ({
+    ...base,
+    color: "#1A2E22",
+    fontSize: "0.875rem",
+  }),
+  menu: (base) => ({
+    ...base,
+    backgroundColor: "#ffffff",
+    border: "1px solid #E4D9C8",
+    borderRadius: "0.75rem",
+    boxShadow: "0 4px 20px rgba(26,46,34,0.10), 0 1px 4px rgba(26,46,34,0.06)",
+    overflow: "hidden",
+    zIndex: 50,
+  }),
+  menuList: (base) => ({
+    ...base,
+    padding: "4px",
+  }),
+  option: (base, state) => ({
+    ...base,
+    backgroundColor: state.isSelected
+      ? "#0A1F14"
+      : state.isFocused
+        ? "rgba(201, 169, 110, 0.10)"
+        : "transparent",
+    color: state.isSelected ? "#FAF7F2" : "#1A2E22",
+    fontSize: "0.875rem",
+    borderRadius: "0.5rem",
+    padding: "0.5rem 0.75rem",
+    cursor: "pointer",
+    transition: "all 0.15s",
+    "&:active": {
+      backgroundColor: "rgba(201, 169, 110, 0.20)",
+    },
+  }),
+  indicatorSeparator: () => ({ display: "none" }),
+  dropdownIndicator: (base, state) => ({
+    ...base,
+    color: state.isFocused ? "#C9A96E" : "#7A9080",
+    padding: "0 8px",
+    transition: "all 0.2s",
+    transform: state.selectProps.menuIsOpen ? "rotate(180deg)" : "rotate(0deg)",
+    "&:hover": { color: "#C9A96E" },
+  }),
+  clearIndicator: (base) => ({
+    ...base,
+    color: "#7A9080",
+    "&:hover": { color: "#C9A96E" },
+  }),
+  valueContainer: (base) => ({
+    ...base,
+    padding: "2px 12px",
+  }),
+};
+
+/* ── Data ── */
+const PROJECT_OPTIONS: Opt[] = [
+  { value: "The Title Rawai Phase 3",      label: "The Title Rawai Phase 3" },
+  { value: "The Title Rawai Phase 4",      label: "The Title Rawai Phase 4" },
+  { value: "The Title Serenity Bangtao",   label: "The Title Serenity Bangtao" },
+  { value: "The Title Signature",          label: "The Title Signature" },
+  { value: "Other",                        label: "Other" },
 ];
 
+const NATIONALITY_OPTIONS: Opt[] = [
+  { value: "Thai",         label: "Thai" },
+  { value: "British",      label: "British" },
+  { value: "American",     label: "American" },
+  { value: "German",       label: "German" },
+  { value: "Australian",   label: "Australian" },
+  { value: "Chinese",      label: "Chinese" },
+  { value: "Russian",      label: "Russian" },
+  { value: "French",       label: "French" },
+  { value: "Scandinavian", label: "Scandinavian" },
+  { value: "Other",        label: "Other" },
+];
+
+const GENDER_OPTIONS: Opt[] = [
+  { value: "male",   label: "Male" },
+  { value: "female", label: "Female" },
+  { value: "other",  label: "Prefer not to say" },
+];
+
+const RESIDENT_OPTIONS: Opt[] = [
+  { value: "owner",  label: "Owner" },
+  { value: "tenant", label: "Tenant (Long-term)" },
+];
+
+/* ── Component ── */
 export default function RegisterPage() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading]   = useState(false);
@@ -71,7 +186,7 @@ export default function RegisterPage() {
     </div>
   );
 
-  /* ── Field helpers ── */
+  /* ── Field helper ── */
   const Field = ({ k, label, children }: { k: string; label: string; children: React.ReactNode }) => (
     <div>
       <label className="label-text">{label}</label>
@@ -79,6 +194,9 @@ export default function RegisterPage() {
       {errors[k] && <p className="text-red-600 text-xs mt-1">{errors[k]}</p>}
     </div>
   );
+
+  /* ── Helper: find option by value ── */
+  const findOpt = (opts: Opt[], val: string) => opts.find((o) => o.value === val) ?? null;
 
   return (
     <div className="min-h-screen bg-cream-100 py-16 px-6">
@@ -116,29 +234,45 @@ export default function RegisterPage() {
               <span className="w-5 h-px bg-gold flex-shrink-0" />Personal Information
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
               <Field k="fullName" label="Full Name *">
                 <input className="input-field" placeholder="e.g. John Smith"
                   value={form.fullName} onChange={(e) => set("fullName", e.target.value)} />
               </Field>
+
               <div /> {/* spacer */}
+
               <Field k="gender" label="Gender *">
-                <select className="input-field" value={form.gender} onChange={(e) => set("gender", e.target.value)}>
-                  <option value="">Select...</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Prefer not to say</option>
-                </select>
+                <Select<Opt>
+                  instanceId="gender"
+                  options={GENDER_OPTIONS}
+                  value={findOpt(GENDER_OPTIONS, form.gender)}
+                  onChange={(opt) => set("gender", opt?.value ?? "")}
+                  placeholder="Select..."
+                  styles={selectStyles}
+                  isSearchable={false}
+                />
               </Field>
+
               <Field k="age" label="Age *">
                 <input className="input-field" type="number" min="18" max="120" placeholder="e.g. 35"
                   value={form.age} onChange={(e) => set("age", e.target.value)} />
               </Field>
-              <Field k="nationality" label="Nationality *">
-                <select className="input-field sm:col-span-2" value={form.nationality} onChange={(e) => set("nationality", e.target.value)}>
-                  <option value="">Select...</option>
-                  {NATIONALITIES.map((n) => <option key={n}>{n}</option>)}
-                </select>
-              </Field>
+
+              <div className="sm:col-span-2">
+                <Field k="nationality" label="Nationality *">
+                  <Select<Opt>
+                    instanceId="nationality"
+                    options={NATIONALITY_OPTIONS}
+                    value={findOpt(NATIONALITY_OPTIONS, form.nationality)}
+                    onChange={(opt) => set("nationality", opt?.value ?? "")}
+                    placeholder="Select..."
+                    styles={selectStyles}
+                    isSearchable
+                  />
+                </Field>
+              </div>
+
             </div>
           </div>
 
@@ -176,17 +310,26 @@ export default function RegisterPage() {
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field k="residentStatus" label="Resident Status *">
-                <select className="input-field" value={form.residentStatus} onChange={(e) => set("residentStatus", e.target.value)}>
-                  <option value="">Select...</option>
-                  <option value="owner">Owner</option>
-                  <option value="tenant">Tenant (Long-term)</option>
-                </select>
+                <Select<Opt>
+                  instanceId="residentStatus"
+                  options={RESIDENT_OPTIONS}
+                  value={findOpt(RESIDENT_OPTIONS, form.residentStatus)}
+                  onChange={(opt) => set("residentStatus", opt?.value ?? "")}
+                  placeholder="Select..."
+                  styles={selectStyles}
+                  isSearchable={false}
+                />
               </Field>
               <Field k="projectName" label="Project / Property *">
-                <select className="input-field" value={form.projectName} onChange={(e) => set("projectName", e.target.value)}>
-                  <option value="">Select...</option>
-                  {PROJECTS.map((p) => <option key={p}>{p}</option>)}
-                </select>
+                <Select<Opt>
+                  instanceId="projectName"
+                  options={PROJECT_OPTIONS}
+                  value={findOpt(PROJECT_OPTIONS, form.projectName)}
+                  onChange={(opt) => set("projectName", opt?.value ?? "")}
+                  placeholder="Select..."
+                  styles={selectStyles}
+                  isSearchable={false}
+                />
               </Field>
             </div>
           </div>
