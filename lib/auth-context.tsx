@@ -1,73 +1,222 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  type ReactNode,
+} from "react";
+import { useRouter } from "next/navigation";
+import type { User } from "@supabase/supabase-js";
+import type { MemberStatus } from "./types";
 import { Member } from "./types";
-import { findMemberByCredentials, MOCK_MEMBERS } from "./mock-data";
+import { createClient } from "./supabase/client";
+import { mapProfileToMember, type ProfileRow } from "./supabase/mappers";
 
 interface AuthContextType {
   member: Member | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  logout: () => void;
+  login: (
+    email: string,
+    password: string
+  ) => Promise<{ success: boolean; error?: string; redirectTo?: string }>;
+  logout: () => Promise<void>;
   isAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-// Admin credentials (mock)
-const ADMIN_EMAIL = "admin@thetitleresidence.com";
-const ADMIN_PASSWORD = "admin123";
+/** Dev / staging: set NEXT_PUBLIC_BYPASS_MEMBERSHIP_APPROVAL=true — pending users can use the member app without admin approval. */
+function bypassMembershipApproval(): boolean {
+  return process.env.NEXT_PUBLIC_BYPASS_MEMBERSHIP_APPROVAL === "true";
+}
+
+function memberCanAccessMemberArea(status: MemberStatus): boolean {
+  if (status === "rejected" || status === "suspended") return false;
+  if (status === "active") return true;
+  if (bypassMembershipApproval()) {
+    return status === "pending_verification" || status === "pending_approval";
+  }
+  return false;
+}
+
+/** Fallback when RPC is not deployed: direct insert (needs RLS insert policy). */
+async function ensureProfileExists(
+  supabase: ReturnType<typeof createClient>,
+  user: User
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const fullName =
+    (typeof user.user_metadata?.full_name === "string" && user.user_metadata.full_name.trim()) ||
+    user.email?.split("@")[0] ||
+    "Member";
+  const { error } = await supabase.from("profiles").insert({
+    id: user.id,
+    full_name: fullName,
+  });
+  if (!error) return { ok: true };
+  if (error.code === "23505") return { ok: true };
+  return { ok: false, message: error.message };
+}
+
+async function loadMemberFromUser(
+  supabase: ReturnType<typeof createClient>,
+  user: User
+): Promise<
+  | { member: Member; isAdmin: boolean }
+  | { error: string }
+> {
+  const metaName =
+    typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name : null;
+
+  let { data: row, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (error) {
+    return { error: `${error.message} (${error.code ?? "unknown"})` };
+  }
+  if (!row) {
+    const { error: rpcErr } = await supabase.rpc("ensure_my_profile", {
+      p_full_name: metaName,
+    });
+    if (rpcErr) {
+      const fallback = await ensureProfileExists(supabase, user);
+      if (!fallback.ok) {
+        return {
+          error: [
+            rpcErr.message,
+            fallback.message,
+            "Deploy supabase/ensure_my_profile_rpc.sql and/or supabase/profiles_email_insert_policy.sql in the SQL Editor.",
+          ].join(" "),
+        };
+      }
+    }
+    const again = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
+    if (again.error) {
+      return { error: again.error.message };
+    }
+    row = again.data;
+    if (!row) {
+      return {
+        error:
+          "Profile row still missing after ensure. Run supabase/ensure_my_profile_rpc.sql in Supabase SQL Editor.",
+      };
+    }
+  }
+  const profile = row as ProfileRow;
+  const member = mapProfileToMember(profile, user.email ?? "");
+  return { member, isAdmin: profile.is_admin };
+}
+
+/** Applies session to React state. Signs out if profile missing or member not allowed. */
+async function syncAuthState(
+  supabase: ReturnType<typeof createClient>,
+  setMember: (m: Member | null) => void,
+  setIsAdmin: (a: boolean) => void
+) {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session?.user) {
+    setMember(null);
+    setIsAdmin(false);
+    return;
+  }
+  const loaded = await loadMemberFromUser(supabase, session.user);
+  if ("error" in loaded) {
+    await supabase.auth.signOut();
+    setMember(null);
+    setIsAdmin(false);
+    return;
+  }
+  if (loaded.isAdmin) {
+    setIsAdmin(true);
+    setMember(loaded.member);
+    return;
+  }
+  if (!memberCanAccessMemberArea(loaded.member.status)) {
+    await supabase.auth.signOut();
+    setMember(null);
+    setIsAdmin(false);
+    return;
+  }
+  setIsAdmin(false);
+  setMember(loaded.member);
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const [member, setMember] = useState<Member | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Restore session from localStorage on mount
-    const stored = localStorage.getItem("ttc_member_id");
-    const adminFlag = localStorage.getItem("ttc_is_admin");
+    const supabase = createClient();
 
-    if (adminFlag === "true") {
-      setIsAdmin(true);
+    async function init() {
+      await syncAuthState(supabase, setMember, setIsAdmin);
       setIsLoading(false);
-      return;
     }
-    if (stored) {
-      const found = MOCK_MEMBERS.find((m) => m.id === stored && m.status === "active");
-      if (found) setMember(found);
-    }
-    setIsLoading(false);
+    void init();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
+      void (async () => {
+        await syncAuthState(supabase, setMember, setIsAdmin);
+        setIsLoading(false);
+      })();
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const login = async (email: string, password: string) => {
-    // Admin login
-    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+    const supabase = createClient();
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    if (!data.user) {
+      return { success: false, error: "Login failed." };
+    }
+    await supabase.auth.getSession();
+    const loaded = await loadMemberFromUser(supabase, data.user);
+    if ("error" in loaded) {
+      await supabase.auth.signOut();
+      return { success: false, error: loaded.error };
+    }
+    if (loaded.isAdmin) {
       setIsAdmin(true);
-      localStorage.setItem("ttc_is_admin", "true");
-      return { success: true };
+      setMember(loaded.member);
+      router.refresh();
+      return { success: true, redirectTo: "/admin" };
     }
-
-    const found = findMemberByCredentials(email, password);
-    if (!found) {
-      // Check if email exists but wrong password / pending
-      const existing = MOCK_MEMBERS.find((m) => m.email === email);
-      if (existing && existing.status !== "active") {
-        return { success: false, error: `Your account is ${existing.status.replace("_", " ")}. Please wait for approval.` };
-      }
-      return { success: false, error: "Invalid email or password." };
+    if (!memberCanAccessMemberArea(loaded.member.status)) {
+      await supabase.auth.signOut();
+      return {
+        success: false,
+        error: `Your account is ${loaded.member.status.replace(/_/g, " ")}. Please wait or contact support.`,
+      };
     }
-    setMember(found);
-    localStorage.setItem("ttc_member_id", found.id);
-    return { success: true };
+    setIsAdmin(false);
+    setMember(loaded.member);
+    router.refresh();
+    return { success: true, redirectTo: "/dashboard" };
   };
 
-  const logout = () => {
+  const logout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
     setMember(null);
     setIsAdmin(false);
-    localStorage.removeItem("ttc_member_id");
-    localStorage.removeItem("ttc_is_admin");
-    window.location.href = "/club/login";
+    router.push("/login");
+    router.refresh();
   };
 
   return (

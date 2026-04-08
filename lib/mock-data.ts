@@ -1,4 +1,4 @@
-import { Member, Privilege, CommunityMoment } from "./types";
+import { Member, Privilege, CommunityMoment, Partner } from "./types";
 
 export const MOCK_MEMBERS: Member[] = [
   {
@@ -158,40 +158,40 @@ export const MOCK_PRIVILEGES: Privilege[] = [
 export const MOCK_COMMUNITY: CommunityMoment[] = [
   {
     id: "cm-001",
-    imageUrl: "https://placehold.co/800x600/0f1923/C9A96E?text=New+Year+Party+2024",
-    caption: "New Year Celebration 2024",
+    imageUrl: "https://scontent.fbkk5-6.fna.fbcdn.net/v/t39.30808-6/611271949_122217486842052360_4965096532042243705_n.jpg?_nc_cat=102&ccb=1-7&_nc_sid=7b2446&_nc_ohc=0EZz22tSYmoQ7kNvwGkCKRV&_nc_oc=AdqdHjyvTHATz6e_e0FvwHeGTxkdwugDmo08vmS-gT-1YsIM0xxAG-J0rm7QLs6WG2c&_nc_zt=23&_nc_ht=scontent.fbkk5-6.fna&_nc_gid=lU57yjCr3nTShmBXE-E9bg&_nc_ss=7a3a8&oh=00_Af2Y3oA8BAFR1ddaKgZ1maDOYLi5vgWUIrtYtyNq1Hh0QQ&oe=69DBA34F",
+    caption: "Excepteur sint occaecat",
     eventDate: "2024-01-01",
     isPublished: true,
     sortOrder: 1,
   },
   {
     id: "cm-002",
-    imageUrl: "https://placehold.co/800x600/16213e/C9A96E?text=Pool+Party",
-    caption: "Summer Pool Party",
+    imageUrl: "https://scontent.fbkk5-4.fna.fbcdn.net/v/t39.30808-6/615892107_122218279382052360_1583726914096791565_n.jpg?_nc_cat=103&ccb=1-7&_nc_sid=13d280&_nc_ohc=-6cfErSZeL4Q7kNvwEtELFm&_nc_oc=AdqIqhmLBOlHoKviSYiqOFYJSBFmo64-2toyEPnhw7I5nX4SJKt6NHNNswD7E0o5Sls&_nc_zt=23&_nc_ht=scontent.fbkk5-4.fna&_nc_gid=rI5MoLwOJRAIcS30tmDGEg&_nc_ss=7a3a8&oh=00_Af2uSdH0qhk2gv3DmDiY2xcfhWbPLk6BWD-LWasEqnPPdg&oe=69DB94F6",
+    caption: "Sed ut perspiciatis unde omnis",
     eventDate: "2024-03-15",
     isPublished: true,
     sortOrder: 2,
   },
   {
     id: "cm-003",
-    imageUrl: "https://placehold.co/800x600/1a1a2e/C9A96E?text=BBQ+Evening",
-    caption: "Resident BBQ Evening",
+    imageUrl: "https://scontent.fbkk5-3.fna.fbcdn.net/v/t39.30808-6/660513107_122225301938052360_5281109952698241705_n.jpg?_nc_cat=105&ccb=1-7&_nc_sid=13d280&_nc_ohc=JfuYg2xrjk0Q7kNvwFgmVRd&_nc_oc=AdqHUxjY43eI9l6FUbOPn2sPinWsgID6YGcSs5CEvDCxpB7muS-WhR9SwudR9Pn2-3g&_nc_zt=23&_nc_ht=scontent.fbkk5-3.fna&_nc_gid=ZLmN6plFS1HNkIzBOrJcnQ&_nc_ss=7a3a8&oh=00_Af0Jz0Rcb2dVe5FCjXt-CP0fNYFpuZbTWDXHPlHK0ZwH7g&oe=69DB9DFE",
+    caption: "exercitationem ullam corporis",
     eventDate: "2024-05-20",
     isPublished: true,
     sortOrder: 3,
   },
   {
     id: "cm-004",
-    imageUrl: "https://placehold.co/800x600/0f3460/C9A96E?text=Songkran+Festival",
-    caption: "Songkran Festival",
+    imageUrl: "https://scontent.fbkk5-6.fna.fbcdn.net/v/t39.30808-6/579093416_122211860516052360_3999910566976489382_n.jpg?_nc_cat=101&ccb=1-7&_nc_sid=7b2446&_nc_ohc=l0xR2AjVbL8Q7kNvwHbGlKD&_nc_oc=AdoKkT983O7ZqbQMzBLDe60zdyuETjoLgWlGqSbV0S3amnbBbKPRsBlrE_3InsY13-g&_nc_zt=23&_nc_ht=scontent.fbkk5-6.fna&_nc_gid=bNHKSQZPYPFSQRT_RHI6JQ&_nc_ss=7a3a8&oh=00_Af2nUvhjSsdw4ztLV6PNhuonFSWh23MfFvydscwkVyx3bw&oe=69DB90B1",
+    caption: "Lorem ipsum dolor sit amet",
     eventDate: "2024-04-13",
     isPublished: true,
     sortOrder: 4,
   },
   {
     id: "cm-005",
-    imageUrl: "https://placehold.co/800x600/16213e/C9A96E?text=Yoga+Morning",
-    caption: "Morning Yoga by the Pool",
+    imageUrl: "https://scontent.fbkk5-4.fna.fbcdn.net/v/t51.82787-15/587552880_17928308682154155_2403100673086112784_n.jpg?_nc_cat=103&ccb=1-7&_nc_sid=13d280&_nc_ohc=pJysTBnFCAYQ7kNvwHTInJl&_nc_oc=Ado69CzrvrS76UHqrfk65boULw_zql4jFzXXhLsTvAuqlrnqFFnbQJCCdqwhh993Kb0&_nc_zt=23&_nc_ht=scontent.fbkk5-4.fna&_nc_gid=h_kRDsGYyE3ygHmI545HVw&_nc_ss=7a3a8&oh=00_Af2B2E2ZBz-MEwpY7a4j9ODEnxl0ya_WTP5lcGcwLwGoZA&oe=69DBB5A3",
+    caption: "Nemo enim ipsam voluptatem",
     eventDate: "2024-06-01",
     isPublished: true,
     sortOrder: 5,
@@ -199,7 +199,7 @@ export const MOCK_COMMUNITY: CommunityMoment[] = [
   {
     id: "cm-006",
     imageUrl: "https://placehold.co/800x600/0f1923/C9A96E?text=Sunset+Drinks",
-    caption: "Resident Sunset Gathering",
+    caption: "Neque porro quisquam est, qui dolorem ipsum quia",
     eventDate: "2024-07-12",
     isPublished: true,
     sortOrder: 6,
@@ -212,3 +212,54 @@ export function findMemberByCredentials(email: string, password: string): Member
     (m) => m.email === email && m.password === password && m.status === "active"
   ) ?? null;
 }
+
+export const MOCK_PARTNERS: Partner[] = [
+  {
+    id: "001",
+    name: "Intercontinental Phuket",
+    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/2/2c/F05237-3d-logo1-rgb-lp.png",
+    link: "",
+  },
+  {
+    id: "002",
+    name: "SAWANU Phuket",
+    imageUrl: "https://thanyapura.com/wp-content/uploads/sites/37/2025/01/Thanyapura_Portrait.svg",
+    link: "https://www.sawanuphuket.com",
+  },
+  {
+    id: "003",
+    name: "BDMS",
+    imageUrl: "https://upload.wikimedia.org/wikipedia/en/thumb/4/4a/BDMS_Logo.svg/1280px-BDMS_Logo.svg.png",
+    link: "https://bdms.co.th/",
+  },
+  {
+    id: "004",
+    name: "Splash Beach Resort",
+    imageUrl: "https://assets-au-01.kc-usercontent.com/8501b3be-ee9d-02d5-1c38-08f2f60063fa/a7203ef6-ab12-4d4c-9290-f9f7c5daa7f5/VTL%20Phuket%20Logo%201.png",
+    link: "https://www.splashbeachresort.com",
+  },
+  {
+    id: "005",
+    name: "Clean Pro Phuket",
+    imageUrl: "https://lirp.cdn-website.com/4246b69b/dms3rep/multi/opt/357091694_662318679261116_4935783886843566529_n-96c537a8-640w.png",
+    link: "https://www.cleanprophuket.com",
+  },
+  {
+    id: "006",
+    name: "Phuket Vegetarian Festival",
+    imageUrl: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR8GqCEcxwuljDVRvuyVBbX_uZq1TheVaTKoA&s",
+    link: "https://www.phuketvegetarianfestival.com",
+  },
+  {
+    id: "007",
+    name: "Phuket Vegetarian Festival",
+    imageUrl: "https://cdn.shopify.com/s/files/1/0262/7741/2898/files/D_C_NEW_LOGO_1.png?height=628&pad_color=fff&v=1635475374&width=1200",
+    link: "https://www.phuketvegetarianfestival.com",
+  },
+  {
+    id: "008",
+    name: "Phuket Vegetarian Festival",
+    imageUrl: "https://static.wixstatic.com/media/5bf034_4b243907dd0a46eba34ad47ebbde8152~mv2.png",
+    link: "https://www.phuketvegetarianfestival.com",
+  },
+];

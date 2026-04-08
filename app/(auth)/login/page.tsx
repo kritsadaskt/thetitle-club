@@ -22,7 +22,7 @@ export default function LoginPage() {
     const result = await login(email, password);
     setLoading(false);
     if (result.success) {
-      router.push(email.includes("admin") ? "/admin" : "/dashboard");
+      router.push(result.redirectTo ?? "/dashboard");
     } else {
       setError(result.error ?? "Login failed");
     }
@@ -46,12 +46,11 @@ export default function LoginPage() {
         <div className="relative">
           <div className="w-10 h-0.5 bg-gold mb-8 opacity-60" />
           <blockquote className="text-4xl font-light text-white leading-[1.2]">
-            &ldquo;One Title,<br />
-            <span className="text-gold-gradient font-semibold">&nbsp;One Family.&rdquo;</span>
+            &ldquo;Discover,<br />
+            <span className="text-gold-gradient font-semibold">&nbsp;Our Community.&rdquo;</span>
           </blockquote>
           <p className="text-white/35 mt-6 text-sm leading-relaxed max-w-sm">
-            Your exclusive community of curated experiences, lifestyle privileges,
-            and meaningful connections awaits.
+            At THE TITLE, we believe that owning a home is more than holding a title — it is becoming part of a family. THE TITLE CLUB is our exclusive community designed to bring residents together through curated experiences, lifestyle privileges, and meaningful connections. Because here, every title belongs to a family.
           </p>
         </div>
 

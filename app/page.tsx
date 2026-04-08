@@ -1,12 +1,32 @@
-"use client";
-
 import Link from "next/link";
-import { MOCK_PRIVILEGES, MOCK_COMMUNITY } from "@/lib/mock-data";
+import { MOCK_PARTNERS } from "@/lib/mock-data";
+import { createClient } from "@/lib/supabase/server";
+import {
+  mapPrivilegeRow,
+  mapCommunityRow,
+  type PrivilegeRow,
+  type CommunityMomentRow,
+} from "@/lib/supabase/mappers";
 import { categoryLabel, categoryColor } from "@/lib/utils";
 
-export default function LandingPage() {
-  const featuredPrivileges = MOCK_PRIVILEGES.filter((p) => p.isActive).slice(0, 3);
-  const featuredCommunity  = MOCK_COMMUNITY.filter((c) => c.isPublished).slice(0, 4);
+export default async function LandingPage() {
+  const supabase = await createClient();
+  const { data: privRows } = await supabase
+    .from("privileges")
+    .select("*")
+    .eq("is_active", true)
+    .order("sort_order");
+  const { data: commRows } = await supabase
+    .from("community_moments")
+    .select("*")
+    .eq("is_published", true)
+    .order("sort_order");
+
+  const privileges = (privRows ?? []).map((r) => mapPrivilegeRow(r as PrivilegeRow));
+  const community = (commRows ?? []).map((r) => mapCommunityRow(r as CommunityMomentRow));
+
+  const featuredPrivileges = privileges.filter((p) => p.isActive).slice(0, 3);
+  const featuredCommunity = community.filter((c) => c.isPublished).slice(0, 5);
 
   return (
     <main className="min-h-screen bg-cream-100">
@@ -43,13 +63,11 @@ export default function LandingPage() {
           <div className="max-w-2xl">
             <p className="section-eyebrow text-gold mb-5">Exclusive Membership</p>
             <h1 className="text-5xl md:text-[64px] font-light text-white leading-[1.12] mb-6 tracking-tight">
-              One Title,<br />
-              <span className="text-gold-gradient font-semibold">One Family.</span>
+              Discover,<br />
+              <span className="text-gold-gradient font-semibold">Our Community.</span>
             </h1>
             <p className="text-lg text-white/50 max-w-lg leading-relaxed mb-10">
-              At THE TITLE, owning a home is more than holding a title — it is becoming part of a family.
-              THE TITLE CLUB brings residents together through curated experiences, lifestyle privileges,
-              and meaningful connections.
+              At THE TITLE, we believe that owning a home is more than holding a title — it is becoming part of a family. THE TITLE CLUB is our exclusive community designed to bring residents together through curated experiences, lifestyle privileges, and meaningful connections. Because here, every title belongs to a family.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Link href="/register" className="btn-gold text-base px-8 py-4 inline-block text-center">
@@ -65,7 +83,7 @@ export default function LandingPage() {
           <div className="mt-20 pt-8 border-t border-white/10 grid grid-cols-3 gap-8 max-w-lg">
             {[
               { num: "3+", label: "Projects" },
-              { num: `${MOCK_PRIVILEGES.length}`, label: "Privileges" },
+              { num: `${privileges.length}`, label: "Privileges" },
               { num: "100%", label: "Exclusive" },
             ].map(({ num, label }) => (
               <div key={label}>
@@ -84,24 +102,20 @@ export default function LandingPage() {
             <div>
               <p className="section-eyebrow text-gold-dark mb-4">Our Community</p>
               <h2 className="text-4xl font-light text-forest leading-tight mb-6">
-                A home within<br />
-                <em className="not-italic text-gold-dark font-serif">a community</em>
+                Community<br />
+                <em className="not-italic text-gold-dark font-serif">Moments</em>
               </h2>
               <p className="text-ink-light leading-relaxed mb-8">
-                THE TITLE CLUB is our exclusive community designed to bring residents together
-                through curated experiences, lifestyle privileges, and meaningful connections.
-                Because here, every title belongs to a family.
-              </p>
+              Within Community Moments, every experience is intentionally crafted for those who appreciate the art of living well. From intimate soirées to exceptional cultural encounters, it is where a global community connects in style and distinction.</p>
               <Link href="/register" className="btn-outline-gold inline-block">
                 Learn More
               </Link>
             </div>
             {/* Community grid preview */}
             <div className="grid grid-cols-2 gap-3">
-              {featuredCommunity.slice(0, 4).map((item, i) => (
+              {featuredCommunity.slice(0, 5).map((item, i) => (
                 <div key={item.id}
-                  className={`relative overflow-hidden rounded-2xl group ${i === 0 ? "row-span-2" : ""}`}
-                  style={{ aspectRatio: i === 0 ? "3/4" : "4/3" }}>
+                  className={`relative overflow-hidden rounded-2xl group ${i === 0 ? "row-span-2" : ""}`}>
                   <img src={item.imageUrl} alt={item.caption}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                   <div className="absolute inset-0 bg-gradient-to-t from-forest-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
@@ -150,7 +164,7 @@ export default function LandingPage() {
           </div>
           <div className="text-center mt-10">
             <Link href="/register" className="btn-outline-gold text-sm">
-              Join to See All {MOCK_PRIVILEGES.length} Privileges →
+              Join to See All {privileges.length} Privileges →
             </Link>
           </div>
         </div>
@@ -171,8 +185,25 @@ export default function LandingPage() {
             and connect with your community.
           </p>
           <Link href="/register" className="btn-gold text-base px-10 py-4 inline-block">
-            Register Now — It&apos;s Free
+            Become a part of the family
           </Link>
+        </div>
+      </section>
+
+      {/* ─── Our Partners ─────────────────── */}
+      <section className="py-28 bg-white">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <p className="section-eyebrow text-gold-dark mb-4">let's meet</p>
+            <h2 className="text-4xl font-light text-forest">Our Partners</h2>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {MOCK_PARTNERS.map((partner) => (
+              <Link href={partner.link} target="_blank" key={partner.id} className="w-full h-auto flex items-center justify-center">
+                <img src={partner.imageUrl} alt={partner.name} className="object-contain object-center w-2/3 h-auto" />
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
 

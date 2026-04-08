@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CheckCircle, ArrowRight } from "lucide-react";
+import { CheckCircle, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import Select, { StylesConfig, GroupBase } from "react-select";
 
 /* ── react-select luxury theme ── */
@@ -96,11 +97,13 @@ const selectStyles: StylesConfig<Opt, false, GroupBase<Opt>> = {
 
 /* ── Data ── */
 const PROJECT_OPTIONS: Opt[] = [
-  { value: "The Title Rawai Phase 3",      label: "The Title Rawai Phase 3" },
-  { value: "The Title Rawai Phase 4",      label: "The Title Rawai Phase 4" },
-  { value: "The Title Serenity Bangtao",   label: "The Title Serenity Bangtao" },
-  { value: "The Title Signature",          label: "The Title Signature" },
-  { value: "Other",                        label: "Other" },
+  { value: "THE Title WEST WING rawai",label: "THE Title WEST WING rawai" },
+  { value: "THE TITLE V rawai",label: "THE TITLE V rawai" },
+  { value: "THE TITLE Residencies nai-yang",label: "THE TITLE Residencies nai-yang" },
+  { value: "THE TITLE HALO 1 nai-yang",label: "THE TITLE HALO 1 nai-yang" },
+  { value: "THE TITLE Legendary Bang-Tao",label: "THE TITLE Legendary Bang-Tao" },
+  { value: "THE TITLE Serenity nai-yang",label: "THE TITLE Serenity nai-yang" },
+  { value: "Other",label: "Other" },
 ];
 
 const NATIONALITY_OPTIONS: Opt[] = [
@@ -124,8 +127,26 @@ const GENDER_OPTIONS: Opt[] = [
 
 const RESIDENT_OPTIONS: Opt[] = [
   { value: "owner",  label: "Owner" },
-  { value: "tenant", label: "Tenant (Long-term)" },
+  { value: "tenant", label: "Tenant" },
 ];
+
+function Field({
+  label,
+  children,
+  error,
+}: {
+  label: string;
+  children: React.ReactNode;
+  error?: string;
+}) {
+  return (
+    <div>
+      <label className="label-text">{label}</label>
+      {children}
+      {error && <p className="text-red-600 text-xs mt-1">{error}</p>}
+    </div>
+  );
+}
 
 /* ── Component ── */
 export default function RegisterPage() {
@@ -133,10 +154,13 @@ export default function RegisterPage() {
   const [loading, setLoading]   = useState(false);
   const [form, setForm] = useState({
     fullName: "", gender: "", age: "", nationality: "",
-    email: "", phone: "", whatsapp: "",
+    email: "", password: "", confirmPassword: "", phone: "", whatsapp: "",
     residentStatus: "", projectName: "", consent: false,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitError, setSubmitError] = useState("");
+  const [showPw, setShowPw] = useState(false);
+  const [showPw2, setShowPw2] = useState(false);
 
   function validate() {
     const e: Record<string, string> = {};
@@ -145,7 +169,10 @@ export default function RegisterPage() {
     if (!form.age || +form.age < 18)   e.age             = "Must be 18 or older";
     if (!form.nationality)             e.nationality     = "Please select nationality";
     if (!form.email.includes("@"))     e.email           = "Valid email required";
+    if (form.password.length < 8)      e.password        = "Password must be at least 8 characters";
+    if (form.password !== form.confirmPassword) e.confirmPassword = "Passwords do not match";
     if (!form.phone.trim())            e.phone           = "Phone number required";
+    if (!form.whatsapp.trim())         e.whatsapp        = "WhatsApp number required";
     if (!form.residentStatus)          e.residentStatus  = "Please select status";
     if (!form.projectName)             e.projectName     = "Please select project";
     if (!form.consent)                 e.consent         = "Please accept the terms";
@@ -157,8 +184,58 @@ export default function RegisterPage() {
     const errs = validate();
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
     setErrors({});
+    setSubmitError("");
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1500));
+    const supabase = createClient();
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const meta = {
+      full_name: form.fullName.trim(),
+      gender: form.gender,
+      age: form.age,
+      nationality: form.nationality,
+      phone: form.phone.trim(),
+      whatsapp: form.whatsapp.trim(),
+      resident_status: form.residentStatus,
+      project_name: form.projectName,
+    };
+    const { data, error } = await supabase.auth.signUp({
+      email: form.email.trim(),
+      password: form.password,
+      options: {
+        emailRedirectTo: `${origin}/club/login`,
+        data: meta,
+      },
+    });
+    if (error) {
+      setSubmitError(error.message);
+      setLoading(false);
+      return;
+    }
+    if (data.session?.user) {
+      const autoApprove = process.env.NEXT_PUBLIC_BYPASS_MEMBERSHIP_APPROVAL === "true";
+      const { error: upErr } = await supabase.from("profiles").update({
+        full_name: meta.full_name,
+        email: form.email.trim(),
+        gender: meta.gender as "male" | "female" | "other",
+        age: parseInt(form.age, 10),
+        nationality: meta.nationality,
+        phone: meta.phone,
+        whatsapp: meta.whatsapp,
+        resident_status: meta.resident_status as "owner" | "tenant",
+        project_name: meta.project_name,
+        ...(autoApprove
+          ? {
+              status: "active" as const,
+              approved_at: new Date().toISOString(),
+            }
+          : {}),
+      }).eq("id", data.session.user.id);
+      if (upErr) {
+        setSubmitError(upErr.message);
+        setLoading(false);
+        return;
+      }
+    }
     setLoading(false);
     setSubmitted(true);
   }
@@ -183,15 +260,6 @@ export default function RegisterPage() {
         </p>
         <Link href="/login" className="btn-gold inline-block px-8">Back to Sign In</Link>
       </div>
-    </div>
-  );
-
-  /* ── Field helper ── */
-  const Field = ({ k, label, children }: { k: string; label: string; children: React.ReactNode }) => (
-    <div>
-      <label className="label-text">{label}</label>
-      {children}
-      {errors[k] && <p className="text-red-600 text-xs mt-1">{errors[k]}</p>}
     </div>
   );
 
@@ -235,14 +303,14 @@ export default function RegisterPage() {
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-              <Field k="fullName" label="Full Name *">
+              <Field label="Full Name *" error={errors.fullName}>
                 <input className="input-field" placeholder="e.g. John Smith"
                   value={form.fullName} onChange={(e) => set("fullName", e.target.value)} />
               </Field>
 
               <div /> {/* spacer */}
 
-              <Field k="gender" label="Gender *">
+              <Field label="Gender *" error={errors.gender}>
                 <Select<Opt>
                   instanceId="gender"
                   options={GENDER_OPTIONS}
@@ -254,13 +322,13 @@ export default function RegisterPage() {
                 />
               </Field>
 
-              <Field k="age" label="Age *">
+              <Field label="Age *" error={errors.age}>
                 <input className="input-field" type="number" min="18" max="120" placeholder="e.g. 35"
                   value={form.age} onChange={(e) => set("age", e.target.value)} />
               </Field>
 
               <div className="sm:col-span-2">
-                <Field k="nationality" label="Nationality *">
+                <Field label="Nationality *" error={errors.nationality}>
                   <Select<Opt>
                     instanceId="nationality"
                     options={NATIONALITY_OPTIONS}
@@ -285,17 +353,41 @@ export default function RegisterPage() {
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="sm:col-span-2">
-                <Field k="email" label="Email Address *">
+                <Field label="Email Address *" error={errors.email}>
                   <input className="input-field" type="email" placeholder="you@example.com"
                     value={form.email} onChange={(e) => set("email", e.target.value)} />
                 </Field>
               </div>
-              <Field k="phone" label="Phone Number *">
+              <Field label="Password *" error={errors.password}>
+                <div className="relative">
+                  <input className="input-field pr-11" type={showPw ? "text" : "password"}
+                    autoComplete="new-password" placeholder="At least 8 characters"
+                    value={form.password} onChange={(e) => set("password", e.target.value)} />
+                  <button type="button" tabIndex={-1}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted hover:text-forest"
+                    onClick={() => setShowPw((v) => !v)} aria-label={showPw ? "Hide password" : "Show password"}>
+                    {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </Field>
+              <Field label="Confirm Password *" error={errors.confirmPassword}>
+                <div className="relative">
+                  <input className="input-field pr-11" type={showPw2 ? "text" : "password"}
+                    autoComplete="new-password" placeholder="Repeat password"
+                    value={form.confirmPassword} onChange={(e) => set("confirmPassword", e.target.value)} />
+                  <button type="button" tabIndex={-1}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted hover:text-forest"
+                    onClick={() => setShowPw2((v) => !v)} aria-label={showPw2 ? "Hide password" : "Show password"}>
+                    {showPw2 ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </Field>
+              <Field label="Phone Number *" error={errors.phone}>
                 <input className="input-field" type="tel" placeholder="+66 8x xxx xxxx"
                   value={form.phone} onChange={(e) => set("phone", e.target.value)} />
               </Field>
-              <Field k="whatsapp" label="WhatsApp Number">
-                <input className="input-field" type="tel" placeholder="Same as above?"
+              <Field label="WhatsApp Number *" error={errors.whatsapp}>
+                <input className="input-field" type="tel" placeholder="+7 999 xxx xx xx"
                   value={form.whatsapp} onChange={(e) => set("whatsapp", e.target.value)} />
               </Field>
             </div>
@@ -309,7 +401,7 @@ export default function RegisterPage() {
               <span className="w-5 h-px bg-gold flex-shrink-0" />Property Details
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Field k="residentStatus" label="Resident Status *">
+              <Field label="Resident Status *" error={errors.residentStatus}>
                 <Select<Opt>
                   instanceId="residentStatus"
                   options={RESIDENT_OPTIONS}
@@ -320,7 +412,7 @@ export default function RegisterPage() {
                   isSearchable={false}
                 />
               </Field>
-              <Field k="projectName" label="Project / Property *">
+              <Field label="Project / Property *" error={errors.projectName}>
                 <Select<Opt>
                   instanceId="projectName"
                   options={PROJECT_OPTIONS}
@@ -349,6 +441,10 @@ export default function RegisterPage() {
             </label>
             {errors.consent && <p className="text-red-600 text-xs mt-2 ml-7">{errors.consent}</p>}
           </div>
+
+          {submitError && (
+            <p className="text-red-600 text-sm text-center">{submitError}</p>
+          )}
 
           <button type="submit" disabled={loading}
             className="btn-gold w-full flex items-center justify-center gap-2 py-4 text-base">
