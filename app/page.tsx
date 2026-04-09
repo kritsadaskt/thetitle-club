@@ -116,8 +116,15 @@ export default async function LandingPage() {
               {featuredCommunity.slice(0, 5).map((item, i) => (
                 <div key={item.id}
                   className={`relative overflow-hidden rounded-2xl group ${i === 0 ? "row-span-2" : ""}`}>
-                  <img src={item.imageUrl} alt={item.caption}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  {item.imageUrl ? (
+                    <img
+                      src={item.imageUrl}
+                      alt={item.caption}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-cream-200" aria-hidden />
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-forest-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
                     <p className="text-white text-xs font-medium">{item.caption}</p>
                   </div>
@@ -143,8 +150,15 @@ export default async function LandingPage() {
               <div key={priv.id} className="card card-hover overflow-hidden">
                 {/* Cover image */}
                 <div className="relative h-44 overflow-hidden">
-                  <img src={priv.coverImage} alt={priv.title}
-                    className="w-full h-full object-cover" />
+                  {priv.coverImage ? (
+                    <img
+                      src={priv.coverImage}
+                      alt={priv.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-cream-300" aria-hidden />
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-forest-900/50 to-transparent" />
                   <span className="absolute top-3 right-3 bg-gold text-forest-900 text-xs font-bold px-3 py-1 rounded-full shadow-gold-sm">
                     {priv.discountLabel}
@@ -200,7 +214,15 @@ export default async function LandingPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {MOCK_PARTNERS.map((partner) => (
               <Link href={partner.link} target="_blank" key={partner.id} className="w-full h-auto flex items-center justify-center">
-                <img src={partner.imageUrl} alt={partner.name} className="object-contain object-center w-2/3 h-auto" />
+                {partner.imageUrl ? (
+                  <img
+                    src={partner.imageUrl}
+                    alt={partner.name}
+                    className="object-contain object-center w-2/3 h-auto"
+                  />
+                ) : (
+                  <div className="w-2/3 aspect-[3/2] bg-cream-200 rounded" aria-hidden />
+                )}
               </Link>
             ))}
           </div>
