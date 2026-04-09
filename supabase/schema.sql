@@ -47,6 +47,7 @@ create table if not exists profiles (
   nationality      text,
 
   -- Contact
+  email            text,
   phone            text,
   whatsapp         text,
 
@@ -68,8 +69,12 @@ create table if not exists profiles (
 create or replace function handle_new_user()
 returns trigger language plpgsql security definer as $$
 begin
-  insert into public.profiles (id, full_name)
-  values (new.id, coalesce(new.raw_user_meta_data->>'full_name', new.email));
+  insert into public.profiles (id, full_name, email)
+  values (
+    new.id,
+    coalesce(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)),
+    new.email
+  );
   return new;
 end;
 $$;
@@ -138,6 +143,46 @@ create table if not exists community_moments (
   created_at   timestamptz not null default now()
 );
 
+-- ── RLS helpers (SECURITY DEFINER + row_security off for lookup — avoids 42P17 recursion) ──
+create or replace function public.is_profile_admin()
+returns boolean
+language plpgsql
+volatile
+security definer
+set search_path = public
+as $$
+begin
+  set local row_security = off;
+  return coalesce(
+    (select p.is_admin from public.profiles p where p.id = auth.uid()),
+    false
+  );
+end;
+$$;
+
+create or replace function public.profile_is_active_member()
+returns boolean
+language plpgsql
+volatile
+security definer
+set search_path = public
+as $$
+begin
+  set local row_security = off;
+  return exists (
+    select 1
+    from public.profiles p
+    where p.id = auth.uid()
+      and p.status = 'active'::member_status
+  );
+end;
+$$;
+
+revoke all on function public.is_profile_admin() from public;
+revoke all on function public.profile_is_active_member() from public;
+grant execute on function public.is_profile_admin() to anon, authenticated;
+grant execute on function public.profile_is_active_member() to anon, authenticated;
+
 -- ============================================================
 --  Row Level Security (RLS)
 -- ============================================================
@@ -158,25 +203,21 @@ create policy "members: update own profile"
   using (auth.uid() = id)
   with check (auth.uid() = id);
 
+create policy "members: insert own profile"
+  on profiles for insert
+  to authenticated
+  with check (auth.uid() = id);
+
 -- Admins can read all profiles
 create policy "admins: read all profiles"
   on profiles for select
-  using (
-    exists (
-      select 1 from profiles
-      where id = auth.uid() and is_admin = true
-    )
-  );
+  using (public.is_profile_admin());
 
 -- Admins can update all profiles (approve / reject / suspend)
 create policy "admins: update all profiles"
   on profiles for update
-  using (
-    exists (
-      select 1 from profiles
-      where id = auth.uid() and is_admin = true
-    )
-  );
+  using (public.is_profile_admin())
+  with check (public.is_profile_admin());
 
 -- ── privileges RLS ───────────────────────────────────────────
 -- Active members can read active privileges
@@ -184,21 +225,14 @@ create policy "active members: read active privileges"
   on privileges for select
   using (
     is_active = true
-    and exists (
-      select 1 from profiles
-      where id = auth.uid() and status = 'active'
-    )
+    and public.profile_is_active_member()
   );
 
 -- Admins can do everything
 create policy "admins: all privileges"
   on privileges for all
-  using (
-    exists (
-      select 1 from profiles
-      where id = auth.uid() and is_admin = true
-    )
-  );
+  using (public.is_profile_admin())
+  with check (public.is_profile_admin());
 
 -- ── redemption_logs RLS ──────────────────────────────────────
 -- Members see only their own logs
@@ -214,12 +248,7 @@ create policy "members: insert own redemptions"
 -- Admins can read all logs
 create policy "admins: read all redemptions"
   on redemption_logs for select
-  using (
-    exists (
-      select 1 from profiles
-      where id = auth.uid() and is_admin = true
-    )
-  );
+  using (public.is_profile_admin());
 
 -- ── community_moments RLS ────────────────────────────────────
 -- Active members can read published moments
@@ -227,21 +256,14 @@ create policy "active members: read published moments"
   on community_moments for select
   using (
     is_published = true
-    and exists (
-      select 1 from profiles
-      where id = auth.uid() and status = 'active'
-    )
+    and public.profile_is_active_member()
   );
 
 -- Admins can do everything
 create policy "admins: all community moments"
   on community_moments for all
-  using (
-    exists (
-      select 1 from profiles
-      where id = auth.uid() and is_admin = true
-    )
-  );
+  using (public.is_profile_admin())
+  with check (public.is_profile_admin());
 
 -- ============================================================
 --  Seed data — Privileges (mirrors mock-data.ts)

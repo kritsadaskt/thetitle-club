@@ -25,6 +25,8 @@ export interface Member {
   status: MemberStatus;
   createdAt: string;
   approvedAt?: string;
+  /** From profiles.is_admin — staff accounts are excluded from the approval queue */
+  isAdmin?: boolean;
   password?: string; // hashed in real app; plain for mock
 }
 
@@ -61,4 +63,11 @@ export interface RedemptionLog {
   privilegeId: string;
   redeemedAt: string;
   method: "qr" | "visual";
+}
+
+export interface Partner {
+  id: string;
+  name: string;
+  imageUrl: string;
+  link: string;
 }
