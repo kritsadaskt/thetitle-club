@@ -45,7 +45,11 @@ export default function PrivilegeDetailPage() {
       </Link>
 
       <div className="relative h-56 md:h-72 rounded-2xl overflow-hidden mb-6 shadow-card">
-        <img src={priv.coverImage} alt={priv.title} className="w-full h-full object-cover" />
+        {priv.coverImage ? (
+          <img src={priv.coverImage} alt={priv.title} className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full bg-cream-300" aria-hidden />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-forest-900/70 to-transparent" />
         <span className="absolute top-4 right-4 bg-gold text-forest-900 font-bold px-4 py-1.5 rounded-full shadow-gold-sm">
           {priv.discountLabel}
@@ -58,11 +62,18 @@ export default function PrivilegeDetailPage() {
       </div>
 
       <div className="flex items-center gap-4 mb-6">
-        <img
-          src={priv.partnerLogo}
-          alt={priv.partnerName}
-          className="w-20 h-12 object-contain bg-cream-200 border border-cream-300 rounded-xl p-2"
-        />
+        {priv.partnerLogo ? (
+          <img
+            src={priv.partnerLogo}
+            alt={priv.partnerName}
+            className="w-20 h-12 object-contain bg-cream-200 border border-cream-300 rounded-xl p-2"
+          />
+        ) : (
+          <div
+            className="w-20 h-12 bg-cream-200 border border-cream-300 rounded-xl"
+            aria-hidden
+          />
+        )}
         <div>
           <p className="text-ink-muted text-xs">{priv.partnerName}</p>
           <h1 className="text-2xl font-light text-forest">{priv.title}</h1>
