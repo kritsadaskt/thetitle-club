@@ -49,7 +49,7 @@ export default function RedeemPage() {
   if (priv === undefined) {
     return (
       <div className="fixed inset-0 bg-forest-900 z-50 flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
       </div>
     );
   }
@@ -68,7 +68,7 @@ export default function RedeemPage() {
   return (
     <div className="fixed inset-0 bg-forest-900 z-50 flex flex-col">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_30%,#163B2B_0%,#0A1F14_70%)] pointer-events-none" />
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-gold/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
 
       <div className="relative flex items-center justify-between px-6 py-4 border-b border-white/8">
         <Link
@@ -85,12 +85,12 @@ export default function RedeemPage() {
       </div>
 
       <div className="relative flex-1 flex flex-col items-center justify-center px-6 py-8 text-center overflow-y-auto">
-        <p className="section-eyebrow text-gold/60 mb-2">Redeeming</p>
-        <p className="text-gold font-semibold text-xl">{priv.partnerName}</p>
+        <p className="section-eyebrow text-primary/60 mb-2">Redeeming</p>
+        <p className="text-primary font-semibold text-xl">{priv.partnerName}</p>
         <p className="text-white/50 text-sm mb-5">{priv.title}</p>
 
-        <div className="bg-gold/15 border border-gold/30 rounded-full px-7 py-2.5 mb-8 shadow-gold-sm">
-          <p className="text-gold font-bold tracking-widest">{priv.discountLabel}</p>
+        <div className="bg-primary/15 border border-primary/30 rounded-full px-7 py-2.5 mb-8 shadow-primary-sm">
+          <p className="text-primary font-bold tracking-widest">{priv.discountLabel}</p>
         </div>
 
         <div className="bg-cream-100 border-4 border-cream-200 p-5 rounded-3xl shadow-2xl mb-7">
@@ -105,7 +105,7 @@ export default function RedeemPage() {
         </div>
 
         <p className="text-white text-2xl font-light">{member.fullName}</p>
-        <p className="text-gold font-mono tracking-widest text-sm mt-2">{member.memberId}</p>
+        <p className="text-primary font-mono tracking-widest text-sm mt-2">{member.memberId}</p>
 
         <div className="mt-6">
           <p className="text-white/25 text-xs">{dateStr}</p>

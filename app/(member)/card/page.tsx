@@ -23,7 +23,7 @@ export default function CardPage() {
       <div className="relative rounded-2xl overflow-hidden bg-forest-900 border border-forest-700/50 p-7 mb-6 shadow-xl">
         {/* Texture */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_80%_20%,#163B2B_0%,#0A1F14_65%)]" />
-        <div className="absolute top-0 right-0 w-56 h-56 bg-gold/6 rounded-full -translate-y-1/3 translate-x-1/3 blur-3xl" />
+        <div className="absolute top-0 right-0 w-56 h-56 bg-primary/6 rounded-full -translate-y-1/3 translate-x-1/3 blur-3xl" />
         {/* Dot grid */}
         <div className="absolute inset-0 opacity-[0.04]"
           style={{ backgroundImage: "radial-gradient(circle, #C9A96E 1px, transparent 1px)", backgroundSize: "24px 24px" }} />
@@ -31,11 +31,11 @@ export default function CardPage() {
         {/* Header */}
         <div className="relative flex justify-between items-start mb-8">
           <div>
-            <p className="section-eyebrow text-gold/70 text-[9px]">The Title Residence</p>
+            <p className="section-eyebrow text-primary/70 text-[9px]">The Title Residence</p>
             <p className="text-white font-semibold tracking-[3px] text-base mt-0.5">CLUB</p>
           </div>
-          <div className="bg-gold/20 border border-gold/35 rounded-lg px-3 py-1.5">
-            <p className="text-gold text-[11px] font-bold tracking-widest">MEMBER</p>
+          <div className="bg-primary/20 border border-primary/35 rounded-lg px-3 py-1.5">
+            <p className="text-primary text-[11px] font-bold tracking-widest">MEMBER</p>
           </div>
         </div>
 
@@ -63,12 +63,12 @@ export default function CardPage() {
         <div className="relative flex items-end justify-between border-t border-white/10 pt-5">
           <div>
             <p className="text-white/25 text-[10px] uppercase tracking-wider mb-1">Member ID</p>
-            <p className="text-gold font-mono font-semibold tracking-[3px] text-sm">{member.memberId}</p>
+            <p className="text-primary font-mono font-semibold tracking-[3px] text-sm">{member.memberId}</p>
           </div>
           {/* Gold bar deco */}
           <div className="flex gap-1 items-end">
             {[20, 28, 16, 24, 12].map((h, i) => (
-              <div key={i} className="w-1 rounded-full bg-gold/30" style={{ height: h }} />
+              <div key={i} className="w-1 rounded-full bg-primary/30" style={{ height: h }} />
             ))}
           </div>
         </div>

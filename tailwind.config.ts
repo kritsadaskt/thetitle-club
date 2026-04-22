@@ -19,19 +19,19 @@ const config: Config = {
           300: "#E4D9C8",
           400: "#D4C4A8",
         },
-        // ── Gold ──
-        gold: {
-          50:  "#FDF8EE",
-          100: "#F5E8C8",
-          200: "#EDD49A",
-          300: "#E0BC6A",
-          DEFAULT: "#C9A96E",
-          400: "#C9A96E",
-          500: "#B8922A",
-          600: "#9A7520",
-          700: "#7A5C18",
-          800: "#5C4410",
-          dark: "#8A6520",
+        // ── Primary (accent) ──
+        primary: {
+          50:  "#F4FCE6",
+          100: "#E8F9CC",
+          200: "#D0F294",
+          300: "#B8EB5C",
+          400: "#ABF233",
+          DEFAULT: "#ABF230",
+          500: "#9ED42A",
+          600: "#82AE22",
+          700: "#65891A",
+          800: "#4A6313",
+          dark: "#3D5411",
         },
         // ── Midnight Green ──
         forest: {
@@ -60,13 +60,13 @@ const config: Config = {
         serif: ["Georgia", "Cambria", "serif"],
       },
       backgroundImage: {
-        "gold-gradient":    "linear-gradient(135deg, #C9A96E 0%, #E0BC6A 50%, #C9A96E 100%)",
+        "primary-gradient":   "linear-gradient(135deg, #ABF230 0%, #C8F24D 50%, #ABF230 100%)",
         "forest-gradient":  "linear-gradient(135deg, #0A1F14 0%, #163B2B 100%)",
         "cream-gradient":   "linear-gradient(180deg, #FAF7F2 0%, #F0EBE1 100%)",
       },
       boxShadow: {
-        "gold-sm": "0 2px 8px rgba(201,169,110,0.20)",
-        "gold-md": "0 4px 20px rgba(201,169,110,0.25)",
+        "primary-sm": "0 2px 8px rgba(171,242,48,0.22)",
+        "primary-md": "0 4px 20px rgba(171,242,48,0.32)",
         "card":    "0 1px 3px rgba(26,46,34,0.06), 0 4px 16px rgba(26,46,34,0.04)",
         "card-hover": "0 4px 20px rgba(26,46,34,0.10), 0 1px 4px rgba(26,46,34,0.06)",
       },

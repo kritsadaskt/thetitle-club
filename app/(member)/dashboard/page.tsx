@@ -35,7 +35,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="p-6 lg:p-10 max-w-5xl mx-auto flex justify-center py-24">
-        <div className="w-8 h-8 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
       </div>
     );
   }
@@ -44,15 +44,15 @@ export default function DashboardPage() {
     <div className="p-6 lg:p-10 max-w-5xl mx-auto">
       <div className="bg-forest-900 rounded-2xl p-7 mb-8 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_80%_50%,#163B2B_0%,#0A1F14_70%)]" />
-        <div className="absolute top-0 right-8 w-48 h-48 bg-gold/6 rounded-full blur-2xl" />
+        <div className="absolute top-0 right-8 w-48 h-48 bg-primary/6 rounded-full blur-2xl" />
         <div className="relative">
           <p className="text-white/40 text-sm">Good day,</p>
           <h1 className="text-2xl font-light text-white mt-1">
             {member?.fullName.split(" ")[0]}{" "}
-            <span className="text-gold text-lg">✦</span>
+            <span className="text-primary text-lg">✦</span>
           </h1>
           <div className="flex flex-wrap items-center gap-3 mt-3">
-            <span className="text-[11px] bg-gold/20 text-gold border border-gold/30 px-3 py-1 rounded-full font-mono tracking-wider">
+            <span className="text-[11px] bg-primary/20 text-primary border border-primary/30 px-3 py-1 rounded-full font-mono tracking-wider">
               {member?.memberId}
             </span>
             <span className="text-white/30 text-xs capitalize">
@@ -76,7 +76,7 @@ export default function DashboardPage() {
             icon: Gift,
             label: "Explore Privileges",
             desc: `${privileges.length} benefits available`,
-            color: "bg-gold/10 text-gold-dark",
+            color: "bg-primary/10 text-primary-dark",
           },
           {
             href: "/community",
@@ -98,7 +98,7 @@ export default function DashboardPage() {
               <p className="text-forest font-medium text-sm">{label}</p>
               <p className="text-ink-muted text-xs mt-0.5">{desc}</p>
             </div>
-            <ChevronRight size={14} className="text-ink-muted group-hover:text-gold-dark transition-colors mt-0.5" />
+            <ChevronRight size={14} className="text-ink-muted group-hover:text-primary-dark transition-colors mt-0.5" />
           </Link>
         ))}
       </div>
@@ -106,7 +106,7 @@ export default function DashboardPage() {
       <div className="mb-10">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-forest font-semibold">Featured Privileges</h2>
-          <Link href="/privileges" className="text-gold-dark text-xs hover:text-gold flex items-center gap-1 font-medium">
+          <Link href="/privileges" className="text-primary-dark text-xs hover:text-primary flex items-center gap-1 font-medium">
             View all <ChevronRight size={12} />
           </Link>
         </div>
@@ -132,10 +132,10 @@ export default function DashboardPage() {
                 >
                   {categoryLabel(priv.category)}
                 </span>
-                <span className="bg-gold/15 text-gold-dark text-xs font-bold px-2.5 py-1 rounded-lg border border-gold/20">
+                <span className="bg-primary/15 text-primary-dark text-xs font-bold px-2.5 py-1 rounded-lg border border-primary/20">
                   {priv.discountLabel}
                 </span>
-                <ChevronRight size={14} className="text-cream-400 group-hover:text-gold-dark transition-colors" />
+                <ChevronRight size={14} className="text-cream-400 group-hover:text-primary-dark transition-colors" />
               </div>
             </Link>
           ))}
@@ -145,7 +145,7 @@ export default function DashboardPage() {
       <div>
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-forest font-semibold">Community Moments</h2>
-          <Link href="/community" className="text-gold-dark text-xs hover:text-gold flex items-center gap-1 font-medium">
+          <Link href="/community" className="text-primary-dark text-xs hover:text-primary flex items-center gap-1 font-medium">
             View all <ChevronRight size={12} />
           </Link>
         </div>

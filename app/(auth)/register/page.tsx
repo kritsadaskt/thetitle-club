@@ -258,7 +258,7 @@ export default function RegisterPage() {
           Click the link to verify your email. Our team will then review your application —
           you&apos;ll receive a welcome email once approved.
         </p>
-        <Link href="/login" className="btn-gold inline-block px-8">Back to Sign In</Link>
+        <Link href="/login" className="btn-primary inline-block px-8">Back to Sign In</Link>
       </div>
     </div>
   );
@@ -272,7 +272,7 @@ export default function RegisterPage() {
 
         {/* Header */}
         <div className="text-center mb-10">
-          <Link href="/" className="section-eyebrow text-gold-dark hover:text-gold transition-colors">
+          <Link href="/" className="section-eyebrow text-primary-dark hover:text-primary transition-colors">
             The Title CLUB
           </Link>
           <h1 className="text-3xl font-light text-forest mt-2">Become Part of the Family</h1>
@@ -299,7 +299,7 @@ export default function RegisterPage() {
           {/* ── Section 1: Personal ── */}
           <div>
             <h3 className="text-xs tracking-[3px] uppercase font-semibold text-forest mb-5 flex items-center gap-2">
-              <span className="w-5 h-px bg-gold flex-shrink-0" />Personal Information
+              <span className="w-5 h-px bg-primary flex-shrink-0" />Personal Information
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
@@ -349,7 +349,7 @@ export default function RegisterPage() {
           {/* ── Section 2: Contact ── */}
           <div>
             <h3 className="text-xs tracking-[3px] uppercase font-semibold text-forest mb-5 flex items-center gap-2">
-              <span className="w-5 h-px bg-gold flex-shrink-0" />Contact Details
+              <span className="w-5 h-px bg-primary flex-shrink-0" />Contact Details
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="sm:col-span-2">
@@ -398,7 +398,7 @@ export default function RegisterPage() {
           {/* ── Section 3: Property ── */}
           <div>
             <h3 className="text-xs tracking-[3px] uppercase font-semibold text-forest mb-5 flex items-center gap-2">
-              <span className="w-5 h-px bg-gold flex-shrink-0" />Property Details
+              <span className="w-5 h-px bg-primary flex-shrink-0" />Property Details
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Resident Status *" error={errors.residentStatus}>
@@ -436,7 +436,7 @@ export default function RegisterPage() {
                 className="mt-0.5 accent-forest-700 w-4 h-4" />
               <span className="text-sm text-ink-light leading-relaxed">
                 I consent to The Title Residence collecting and processing my personal data in accordance with the{" "}
-                <a href="#" className="text-gold-dark underline">Privacy Policy</a>{" "}(PDPA) and confirm that all information provided is accurate.
+                <a href="#" className="text-primary-dark underline">Privacy Policy</a>{" "}(PDPA) and confirm that all information provided is accurate.
               </span>
             </label>
             {errors.consent && <p className="text-red-600 text-xs mt-2 ml-7">{errors.consent}</p>}
@@ -447,7 +447,7 @@ export default function RegisterPage() {
           )}
 
           <button type="submit" disabled={loading}
-            className="btn-gold w-full flex items-center justify-center gap-2 py-4 text-base">
+            className="btn-primary w-full flex items-center justify-center gap-2 py-4 text-base">
             {loading
               ? <span className="w-4 h-4 border-2 border-forest/30 border-t-forest rounded-full animate-spin" />
               : <ArrowRight size={16} />}
@@ -457,7 +457,7 @@ export default function RegisterPage() {
 
         <p className="text-center text-ink-muted text-sm mt-6">
           Already a member?{" "}
-          <Link href="/login" className="text-gold-dark font-medium hover:text-gold">Sign in</Link>
+          <Link href="/login" className="text-primary-dark font-medium hover:text-primary">Sign in</Link>
         </p>
       </div>
     </div>

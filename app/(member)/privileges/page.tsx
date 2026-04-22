@@ -45,7 +45,7 @@ export default function PrivilegesPage() {
   if (loading) {
     return (
       <div className="p-6 lg:p-10 max-w-5xl mx-auto flex justify-center py-24">
-        <div className="w-8 h-8 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
       </div>
     );
   }
@@ -102,7 +102,7 @@ export default function PrivilegesPage() {
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-forest-900/50 to-transparent" />
-                <span className="absolute top-3 right-3 bg-gold text-forest-900 text-xs font-bold px-3 py-1 rounded-full shadow-gold-sm">
+                <span className="absolute top-3 right-3 bg-primary text-forest-900 text-xs font-bold px-3 py-1 rounded-full shadow-primary-sm">
                   {priv.discountLabel}
                 </span>
                 <span
@@ -129,7 +129,7 @@ export default function PrivilegesPage() {
                   {priv.validUntil && (
                     <p className="text-ink-muted text-xs">Until {priv.validUntil}</p>
                   )}
-                  <span className="text-gold-dark text-xs flex items-center gap-1 font-medium ml-auto group-hover:text-gold transition-colors">
+                  <span className="text-primary-dark text-xs flex items-center gap-1 font-medium ml-auto group-hover:text-primary transition-colors">
                     Redeem <ChevronRight size={12} />
                   </span>
                 </div>

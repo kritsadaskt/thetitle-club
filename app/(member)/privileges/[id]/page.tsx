@@ -28,7 +28,7 @@ export default function PrivilegeDetailPage() {
   if (priv === undefined) {
     return (
       <div className="p-6 lg:p-10 max-w-3xl mx-auto flex justify-center py-24">
-        <div className="w-8 h-8 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
       </div>
     );
   }
@@ -51,7 +51,7 @@ export default function PrivilegeDetailPage() {
           <div className="w-full h-full bg-cream-300" aria-hidden />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-forest-900/70 to-transparent" />
-        <span className="absolute top-4 right-4 bg-gold text-forest-900 font-bold px-4 py-1.5 rounded-full shadow-gold-sm">
+        <span className="absolute top-4 right-4 bg-primary text-forest-900 font-bold px-4 py-1.5 rounded-full shadow-primary-sm">
           {priv.discountLabel}
         </span>
         <span
@@ -81,8 +81,8 @@ export default function PrivilegeDetailPage() {
       </div>
 
       {priv.validUntil && (
-        <div className="bg-gold/10 border border-gold/25 rounded-xl px-4 py-3 mb-6 text-sm text-gold-dark flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0" />
+        <div className="bg-primary/10 border border-primary/25 rounded-xl px-4 py-3 mb-6 text-sm text-primary-dark flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
           Valid until <strong>{priv.validUntil}</strong>
         </div>
       )}
@@ -94,7 +94,7 @@ export default function PrivilegeDetailPage() {
 
       <section className="mb-7 bg-forest-50 border border-forest-100 rounded-2xl p-5">
         <h2 className="text-forest font-semibold mb-4 flex items-center gap-2">
-          <Ticket size={15} className="text-gold-dark" />
+          <Ticket size={15} className="text-primary-dark" />
           How to Redeem
         </h2>
         <div className="space-y-3">
@@ -121,7 +121,7 @@ export default function PrivilegeDetailPage() {
       <div className="sticky bottom-6">
         <Link
           href={`/privileges/${priv.id}/redeem`}
-          className="btn-gold w-full text-center text-base flex items-center justify-center gap-2 py-4 shadow-gold-md"
+          className="btn-primary w-full text-center text-base flex items-center justify-center gap-2 py-4 shadow-primary-md"
         >
           <Ticket size={18} />
           Use This Privilege
