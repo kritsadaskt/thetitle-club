@@ -28,7 +28,7 @@ export default function CommunityPage() {
   if (loading) {
     return (
       <div className="p-6 lg:p-10 max-w-5xl mx-auto flex justify-center py-24">
-        <div className="w-8 h-8 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
       </div>
     );
   }

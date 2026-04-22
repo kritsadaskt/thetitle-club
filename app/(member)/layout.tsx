@@ -27,7 +27,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
 
   if (isLoading || !member) return (
     <div className="min-h-screen bg-cream-100 flex items-center justify-center">
-      <div className="w-6 h-6 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
+      <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
     </div>
   );
 
@@ -38,7 +38,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
       <aside className="hidden lg:flex flex-col w-60 bg-forest-900 fixed inset-y-0 left-0 z-30">
         {/* Logo */}
         <div className="px-6 py-6 border-b border-white/8">
-          <p className="section-eyebrow text-gold/80">The Title</p>
+          <p className="section-eyebrow text-primary/80">The Title</p>
           <p className="text-white font-semibold tracking-[3px] text-sm mt-0.5">CLUB</p>
         </div>
 
@@ -51,7 +51,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all",
                   active
-                    ? "bg-gold/15 text-gold font-medium"
+                    ? "bg-primary/15 text-primary font-medium"
                     : "text-white/45 hover:text-white/75 hover:bg-white/6"
                 )}>
                 <Icon size={15} strokeWidth={active ? 2 : 1.5} />
@@ -64,7 +64,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
         {/* User footer */}
         <div className="px-4 py-5 border-t border-white/8">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 rounded-full bg-gold/20 border border-gold/30 flex items-center justify-center text-gold text-xs font-bold">
+            <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-primary text-xs font-bold">
               {member.fullName.charAt(0)}
             </div>
             <div className="flex-1 min-w-0">
@@ -82,7 +82,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
       {/* ── MOBILE HEADER (Midnight Green) ── */}
       <header className="lg:hidden fixed top-0 inset-x-0 z-30 bg-forest-900/95 backdrop-blur border-b border-white/8 h-14 flex items-center px-5 justify-between">
         <div>
-          <p className="section-eyebrow text-gold/80 text-[9px]">The Title</p>
+          <p className="section-eyebrow text-primary/80 text-[9px]">The Title</p>
           <p className="text-white font-semibold tracking-[3px] text-xs">CLUB</p>
         </div>
         <button onClick={() => setMobileOpen((v) => !v)} className="text-white/50 hover:text-white">
@@ -101,7 +101,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
                 <Link key={href} href={href} onClick={() => setMobileOpen(false)}
                   className={cn(
                     "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all",
-                    pathname === href ? "bg-gold/15 text-gold" : "text-white/45 hover:text-white/75"
+                    pathname === href ? "bg-primary/15 text-primary" : "text-white/45 hover:text-white/75"
                   )}>
                   <Icon size={15} />{label}
                 </Link>

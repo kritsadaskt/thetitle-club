@@ -25,12 +25,12 @@ export default function ProfilePage() {
 
       {/* Avatar card */}
       <div className="bg-white border border-cream-300 rounded-2xl p-6 flex items-center gap-5 mb-6 shadow-card">
-        <div className="w-16 h-16 rounded-full bg-forest-900 flex items-center justify-center text-gold text-2xl font-semibold flex-shrink-0 shadow-md">
+        <div className="w-16 h-16 rounded-full bg-forest-900 flex items-center justify-center text-primary text-2xl font-semibold flex-shrink-0 shadow-md">
           {member.fullName.charAt(0)}
         </div>
         <div>
           <p className="text-forest font-semibold text-lg">{member.fullName}</p>
-          <p className="text-gold-dark font-mono text-sm tracking-widest mt-1">{member.memberId}</p>
+          <p className="text-primary-dark font-mono text-sm tracking-widest mt-1">{member.memberId}</p>
           <span className="inline-block mt-2 text-xs bg-forest-50 text-forest-700 border border-forest-100 px-3 py-0.5 rounded-full font-medium">
             ✦ Active Member
           </span>
@@ -59,7 +59,7 @@ export default function ProfilePage() {
 
       <p className="text-ink-muted text-xs text-center">
         To update your details, please contact{" "}
-        <a href="mailto:club@thetitleresidence.com" className="text-gold-dark hover:text-gold underline transition-colors">
+        <a href="mailto:club@thetitleresidence.com" className="text-primary-dark hover:text-primary underline transition-colors">
           club@thetitleresidence.com
         </a>
       </p>

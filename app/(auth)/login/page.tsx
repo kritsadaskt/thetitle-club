@@ -34,20 +34,20 @@ export default function LoginPage() {
       <div className="hidden lg:flex flex-col justify-between w-[45%] bg-forest-900 relative overflow-hidden p-12">
         {/* bg textures */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_20%_60%,#163B2B_0%,#0A1F14_70%)]" />
-        <div className="absolute bottom-0 right-0 w-80 h-80 bg-gold/6 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-0 w-80 h-80 bg-primary/6 rounded-full blur-3xl" />
         <div className="absolute inset-0 opacity-[0.025]"
           style={{ backgroundImage: "linear-gradient(#C9A96E 1px,transparent 1px),linear-gradient(90deg,#C9A96E 1px,transparent 1px)", backgroundSize: "48px 48px" }} />
 
         <div className="relative">
-          <p className="section-eyebrow text-gold">The Title Residence</p>
+          <p className="section-eyebrow text-primary">The Title Residence</p>
           <p className="text-white font-semibold tracking-[3px] text-lg mt-0.5">CLUB</p>
         </div>
 
         <div className="relative">
-          <div className="w-10 h-0.5 bg-gold mb-8 opacity-60" />
+          <div className="w-10 h-0.5 bg-primary mb-8 opacity-60" />
           <blockquote className="text-4xl font-light text-white leading-[1.2]">
             &ldquo;Discover,<br />
-            <span className="text-gold-gradient font-semibold">&nbsp;Our Community.&rdquo;</span>
+            <span className="text-primary-gradient font-semibold">&nbsp;Our Community.&rdquo;</span>
           </blockquote>
           <p className="text-white/35 mt-6 text-sm leading-relaxed max-w-sm">
             At THE TITLE, we believe that owning a home is more than holding a title — it is becoming part of a family. THE TITLE CLUB is our exclusive community designed to bring residents together through curated experiences, lifestyle privileges, and meaningful connections. Because here, every title belongs to a family.
@@ -62,7 +62,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="text-center mb-10 lg:hidden">
-            <p className="section-eyebrow text-gold-dark">The Title</p>
+            <p className="section-eyebrow text-primary-dark">The Title</p>
             <p className="text-forest font-semibold tracking-[3px] text-xl mt-0.5">CLUB</p>
           </div>
 
@@ -102,7 +102,7 @@ export default function LoginPage() {
             )}
 
             <button type="submit" disabled={loading}
-              className="btn-gold w-full flex items-center justify-center gap-2 py-3.5">
+              className="btn-primary w-full flex items-center justify-center gap-2 py-3.5">
               {loading
                 ? <span className="w-4 h-4 border-2 border-forest/30 border-t-forest rounded-full animate-spin" />
                 : <ArrowRight size={16} />}
@@ -113,7 +113,7 @@ export default function LoginPage() {
           <div className="mt-6 text-center space-y-3">
             <p className="text-ink-muted text-sm">
               Not a member?{" "}
-              <Link href="/register" className="text-gold-dark font-medium hover:text-gold transition-colors">
+              <Link href="/register" className="text-primary-dark font-medium hover:text-primary transition-colors">
                 Register here
               </Link>
             </p>

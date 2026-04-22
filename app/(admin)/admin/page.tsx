@@ -80,7 +80,7 @@ export default function AdminPage() {
   if (isLoading || !isAdmin) {
     return (
       <div className="min-h-screen bg-cream-100 flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
       </div>
     );
   }
@@ -97,11 +97,11 @@ export default function AdminPage() {
     <div className="min-h-screen bg-cream-100">
       <header className="bg-forest-900 border-b border-white/8 px-8 py-4 flex items-center justify-between">
         <div>
-          <p className="section-eyebrow text-gold/80 text-[9px]">The Title Residence</p>
+          <p className="section-eyebrow text-primary/80 text-[9px]">The Title Residence</p>
           <p className="text-white font-semibold tracking-[3px] text-sm mt-0.5">CLUB — Admin</p>
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-[11px] bg-gold/20 text-gold border border-gold/30 px-3 py-1 rounded-full font-medium">
+          <span className="text-[11px] bg-primary/20 text-primary border border-primary/30 px-3 py-1 rounded-full font-medium">
             Administrator
           </span>
           <button
@@ -129,7 +129,7 @@ export default function AdminPage() {
               label: "Privileges Active",
               value: privileges.filter((p) => p.isActive).length,
               icon: Gift,
-              color: "bg-gold/10 text-gold-dark",
+              color: "bg-primary/10 text-primary-dark",
             },
           ].map(({ label, value, icon: Icon, color }) => (
             <div key={label} className="bg-white border border-cream-300 rounded-2xl p-5 shadow-card">
@@ -164,7 +164,7 @@ export default function AdminPage() {
           <div>
             {dataLoading ? (
               <div className="flex justify-center py-16">
-                <div className="w-8 h-8 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
               </div>
             ) : (
               <>
@@ -228,7 +228,7 @@ export default function AdminPage() {
                         <tr key={m.id} className="hover:bg-cream-100/60 transition-colors">
                           <td className="px-5 py-3.5">
                             <div className="flex items-center gap-3">
-                              <div className="w-7 h-7 rounded-full bg-forest-900 flex items-center justify-center text-gold text-xs font-bold">
+                              <div className="w-7 h-7 rounded-full bg-forest-900 flex items-center justify-center text-primary text-xs font-bold">
                                 {m.fullName.charAt(0)}
                               </div>
                               <span className="text-forest font-medium">{m.fullName}</span>
@@ -259,7 +259,7 @@ export default function AdminPage() {
           <div>
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-ink-muted text-xs tracking-[2px] uppercase font-semibold">All Privileges</h2>
-              <button type="button" className="btn-gold text-xs px-4 py-2">
+              <button type="button" className="btn-primary text-xs px-4 py-2">
                 + Add Privilege
               </button>
             </div>
@@ -281,7 +281,7 @@ export default function AdminPage() {
                       <td className="px-5 py-3.5 text-ink-light">{p.partnerName}</td>
                       <td className="px-5 py-3.5 text-ink-muted capitalize text-xs">{p.category}</td>
                       <td className="px-5 py-3.5">
-                        <span className="bg-gold/15 text-gold-dark text-xs font-bold px-2.5 py-1 rounded-lg border border-gold/20">
+                        <span className="bg-primary/15 text-primary-dark text-xs font-bold px-2.5 py-1 rounded-lg border border-primary/20">
                           {p.discountLabel}
                         </span>
                       </td>
