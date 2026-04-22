@@ -50,21 +50,15 @@ export default async function LandingPage() {
       </nav>
 
       {/* ─── HERO (Midnight Green) ────────────────── */}
-      <section className="pt-16 min-h-screen flex items-center relative overflow-hidden bg-forest-900">
-        {/* Texture layers */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_40%,#163B2B_0%,#0A1F14_70%)]" />
-        <div className="absolute top-20 right-0 w-[600px] h-[600px] bg-gold/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-20 w-80 h-80 bg-forest-700/40 rounded-full blur-3xl" />
+      <section className="pt-16 min-h-screen flex items-center relative overflow-hidden bg-red bg-cover bg-center" style={{ backgroundImage: "url('/club/club-bg.webp')" }}>
         {/* Subtle grid */}
-        <div className="absolute inset-0 opacity-[0.03]"
-          style={{ backgroundImage: "linear-gradient(#C9A96E 1px, transparent 1px), linear-gradient(90deg, #C9A96E 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
 
         <div className="relative max-w-6xl mx-auto px-6 py-28">
           <div className="max-w-2xl">
             <p className="section-eyebrow text-gold mb-5">Exclusive Membership</p>
             <h1 className="text-5xl md:text-[64px] font-light text-white leading-[1.12] mb-6 tracking-tight">
               Discover,<br />
-              <span className="text-gold-gradient font-semibold">Our Community.</span>
+              <span className="text-[#abf230] font-semibold">Our Community.</span>
             </h1>
             <p className="text-lg text-white/50 max-w-lg leading-relaxed mb-10">
               At THE TITLE, we believe that owning a home is more than holding a title — it is becoming part of a family. THE TITLE CLUB is our exclusive community designed to bring residents together through curated experiences, lifestyle privileges, and meaningful connections. Because here, every title belongs to a family.
