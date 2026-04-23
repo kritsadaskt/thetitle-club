@@ -11,6 +11,29 @@ import { categoryLabel, categoryColor } from "@/lib/utils";
 
 export default async function LandingPage() {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let isAdmin = false;
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_admin")
+      .eq("id", user.id)
+      .maybeSingle();
+    isAdmin = profile?.is_admin ?? false;
+  }
+
+  const isSignedIn = Boolean(user);
+  const memberEntryHref = isAdmin ? "/admin" : "/profile";
+  const memberEntryLabel = isAdmin ? "Go to Dashboard" : "View Profile";
+  const memberHeroLabel = isAdmin ? "Open Admin Dashboard" : "Go to My Profile";
+  const memberCtaTitle = isAdmin ? "Welcome back, Admin" : "Welcome back";
+  const memberCtaDescription = isAdmin
+    ? "Continue managing members, privileges, and community content."
+    : "Continue exploring your member card, benefits, and community moments.";
+
   const { data: privRows } = await supabase
     .from("privileges")
     .select("*")
@@ -38,12 +61,20 @@ export default async function LandingPage() {
             <img src="/club/title-club-logo_mockup-dark.webp" alt="The Title" className="w-20 h-auto object-contain" />
           </div>
           <div className="flex items-center gap-4">
-            <Link href="/login" className="text-sm text-ink-light hover:text-primary-dark transition-colors font-medium">
-              Sign In
-            </Link>
-            <Link href="/register" className="btn-primary font-semibold px-5 py-2.5 rounded-lg">
-              Become a Member
-            </Link>
+            {isSignedIn ? (
+              <Link href={memberEntryHref} className="btn-primary font-semibold px-5 py-2.5 rounded-lg">
+                {memberEntryLabel}
+              </Link>
+            ) : (
+              <>
+                <Link href="/login" className="text-sm text-ink-light hover:text-primary-dark transition-colors font-medium">
+                  Sign In
+                </Link>
+                <Link href="/register" className="btn-primary font-semibold px-5 py-2.5 rounded-lg">
+                  Become a Member
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </nav>
@@ -63,12 +94,20 @@ export default async function LandingPage() {
               At THE TITLE, we believe that owning a home is more than holding a title — it is becoming part of a family. THE TITLE CLUB is our exclusive community designed to bring residents together through curated experiences, lifestyle privileges, and meaningful connections. Because here, every title belongs to a family.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link href="/register" className="bg-primary text-base font-semibold px-8 py-4 inline-block text-center rounded-lg">
-                Become Part of the Family
-              </Link>
-              <Link href="/login" className="btn-ghost-dark text-base px-8 py-4 inline-block text-center">
-                Member Login
-              </Link>
+              {isSignedIn ? (
+                <Link href={memberEntryHref} className="bg-primary text-base font-semibold px-8 py-4 inline-block text-center rounded-lg">
+                  {memberHeroLabel}
+                </Link>
+              ) : (
+                <>
+                  <Link href="/register" className="bg-primary text-base font-semibold px-8 py-4 inline-block text-center rounded-lg">
+                    Become Part of the Family
+                  </Link>
+                  <Link href="/login" className="btn-ghost-dark text-base px-8 py-4 inline-block text-center">
+                    Member Login
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -169,17 +208,27 @@ export default async function LandingPage() {
         <div className="absolute top-0 left-1/2 w-96 h-96 bg-primary/5 rounded-full blur-3xl -translate-x-1/2" />
         <div className="absolute inset-0" style={{ backgroundImage: "url('/club/club-bg.webp')" }} />
         <div className="relative max-w-2xl mx-auto px-6 text-center">
-          <p className="section-eyebrow text-primary mb-5">Join the Family</p>
+          <p className="section-eyebrow text-primary mb-5">{isSignedIn ? "Member Access" : "Join the Family"}</p>
           <h2 className="text-4xl md:text-5xl font-light text-white mb-6 leading-tight">
-            Become Part of<br />
-            <span className="text-primary-gradient font-semibold">the Family</span>
+            {isSignedIn ? (
+              <>
+                {memberCtaTitle}<br />
+                <span className="text-primary-gradient font-semibold">Continue Your Journey</span>
+              </>
+            ) : (
+              <>
+                Become Part of<br />
+                <span className="text-primary-gradient font-semibold">the Family</span>
+              </>
+            )}
           </h2>
           <p className="text-white/80 mb-10 max-w-md mx-auto leading-relaxed">
-            Register now to receive your digital membership card, access exclusive privileges,
-            and connect with your community.
+            {isSignedIn
+              ? memberCtaDescription
+              : "Register now to receive your digital membership card, access exclusive privileges, and connect with your community."}
           </p>
-          <Link href="/register" className="btn-primary rounded-lg font-semibold text-base px-10 py-4 inline-block">
-            Become a part of the family
+          <Link href={isSignedIn ? memberEntryHref : "/register"} className="btn-primary rounded-lg font-semibold text-base px-10 py-4 inline-block">
+            {isSignedIn ? memberEntryLabel : "Become a part of the family"}
           </Link>
         </div>
       </section>

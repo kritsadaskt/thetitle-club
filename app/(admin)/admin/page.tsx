@@ -8,8 +8,9 @@ import { fetchActivePrivileges } from "@/lib/supabase/data";
 import { mapProfileToMember, type ProfileRow } from "@/lib/supabase/mappers";
 import type { Member, Privilege } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
-import { Users, Gift, CheckCircle, XCircle, Clock, LogOut, TrendingUp } from "lucide-react";
+import { Users, Gift, CheckCircle, XCircle, Clock, LogOut, TrendingUp, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 type Tab = "members" | "privileges";
 
@@ -97,8 +98,9 @@ export default function AdminPage() {
     <div className="min-h-screen bg-cream-100">
       <header className="bg-deep-blue border-b border-white/8 px-8 py-4 flex items-center justify-between" style={{ backgroundImage: "url('/club/club-bg.webp')" }}>
         <div>
-          <p className="section-eyebrow text-primary/80 text-[9px]">The Title Residence</p>
-          <p className="text-white font-semibold tracking-[3px] text-sm mt-0.5">CLUB — Admin</p>
+          <Link href="/" title="Back to Club Homepage">
+            <img src="/club/title-club-logo_mockup-white.webp" alt="The Title" className="w-20 h-auto object-contain" />
+          </Link>
         </div>
         <div className="flex items-center gap-4">
           <span className="text-[11px] bg-primary/20 text-primary border border-primary/30 px-3 py-1 rounded-full font-medium">
@@ -120,6 +122,11 @@ export default function AdminPage() {
             Could not load members: {loadError}
           </div>
         )}
+        <Link href="/" title="Back to Club Homepage" className="flex items-center gap-2 text-ink-muted text-xs hover:text-primary-dark transition-colors font-medium">
+          <ArrowLeft size={15} />
+          <span className="text-black/70 text-sm">Back Homepage</span>
+        </Link>
+        <div className="h-5"></div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {[
             { label: "Total Members", value: members.length, icon: Users, color: "bg-forest-50 text-forest-700" },
