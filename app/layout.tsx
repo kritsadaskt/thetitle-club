@@ -5,6 +5,21 @@ import { AuthProvider } from "@/lib/auth-context";
 export const metadata: Metadata = {
   title: "THE TITLE CLUB",
   description: "Exclusive community for The Title Residence residents",
+  openGraph: {
+    title: "THE TITLE CLUB",
+    description: "Exclusive community for The Title Residence residents",
+    type: "website",
+    url: "https://thetitleresidence.com/club",
+    siteName: "THE TITLE CLUB",
+    locale: "en_US",
+    images: [
+      {
+        url: "/club/thetitle-club_og.jpg",
+        width: 1200,
+        height: 630,
+      },
+    ],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
