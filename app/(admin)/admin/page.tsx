@@ -8,8 +8,9 @@ import { fetchActivePrivileges } from "@/lib/supabase/data";
 import { mapProfileToMember, type ProfileRow } from "@/lib/supabase/mappers";
 import type { Member, Privilege } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
-import { Users, Gift, CheckCircle, XCircle, Clock, LogOut, TrendingUp } from "lucide-react";
+import { Users, Gift, CheckCircle, XCircle, Clock, LogOut, TrendingUp, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 type Tab = "members" | "privileges";
 
@@ -95,10 +96,11 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-cream-100">
-      <header className="bg-forest-900 border-b border-white/8 px-8 py-4 flex items-center justify-between">
+      <header className="bg-deep-blue border-b border-white/8 px-8 py-4 flex items-center justify-between" style={{ backgroundImage: "url('/club/club-bg.webp')" }}>
         <div>
-          <p className="section-eyebrow text-primary/80 text-[9px]">The Title Residence</p>
-          <p className="text-white font-semibold tracking-[3px] text-sm mt-0.5">CLUB — Admin</p>
+          <Link href="/" title="Back to Club Homepage">
+            <img src="/club/title-club-logo_mockup-white.webp" alt="The Title" className="w-20 h-auto object-contain" />
+          </Link>
         </div>
         <div className="flex items-center gap-4">
           <span className="text-[11px] bg-primary/20 text-primary border border-primary/30 px-3 py-1 rounded-full font-medium">
@@ -107,7 +109,7 @@ export default function AdminPage() {
           <button
             type="button"
             onClick={() => void logout()}
-            className="flex items-center gap-2 text-white/30 hover:text-red-300 text-xs transition-colors"
+            className="flex items-center gap-2 text-white hover:text-red-400 cursor-pointer text-xs transition-colors"
           >
             <LogOut size={13} /> Logout
           </button>
@@ -120,6 +122,11 @@ export default function AdminPage() {
             Could not load members: {loadError}
           </div>
         )}
+        <Link href="/" title="Back to Club Homepage" className="flex items-center gap-2 text-ink-muted text-xs hover:text-primary-dark transition-colors font-medium">
+          <ArrowLeft size={15} />
+          <span className="text-black/70 text-sm">Back Homepage</span>
+        </Link>
+        <div className="h-5"></div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {[
             { label: "Total Members", value: members.length, icon: Users, color: "bg-forest-50 text-forest-700" },
@@ -179,7 +186,7 @@ export default function AdminPage() {
                           key={m.id}
                           className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-center gap-4 shadow-sm"
                         >
-                          <div className="w-10 h-10 rounded-full bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-700 font-bold flex-shrink-0">
+                          <div className="w-10 h-10 rounded-full bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-700 font-bold shrink-0">
                             {m.fullName.charAt(0)}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -189,7 +196,7 @@ export default function AdminPage() {
                             </p>
                             <p className="text-ink-muted text-xs mt-0.5">Applied: {formatDate(m.createdAt)}</p>
                           </div>
-                          <div className="flex gap-2 flex-shrink-0">
+                          <div className="flex gap-2 shrink-0">
                             <button
                               type="button"
                               onClick={() => void approve(m.id)}

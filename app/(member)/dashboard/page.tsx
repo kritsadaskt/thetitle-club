@@ -42,20 +42,18 @@ export default function DashboardPage() {
 
   return (
     <div className="p-6 lg:p-10 max-w-5xl mx-auto">
-      <div className="bg-forest-900 rounded-2xl p-7 mb-8 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_80%_50%,#163B2B_0%,#0A1F14_70%)]" />
-        <div className="absolute top-0 right-8 w-48 h-48 bg-primary/6 rounded-full blur-2xl" />
+      <div className="bg-deep-blue rounded-2xl p-7 mb-8 relative overflow-hidden" style={{ backgroundImage: "url('/club/club-bg.webp')" }}>
         <div className="relative">
-          <p className="text-white/40 text-sm">Good day,</p>
-          <h1 className="text-2xl font-light text-white mt-1">
+          <p className="text-white text-sm">Good day,</p>
+          <h1 className="text-2xl font-semibold text-white mt-1">
             {member?.fullName.split(" ")[0]}{" "}
             <span className="text-primary text-lg">✦</span>
           </h1>
           <div className="flex flex-wrap items-center gap-3 mt-3">
-            <span className="text-[11px] bg-primary/20 text-primary border border-primary/30 px-3 py-1 rounded-full font-mono tracking-wider">
+            <span className="text-[11px] bg-white/20 text-white border border-white/30 px-3 py-1 rounded-full font-mono tracking-wider">
               {member?.memberId}
             </span>
-            <span className="text-white/30 text-xs capitalize">
+            <span className="text-white text-xs capitalize">
               {member?.residentStatus} · {member?.projectName}
             </span>
           </div>
@@ -91,7 +89,7 @@ export default function DashboardPage() {
             href={href}
             className="group bg-white border border-cream-300 rounded-2xl p-5 flex items-start gap-4 card-hover shadow-card"
           >
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
               <Icon size={18} strokeWidth={1.5} />
             </div>
             <div className="flex-1">
@@ -120,13 +118,13 @@ export default function DashboardPage() {
               <img
                 src={priv.partnerLogo}
                 alt={priv.partnerName}
-                className="w-16 h-10 object-contain rounded-lg bg-cream-200 p-1 flex-shrink-0"
+                className="w-16 h-10 object-contain rounded-lg bg-cream-200 p-1 shrink-0"
               />
               <div className="flex-1 min-w-0">
                 <p className="text-forest text-sm font-medium truncate">{priv.title}</p>
                 <p className="text-ink-muted text-xs truncate">{priv.summary}</p>
               </div>
-              <div className="flex items-center gap-3 flex-shrink-0">
+              <div className="flex items-center gap-3 shrink-0">
                 <span
                   className={`text-xs px-2 py-0.5 rounded border hidden sm:block ${categoryColor(priv.category)}`}
                 >
@@ -160,7 +158,7 @@ export default function DashboardPage() {
                 alt={item.caption}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-forest-900/55 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
+              <div className="absolute inset-0 bg-linear-to-t from-forest-900/55 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
                 <p className="text-white text-xs font-medium">{item.caption}</p>
               </div>
             </div>

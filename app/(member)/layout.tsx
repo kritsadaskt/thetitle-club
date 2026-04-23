@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
-import { LayoutDashboard, CreditCard, Gift, Image, User, LogOut, Menu, X } from "lucide-react";
+import { LayoutDashboard, CreditCard, Gift, Image, User, LogOut, Menu, X, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -35,11 +35,10 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
     <div className="min-h-screen bg-cream-100 flex">
 
       {/* ── SIDEBAR desktop (Midnight Green) ── */}
-      <aside className="hidden lg:flex flex-col w-60 bg-forest-900 fixed inset-y-0 left-0 z-30">
+      <aside className="hidden lg:flex flex-col w-60 bg-deep-blue fixed inset-y-0 left-0 z-30" style={{ backgroundImage: "url('/club/club-bg.webp')" }}>
         {/* Logo */}
         <div className="px-6 py-6 border-b border-white/8">
-          <p className="section-eyebrow text-primary/80">The Title</p>
-          <p className="text-white font-semibold tracking-[3px] text-sm mt-0.5">CLUB</p>
+          <img src="/club/title-club-logo_mockup-white.webp" alt="The Title" className="w-24 h-auto object-contain mx-auto" />
         </div>
 
         {/* Nav links */}
@@ -52,13 +51,17 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
                   "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all",
                   active
                     ? "bg-primary/15 text-primary font-medium"
-                    : "text-white/45 hover:text-white/75 hover:bg-white/6"
+                    : "text-white/80 hover:text-white/75 hover:bg-white/6"
                 )}>
                 <Icon size={15} strokeWidth={active ? 2 : 1.5} />
                 {label}
               </Link>
             );
           })}
+          <hr className="my-2 border-white/20" />
+          <Link href="/" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all text-white/80 hover:text-white/75 hover:bg-white/6">
+            <ArrowLeft size={15} /> Back to Club
+          </Link>
         </nav>
 
         {/* User footer */}
@@ -68,12 +71,12 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
               {member.fullName.charAt(0)}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-white text-xs font-medium truncate">{member.fullName}</p>
-              <p className="text-white/30 text-[10px] font-mono truncate">{member.memberId}</p>
+              <p className="text-white text-base font-medium truncate">{member.fullName}</p>
+              <p className="text-white text-sm font-mono truncate">{member.memberId}</p>
             </div>
           </div>
           <button onClick={logout}
-            className="flex items-center gap-2 text-white/25 hover:text-red-400 text-xs transition-colors">
+            className="flex items-center gap-2 text-white/60 hover:text-red-400 text-sm transition-colors">
             <LogOut size={13} /> Sign Out
           </button>
         </div>
