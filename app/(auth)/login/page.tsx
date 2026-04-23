@@ -31,16 +31,11 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex">
       {/* ── Left panel: Midnight Green ── */}
-      <div className="hidden lg:flex flex-col justify-between w-[45%] bg-forest-900 relative overflow-hidden p-12">
-        {/* bg textures */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_20%_60%,#163B2B_0%,#0A1F14_70%)]" />
-        <div className="absolute bottom-0 right-0 w-80 h-80 bg-primary/6 rounded-full blur-3xl" />
-        <div className="absolute inset-0 opacity-[0.025]"
-          style={{ backgroundImage: "linear-gradient(#C9A96E 1px,transparent 1px),linear-gradient(90deg,#C9A96E 1px,transparent 1px)", backgroundSize: "48px 48px" }} />
+      <div className="hidden lg:flex flex-col justify-between w-[45%] bg-deep-blue relative overflow-hidden p-12" style={{ backgroundImage: "url('/club/club-bg.webp')" }}>
 
+      <div className="flex flex-col justify-between gap-10">
         <div className="relative">
-          <p className="section-eyebrow text-primary">The Title Residence</p>
-          <p className="text-white font-semibold tracking-[3px] text-lg mt-0.5">CLUB</p>
+          <img src="/club/title-club-logo_mockup-white.webp" alt="The Title" className="w-32 h-auto object-contain" />
         </div>
 
         <div className="relative">
@@ -49,12 +44,13 @@ export default function LoginPage() {
             &ldquo;Discover,<br />
             <span className="text-primary-gradient font-semibold">&nbsp;Our Community.&rdquo;</span>
           </blockquote>
-          <p className="text-white/35 mt-6 text-sm leading-relaxed max-w-sm">
+          <p className="text-white mt-6 text-sm leading-relaxed max-w-sm">
             At THE TITLE, we believe that owning a home is more than holding a title — it is becoming part of a family. THE TITLE CLUB is our exclusive community designed to bring residents together through curated experiences, lifestyle privileges, and meaningful connections. Because here, every title belongs to a family.
           </p>
         </div>
+      </div>
 
-        <p className="relative text-white/15 text-xs">thetitleresidence.com/club</p>
+        <p className="relative text-white text-xs">thetitleresidence.com/club</p>
       </div>
 
       {/* ── Right panel: Cream ── */}
@@ -62,8 +58,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="text-center mb-10 lg:hidden">
-            <p className="section-eyebrow text-primary-dark">The Title</p>
-            <p className="text-forest font-semibold tracking-[3px] text-xl mt-0.5">CLUB</p>
+            <img src="/club/title-club-logo_mockup-dark.webp" alt="The Title" className="w-32 h-auto object-contain mx-auto" />
           </div>
 
           <h2 className="text-3xl font-light text-forest mb-2">Welcome back</h2>
@@ -102,7 +97,7 @@ export default function LoginPage() {
             )}
 
             <button type="submit" disabled={loading}
-              className="btn-primary w-full flex items-center justify-center gap-2 py-3.5">
+              className="btn-primary rounded-lg font-semibold w-full flex items-center justify-center gap-2 py-3.5">
               {loading
                 ? <span className="w-4 h-4 border-2 border-forest/30 border-t-forest rounded-full animate-spin" />
                 : <ArrowRight size={16} />}

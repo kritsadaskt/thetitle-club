@@ -42,20 +42,18 @@ export default function DashboardPage() {
 
   return (
     <div className="p-6 lg:p-10 max-w-5xl mx-auto">
-      <div className="bg-forest-900 rounded-2xl p-7 mb-8 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_80%_50%,#163B2B_0%,#0A1F14_70%)]" />
-        <div className="absolute top-0 right-8 w-48 h-48 bg-primary/6 rounded-full blur-2xl" />
+      <div className="bg-deep-blue rounded-2xl p-7 mb-8 relative overflow-hidden" style={{ backgroundImage: "url('/club/club-bg.webp')" }}>
         <div className="relative">
-          <p className="text-white/40 text-sm">Good day,</p>
-          <h1 className="text-2xl font-light text-white mt-1">
+          <p className="text-white text-sm">Good day,</p>
+          <h1 className="text-2xl font-semibold text-white mt-1">
             {member?.fullName.split(" ")[0]}{" "}
             <span className="text-primary text-lg">✦</span>
           </h1>
           <div className="flex flex-wrap items-center gap-3 mt-3">
-            <span className="text-[11px] bg-primary/20 text-primary border border-primary/30 px-3 py-1 rounded-full font-mono tracking-wider">
+            <span className="text-[11px] bg-white/20 text-white border border-white/30 px-3 py-1 rounded-full font-mono tracking-wider">
               {member?.memberId}
             </span>
-            <span className="text-white/30 text-xs capitalize">
+            <span className="text-white text-xs capitalize">
               {member?.residentStatus} · {member?.projectName}
             </span>
           </div>

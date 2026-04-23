@@ -35,8 +35,7 @@ export default async function LandingPage() {
       <nav className="fixed top-0 inset-x-0 z-50 bg-white backdrop-blur-md border-b border-cream-300">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div>
-            <span className="section-eyebrow text-primary-dark">The Title</span>
-            <div className="text-forest font-semibold tracking-[3px] text-sm leading-tight">CLUB</div>
+            <img src="/club/title-club-logo_mockup-dark.webp" alt="The Title" className="w-20 h-auto object-contain" />
           </div>
           <div className="flex items-center gap-4">
             <Link href="/login" className="text-sm text-ink-light hover:text-primary-dark transition-colors font-medium">
@@ -175,11 +174,11 @@ export default async function LandingPage() {
             Become Part of<br />
             <span className="text-primary-gradient font-semibold">the Family</span>
           </h2>
-          <p className="text-white/40 mb-10 max-w-md mx-auto leading-relaxed">
+          <p className="text-white/80 mb-10 max-w-md mx-auto leading-relaxed">
             Register now to receive your digital membership card, access exclusive privileges,
             and connect with your community.
           </p>
-          <Link href="/register" className="btn-primary text-base px-10 py-4 inline-block">
+          <Link href="/register" className="btn-primary rounded-lg font-semibold text-base px-10 py-4 inline-block">
             Become a part of the family
           </Link>
         </div>
