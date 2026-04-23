@@ -179,7 +179,7 @@ export default function AdminPage() {
                           key={m.id}
                           className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-center gap-4 shadow-sm"
                         >
-                          <div className="w-10 h-10 rounded-full bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-700 font-bold flex-shrink-0">
+                          <div className="w-10 h-10 rounded-full bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-700 font-bold shrink-0">
                             {m.fullName.charAt(0)}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -189,7 +189,7 @@ export default function AdminPage() {
                             </p>
                             <p className="text-ink-muted text-xs mt-0.5">Applied: {formatDate(m.createdAt)}</p>
                           </div>
-                          <div className="flex gap-2 flex-shrink-0">
+                          <div className="flex gap-2 shrink-0">
                             <button
                               type="button"
                               onClick={() => void approve(m.id)}

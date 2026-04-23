@@ -89,7 +89,7 @@ export default function DashboardPage() {
             href={href}
             className="group bg-white border border-cream-300 rounded-2xl p-5 flex items-start gap-4 card-hover shadow-card"
           >
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
               <Icon size={18} strokeWidth={1.5} />
             </div>
             <div className="flex-1">
@@ -118,13 +118,13 @@ export default function DashboardPage() {
               <img
                 src={priv.partnerLogo}
                 alt={priv.partnerName}
-                className="w-16 h-10 object-contain rounded-lg bg-cream-200 p-1 flex-shrink-0"
+                className="w-16 h-10 object-contain rounded-lg bg-cream-200 p-1 shrink-0"
               />
               <div className="flex-1 min-w-0">
                 <p className="text-forest text-sm font-medium truncate">{priv.title}</p>
                 <p className="text-ink-muted text-xs truncate">{priv.summary}</p>
               </div>
-              <div className="flex items-center gap-3 flex-shrink-0">
+              <div className="flex items-center gap-3 shrink-0">
                 <span
                   className={`text-xs px-2 py-0.5 rounded border hidden sm:block ${categoryColor(priv.category)}`}
                 >
@@ -158,7 +158,7 @@ export default function DashboardPage() {
                 alt={item.caption}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-forest-900/55 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
+              <div className="absolute inset-0 bg-linear-to-t from-forest-900/55 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
                 <p className="text-white text-xs font-medium">{item.caption}</p>
               </div>
             </div>

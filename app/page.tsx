@@ -138,7 +138,7 @@ export default async function LandingPage() {
                   ) : (
                     <div className="w-full h-full bg-cream-300" aria-hidden />
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-forest-900/50 to-transparent" />
+                  <div className="absolute inset-0 bg-linear-to-t from-forest-900/50 to-transparent" />
                   <span className="absolute top-3 right-3 bg-primary text-forest-900 text-xs font-bold px-3 py-1 rounded-full shadow-primary-sm">
                     {priv.discountLabel}
                   </span>
@@ -201,7 +201,7 @@ export default async function LandingPage() {
                     className="object-contain object-center w-2/3 h-auto"
                   />
                 ) : (
-                  <div className="w-2/3 aspect-[3/2] bg-cream-200 rounded" aria-hidden />
+                  <div className="w-2/3 aspect-3/2 bg-cream-200 rounded" aria-hidden />
                 )}
               </Link>
             ))}
