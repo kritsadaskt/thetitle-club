@@ -1,7 +1,8 @@
 "use client";
 
 import { useAuth } from "@/lib/auth-context";
-import { QRCodeSVG } from "qrcode.react";
+import { QRCodeCanvas } from "qrcode.react";
+import { buildMembershipCardQrValue } from "@/lib/qr";
 import { Share2, Download } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
@@ -9,7 +10,7 @@ export default function CardPage() {
   const { member } = useAuth();
   if (!member) return null;
 
-  const qrValue   = `TTC:${member.qrToken}:${member.memberId}`;
+  const qrValue = buildMembershipCardQrValue(member.qrToken, member.memberId);
   const joinedDate = member.approvedAt ? formatDate(member.approvedAt) : "—";
 
   return (
@@ -71,14 +72,20 @@ export default function CardPage() {
       <div className="bg-white border border-cream-300 rounded-2xl p-6 mb-6 text-center shadow-card">
         <p className="section-eyebrow text-ink-muted text-[10px] mb-5">Scan to Verify Membership</p>
         <div className="inline-block bg-cream-100 border border-cream-300 p-4 rounded-2xl mb-4 shadow-sm">
-          <QRCodeSVG
-            value={qrValue}
-            size={180}
-            level="H"
-            includeMargin={false}
-            fgColor="#0A1F14"
-            bgColor="#FAF7F2"
-          />
+          {qrValue ? (
+            <QRCodeCanvas
+              value={qrValue}
+              size={256}
+              level="M"
+              includeMargin
+              fgColor="#0A1F14"
+              bgColor="#FAF7F2"
+              className="mx-auto h-[180px] w-[180px]"
+              style={{ imageRendering: "pixelated" }}
+            />
+          ) : (
+            <p className="text-ink-muted text-sm py-6">Unable to generate QR — missing member token.</p>
+          )}
         </div>
         <p className="text-ink-muted text-xs font-mono">{member.qrToken}</p>
         <p className="text-ink-muted text-[11px] mt-1.5 max-w-xs mx-auto">

@@ -46,6 +46,8 @@ export interface Privilege {
   validUntil?: string;
   sortOrder: number;
   discountLabel: string; // e.g. "15% OFF"
+  /** Encoded in redeem QR; set by admin (maps to privileges.privilege_code) */
+  privilegeCode: string;
 }
 
 export interface CommunityMoment {

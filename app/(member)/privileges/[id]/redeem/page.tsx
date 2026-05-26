@@ -6,16 +6,20 @@ import { useAuth } from "@/lib/auth-context";
 import { fetchPrivilegeById } from "@/lib/supabase/data";
 import { createClient } from "@/lib/supabase/client";
 import type { Privilege } from "@/lib/types";
-import { QRCodeSVG } from "qrcode.react";
+import { QRCodeCanvas } from "qrcode.react";
 import Link from "next/link";
-import { ArrowLeft, ShieldCheck } from "lucide-react";
+import { ArrowLeft, QrCode, ShieldCheck, Type } from "lucide-react";
+import { buildRedeemQrValue } from "@/lib/qr";
+import { cn } from "@/lib/utils";
+
+type DisplayMode = "qr" | "text";
 
 export default function RedeemPage() {
   const params = useParams();
   const id = typeof params?.id === "string" ? params.id : "";
   const { member } = useAuth();
   const [priv, setPriv] = useState<Privilege | null | undefined>(undefined);
-  const [now, setNow] = useState(new Date());
+  const [displayMode, setDisplayMode] = useState<DisplayMode>("qr");
   const loggedRef = useRef(false);
 
   useEffect(() => {
@@ -29,11 +33,6 @@ export default function RedeemPage() {
       cancelled = true;
     };
   }, [id]);
-
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(t);
-  }, []);
 
   useEffect(() => {
     if (!member || !priv || loggedRef.current) return;
@@ -56,14 +55,7 @@ export default function RedeemPage() {
 
   if (!priv || !member) return notFound();
 
-  const qrValue = `TTC:${member.qrToken}:${priv.id}:${Date.now()}`;
-  const timeStr = now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-  const dateStr = now.toLocaleDateString("en-GB", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  const qrValue = buildRedeemQrValue(priv.privilegeCode);
 
   return (
     <div className="fixed inset-0 bg-forest-900 z-50 flex flex-col">
@@ -89,28 +81,75 @@ export default function RedeemPage() {
         <p className="text-primary font-semibold text-xl">{priv.partnerName}</p>
         <p className="text-white/50 text-sm mb-5">{priv.title}</p>
 
-        <div className="bg-primary/15 border border-primary/30 rounded-full px-7 py-2.5 mb-8 shadow-primary-sm">
+        <div className="bg-primary/15 border border-primary/30 rounded-full px-7 py-2.5 mb-6 shadow-primary-sm">
           <p className="text-primary font-bold tracking-widest">{priv.discountLabel}</p>
         </div>
 
-        <div className="bg-cream-100 border-4 border-cream-200 p-5 rounded-3xl shadow-2xl mb-7">
-          <QRCodeSVG
-            value={qrValue}
-            size={200}
-            level="H"
-            includeMargin={false}
-            fgColor="#0A1F14"
-            bgColor="#FAF7F2"
-          />
+        {qrValue && (
+          <div
+            className="flex gap-1 mb-5 p-1 rounded-full bg-white/8 border border-white/10"
+            role="tablist"
+            aria-label="Display mode"
+          >
+            {(
+              [
+                { id: "qr" as const, label: "QR Code", icon: QrCode },
+                { id: "text" as const, label: "Text", icon: Type },
+              ] as const
+            ).map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={displayMode === id}
+                onClick={() => setDisplayMode(id)}
+                className={cn(
+                  "flex items-center gap-2 px-5 py-2 rounded-full text-xs font-medium transition-all",
+                  displayMode === id
+                    ? "bg-primary text-forest-900 shadow-primary-sm"
+                    : "text-white/50 hover:text-white/80"
+                )}
+              >
+                <Icon size={14} strokeWidth={displayMode === id ? 2 : 1.5} />
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div className="bg-cream-100 border-4 border-cream-200 p-5 rounded-3xl shadow-2xl mb-7 min-h-[240px] min-w-[240px] flex items-center justify-center">
+          {!qrValue ? (
+            <p className="text-forest-900 text-sm px-4 py-8 max-w-[220px]">
+              No privilege code configured. Please contact THE TITLE CLUB support.
+            </p>
+          ) : displayMode === "qr" ? (
+            <QRCodeCanvas
+              value={qrValue}
+              size={280}
+              level="M"
+              includeMargin
+              fgColor="#0A1F14"
+              bgColor="#FAF7F2"
+              className="mx-auto h-[200px] w-[200px]"
+              style={{ imageRendering: "pixelated" }}
+            />
+          ) : (
+            <div className="px-4 py-6 text-center">
+              <p className="text-forest-900/50 text-[10px] uppercase tracking-[2px] mb-3">Privilege code</p>
+              <p className="text-forest-900 font-mono text-2xl sm:text-3xl font-semibold tracking-widest break-all">
+                {qrValue}
+              </p>
+            </div>
+          )}
         </div>
 
         <p className="text-white text-2xl font-light">{member.fullName}</p>
         <p className="text-primary font-mono tracking-widest text-sm mt-2">{member.memberId}</p>
-
-        <div className="mt-6">
-          <p className="text-white/25 text-xs">{dateStr}</p>
-          <p className="text-white/45 font-mono mt-0.5">{timeStr}</p>
-        </div>
+        <p className="text-white/35 text-xs mt-6 max-w-xs">
+          {displayMode === "qr"
+            ? "Show this QR to partner staff to scan your privilege code."
+            : "Tell partner staff this code or show this screen for manual entry."}
+        </p>
       </div>
     </div>
   );
