@@ -28,7 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <AuthProvider>{children}</AuthProvider>
-        <SpeedInsights />
+        <SpeedInsights scriptSrc="/club/_vercel/speed-insights/script.js" />
       </body>
     </html>
   );
