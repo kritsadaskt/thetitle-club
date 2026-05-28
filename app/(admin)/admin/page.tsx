@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { createClient } from "@/lib/supabase/client";
-import { fetchActivePrivileges } from "@/lib/supabase/data";
+import { fetchAllPrivileges } from "@/lib/supabase/data";
 import { mapProfileToMember, type ProfileRow } from "@/lib/supabase/mappers";
 import type { Member, Privilege } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
@@ -28,6 +28,9 @@ export default function AdminPage() {
   const [tab, setTab] = useState<Tab>("members");
   const [members, setMembers] = useState<Member[]>([]);
   const [privileges, setPrivileges] = useState<Privilege[]>([]);
+  const [codeDrafts, setCodeDrafts] = useState<Record<string, string>>({});
+  const [savingCodeId, setSavingCodeId] = useState<string | null>(null);
+  const [codeSaveError, setCodeSaveError] = useState<string | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -36,7 +39,7 @@ export default function AdminPage() {
     setLoadError(null);
     const [mRes, privs] = await Promise.all([
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
-      fetchActivePrivileges(),
+      fetchAllPrivileges(),
     ]);
     if (mRes.error) {
       setLoadError(mRes.error.message);
@@ -45,8 +48,28 @@ export default function AdminPage() {
       setMembers(mRes.data.map((row) => mapProfileToMember(row as ProfileRow, "")));
     }
     setPrivileges(privs);
+    setCodeDrafts(Object.fromEntries(privs.map((p) => [p.id, p.privilegeCode])));
     setDataLoading(false);
   }, []);
+
+  const savePrivilegeCode = async (privilegeId: string) => {
+    setCodeSaveError(null);
+    setSavingCodeId(privilegeId);
+    const supabase = createClient();
+    const code = codeDrafts[privilegeId]?.trim() ?? "";
+    const { error } = await supabase
+      .from("privileges")
+      .update({ privilege_code: code || null })
+      .eq("id", privilegeId);
+    setSavingCodeId(null);
+    if (error) {
+      setCodeSaveError(error.message);
+      return;
+    }
+    setPrivileges((prev) =>
+      prev.map((p) => (p.id === privilegeId ? { ...p, privilegeCode: code } : p))
+    );
+  };
 
   useEffect(() => {
     if (!isLoading && !isAdmin) router.replace("/login");
@@ -270,11 +293,19 @@ export default function AdminPage() {
                 + Add Privilege
               </button>
             </div>
-            <div className="bg-white border border-cream-300 rounded-2xl overflow-hidden shadow-card">
-              <table className="w-full text-sm">
+            {codeSaveError && (
+              <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                Could not save privilege code: {codeSaveError}
+              </div>
+            )}
+            <p className="text-ink-muted text-xs mb-4 max-w-2xl">
+              Privilege code is the plain text encoded in the member redeem QR. Partners scan this value at checkout.
+            </p>
+            <div className="bg-white border border-cream-300 rounded-2xl overflow-x-auto shadow-card">
+              <table className="w-full text-sm min-w-[900px]">
                 <thead>
                   <tr className="border-b border-cream-300 bg-cream-100">
-                    {["Privilege", "Partner", "Category", "Discount", "Status"].map((h) => (
+                    {["Privilege", "Partner", "Privilege code (QR)", "Discount", "Status"].map((h) => (
                       <th key={h} className="px-5 py-3.5 text-left text-ink-muted text-xs font-semibold tracking-wide">
                         {h}
                       </th>
@@ -286,7 +317,27 @@ export default function AdminPage() {
                     <tr key={p.id} className="hover:bg-cream-100/60 transition-colors">
                       <td className="px-5 py-3.5 text-forest font-medium">{p.title}</td>
                       <td className="px-5 py-3.5 text-ink-light">{p.partnerName}</td>
-                      <td className="px-5 py-3.5 text-ink-muted capitalize text-xs">{p.category}</td>
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-2 max-w-xs">
+                          <input
+                            type="text"
+                            value={codeDrafts[p.id] ?? ""}
+                            onChange={(e) =>
+                              setCodeDrafts((prev) => ({ ...prev, [p.id]: e.target.value }))
+                            }
+                            placeholder="e.g. TTC-BDMS-15"
+                            className="flex-1 min-w-0 rounded-lg border border-cream-300 bg-cream-50 px-3 py-1.5 text-xs font-mono text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                          />
+                          <button
+                            type="button"
+                            disabled={savingCodeId === p.id}
+                            onClick={() => void savePrivilegeCode(p.id)}
+                            className="shrink-0 rounded-lg bg-forest-900 px-3 py-1.5 text-xs font-medium text-cream-100 hover:bg-forest-800 disabled:opacity-50 transition-colors"
+                          >
+                            {savingCodeId === p.id ? "…" : "Save"}
+                          </button>
+                        </div>
+                      </td>
                       <td className="px-5 py-3.5">
                         <span className="bg-primary/15 text-primary-dark text-xs font-bold px-2.5 py-1 rounded-lg border border-primary/20">
                           {p.discountLabel}

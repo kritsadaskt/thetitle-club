@@ -33,6 +33,7 @@ export type PrivilegeRow = {
   how_to_redeem: string | null;
   category: PrivilegeCategory;
   discount_label: string | null;
+  privilege_code: string | null;
   is_active: boolean;
   valid_from: string;
   valid_until: string | null;
@@ -88,6 +89,7 @@ export function mapPrivilegeRow(row: PrivilegeRow): Privilege {
     validUntil: vu,
     sortOrder: row.sort_order,
     discountLabel: row.discount_label ?? "",
+    privilegeCode: row.privilege_code?.trim() ?? "",
   };
 }
 

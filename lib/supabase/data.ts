@@ -18,6 +18,13 @@ export async function fetchActivePrivileges(): Promise<Privilege[]> {
   return (data ?? []).map((r) => mapPrivilegeRow(r as PrivilegeRow));
 }
 
+export async function fetchAllPrivileges(): Promise<Privilege[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase.from("privileges").select("*").order("sort_order");
+  if (error) return [];
+  return (data ?? []).map((r) => mapPrivilegeRow(r as PrivilegeRow));
+}
+
 export async function fetchPrivilegeById(id: string): Promise<Privilege | null> {
   const supabase = createClient();
   const { data, error } = await supabase.from("privileges").select("*").eq("id", id).single();

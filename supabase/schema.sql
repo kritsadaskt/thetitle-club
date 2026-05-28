@@ -97,6 +97,7 @@ create table if not exists privileges (
   how_to_redeem  text,
   category       privilege_category not null default 'lifestyle',
   discount_label text,
+  privilege_code text,
   is_active      boolean          not null default true,
   valid_from     date             not null default current_date,
   valid_until    date,

@@ -93,6 +93,7 @@ export const MOCK_PRIVILEGES: Privilege[] = [
     validUntil: "2024-12-31",
     sortOrder: 1,
     discountLabel: "15% OFF",
+    privilegeCode: "TTC-BDMS-15",
   },
   {
     id: "priv-002",
@@ -113,6 +114,7 @@ export const MOCK_PRIVILEGES: Privilege[] = [
     validUntil: "2024-12-31",
     sortOrder: 2,
     discountLabel: "Special Rate",
+    privilegeCode: "TTC-SAWANU",
   },
   {
     id: "priv-003",
@@ -133,6 +135,7 @@ export const MOCK_PRIVILEGES: Privilege[] = [
     validUntil: "2024-12-31",
     sortOrder: 3,
     discountLabel: "10–15% OFF",
+    privilegeCode: "TTC-SPLASH-10",
   },
   {
     id: "priv-004",
@@ -152,6 +155,7 @@ export const MOCK_PRIVILEGES: Privilege[] = [
     validFrom: "2024-01-01",
     sortOrder: 4,
     discountLabel: "10% OFF",
+    privilegeCode: "TTC-CLEAN-10",
   },
 ];
 
