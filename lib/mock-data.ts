@@ -76,6 +76,7 @@ export const MOCK_MEMBERS: Member[] = [
 export const MOCK_PRIVILEGES: Privilege[] = [
   {
     id: "priv-001",
+    partnerId: "partner-001",
     title: "BDMS Private Hospital Discount",
     partnerName: "Bangkok Hospital Phuket",
     partnerLogo: "https://placehold.co/120x60/1a1a2e/C9A96E?text=BDMS",
@@ -94,9 +95,11 @@ export const MOCK_PRIVILEGES: Privilege[] = [
     sortOrder: 1,
     discountLabel: "15% OFF",
     privilegeCode: "TTC-BDMS-15",
+    codeMode: "shared",
   },
   {
     id: "priv-002",
+    partnerId: "partner-002",
     title: "SAWANU One-Day Boat Trip",
     partnerName: "SAWANU Phuket",
     partnerLogo: "https://placehold.co/120x60/1a1a2e/C9A96E?text=SAWANU",
@@ -115,9 +118,11 @@ export const MOCK_PRIVILEGES: Privilege[] = [
     sortOrder: 2,
     discountLabel: "Special Rate",
     privilegeCode: "TTC-SAWANU",
+    codeMode: "shared",
   },
   {
     id: "priv-003",
+    partnerId: "partner-003",
     title: "Splash Beach Resort Water Park",
     partnerName: "Splash Beach Resort",
     partnerLogo: "https://placehold.co/120x60/1a1a2e/C9A96E?text=Splash",
@@ -136,9 +141,11 @@ export const MOCK_PRIVILEGES: Privilege[] = [
     sortOrder: 3,
     discountLabel: "10–15% OFF",
     privilegeCode: "TTC-SPLASH-10",
+    codeMode: "shared",
   },
   {
     id: "priv-004",
+    partnerId: "partner-004",
     title: "Villa Cleaning Service Discount",
     partnerName: "Clean Pro Phuket",
     partnerLogo: "https://placehold.co/120x60/1a1a2e/C9A96E?text=CleanPro",
@@ -156,6 +163,7 @@ export const MOCK_PRIVILEGES: Privilege[] = [
     sortOrder: 4,
     discountLabel: "10% OFF",
     privilegeCode: "TTC-CLEAN-10",
+    codeMode: "shared",
   },
 ];
 

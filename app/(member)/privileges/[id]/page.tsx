@@ -1,29 +1,78 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { notFound, useParams } from "next/navigation";
+import { notFound, useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import type { Privilege } from "@/lib/types";
-import { fetchPrivilegeById } from "@/lib/supabase/data";
+import {
+  claimPromoCode,
+  fetchMemberPromoCodeForPrivilege,
+  fetchPrivilegeById,
+  fetchPromoCodeStats,
+} from "@/lib/supabase/data";
 import { categoryLabel, categoryColor } from "@/lib/utils";
-import { ArrowLeft, CheckCircle, Ticket } from "lucide-react";
+import { ArrowLeft, CheckCircle, Ticket, Tag, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+type ClaimState = "none" | "claimed" | "redeemed" | "sold_out" | "loading";
 
 export default function PrivilegeDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const id = typeof params?.id === "string" ? params.id : "";
   const [priv, setPriv] = useState<Privilege | null | undefined>(undefined);
+  const [claimState, setClaimState] = useState<ClaimState>("loading");
+  const [claiming, setClaiming] = useState(false);
+  const [claimError, setClaimError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
     let cancelled = false;
     void (async () => {
       const row = await fetchPrivilegeById(id);
-      if (!cancelled) setPriv(row);
+      if (cancelled) return;
+      setPriv(row);
+      if (!row) return;
+
+      if (row.codeMode === "shared") {
+        setClaimState("none");
+        return;
+      }
+
+      const [memberCode, stats] = await Promise.all([
+        fetchMemberPromoCodeForPrivilege(id),
+        fetchPromoCodeStats(id),
+      ]);
+      if (cancelled) return;
+
+      if (memberCode?.status === "redeemed") {
+        setClaimState("redeemed");
+      } else if (memberCode?.status === "claimed") {
+        setClaimState("claimed");
+      } else if (stats.available > 0) {
+        setClaimState("none");
+      } else {
+        setClaimState("sold_out");
+      }
     })();
     return () => {
       cancelled = true;
     };
   }, [id]);
+
+  const handleClaim = async () => {
+    if (!priv) return;
+    setClaiming(true);
+    setClaimError(null);
+    const res = await claimPromoCode(priv.id);
+    setClaiming(false);
+    if (!res.ok) {
+      setClaimError(res.error);
+      return;
+    }
+    setClaimState("claimed");
+    router.push("/my-codes");
+  };
 
   if (priv === undefined) {
     return (
@@ -34,6 +83,8 @@ export default function PrivilegeDetailPage() {
   }
 
   if (!priv) return notFound();
+
+  const isUniquePool = priv.codeMode === "unique_pool";
 
   return (
     <div className="p-6 lg:p-10 max-w-3xl mx-auto">
@@ -69,16 +120,19 @@ export default function PrivilegeDetailPage() {
             className="w-20 h-12 object-contain bg-cream-200 border border-cream-300 rounded-xl p-2"
           />
         ) : (
-          <div
-            className="w-20 h-12 bg-cream-200 border border-cream-300 rounded-xl"
-            aria-hidden
-          />
+          <div className="w-20 h-12 bg-cream-200 border border-cream-300 rounded-xl" aria-hidden />
         )}
         <div>
           <p className="text-ink-muted text-xs">{priv.partnerName}</p>
           <h1 className="text-2xl font-light text-forest">{priv.title}</h1>
         </div>
       </div>
+
+      {isUniquePool && (
+        <div className="bg-sky-50 border border-sky-200 rounded-xl px-4 py-3 mb-6 text-sm text-sky-800">
+          Limited promo codes — claim yours and use within 24 hours.
+        </div>
+      )}
 
       {priv.validUntil && (
         <div className="bg-primary/10 border border-primary/25 rounded-xl px-4 py-3 mb-6 text-sm text-primary-dark flex items-center gap-2">
@@ -119,13 +173,74 @@ export default function PrivilegeDetailPage() {
       </section>
 
       <div className="sticky bottom-6">
-        <Link
-          href={`/privileges/${priv.id}/redeem`}
-          className="btn-primary w-full text-center text-base flex items-center justify-center gap-2 py-4 shadow-primary-md"
-        >
-          <Ticket size={18} />
-          Use This Privilege
-        </Link>
+        {!isUniquePool ? (
+          <Link
+            href={`/privileges/${priv.id}/redeem`}
+            className="btn-primary w-full text-center text-base flex items-center justify-center gap-2 py-4 shadow-primary-md"
+          >
+            <Ticket size={18} />
+            Use This Privilege
+          </Link>
+        ) : claimState === "loading" ? (
+          <div className="btn-primary w-full text-center text-base flex items-center justify-center gap-2 py-4 opacity-70">
+            <Loader2 size={18} className="animate-spin" />
+            Loading…
+          </div>
+        ) : claimState === "claimed" ? (
+          <Link
+            href="/my-codes"
+            className="btn-primary w-full text-center text-base flex items-center justify-center gap-2 py-4 shadow-primary-md"
+          >
+            <Tag size={18} />
+            ดูโค้ดของฉัน
+          </Link>
+        ) : claimState === "redeemed" ? (
+          <button
+            type="button"
+            disabled
+            className={cn(
+              "w-full text-center text-base flex items-center justify-center gap-2 py-4 rounded-xl",
+              "bg-cream-200 text-ink-muted border border-cream-300 cursor-not-allowed"
+            )}
+          >
+            <CheckCircle size={18} />
+            ใช้สิทธิ์แล้ว
+          </button>
+        ) : claimState === "sold_out" ? (
+          <button
+            type="button"
+            disabled
+            className={cn(
+              "w-full text-center text-base flex items-center justify-center gap-2 py-4 rounded-xl",
+              "bg-cream-200 text-ink-muted border border-cream-300 cursor-not-allowed"
+            )}
+          >
+            โค้ดหมดแล้ว
+          </button>
+        ) : (
+          <>
+            {claimError && (
+              <p className="text-red-600 text-sm text-center mb-3">{claimError}</p>
+            )}
+            <button
+              type="button"
+              disabled={claiming}
+              onClick={() => void handleClaim()}
+              className="btn-primary w-full text-center text-base flex items-center justify-center gap-2 py-4 shadow-primary-md disabled:opacity-60"
+            >
+              {claiming ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" /> กำลังรับโค้ด…
+                </>
+              ) : (
+                <>
+                  <Tag size={18} />
+                  รับโค้ดโปรโมชัน
+                </>
+              )}
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

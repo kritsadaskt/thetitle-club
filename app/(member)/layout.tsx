@@ -4,13 +4,14 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
-import { LayoutDashboard, CreditCard, Gift, Image, User, LogOut, Menu, X, ArrowLeft } from "lucide-react";
+import { LayoutDashboard, CreditCard, Gift, Image, User, LogOut, Menu, X, ArrowLeft, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { href: "/dashboard",  label: "Dashboard",  icon: LayoutDashboard },
   { href: "/card",       label: "My Card",     icon: CreditCard },
   { href: "/privileges", label: "Privileges",  icon: Gift },
+  { href: "/my-codes",   label: "My Codes",    icon: Tag },
   { href: "/community",  label: "Community",   icon: Image },
   { href: "/profile",    label: "Profile",     icon: User },
 ];

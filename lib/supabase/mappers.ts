@@ -1,5 +1,5 @@
-import type { CommunityMoment, Member, Privilege } from "@/lib/types";
-import type { MemberStatus, PrivilegeCategory, ResidentStatus } from "@/lib/types";
+import type { CommunityMoment, Member, MemberPromoCode, Privilege, PromoCode, PromoCodeStats, ShopPartner } from "@/lib/types";
+import type { CodeMode, MemberStatus, PrivilegeCategory, PromoCodeStatus, ResidentStatus } from "@/lib/types";
 
 export type ProfileRow = {
   id: string;
@@ -21,11 +21,33 @@ export type ProfileRow = {
   approved_at: string | null;
 };
 
+export type PartnerRow = {
+  id: string;
+  name: string;
+  logo_url: string | null;
+  website_url: string | null;
+  description: string | null;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+  privileges?: { count: number }[];
+};
+
+export type PartnerJoin = {
+  id: string;
+  name: string;
+  logo_url: string | null;
+  website_url: string | null;
+};
+
 export type PrivilegeRow = {
   id: string;
+  partner_id?: string | null;
   title: string;
-  partner_name: string;
-  partner_logo: string | null;
+  partner_name?: string;
+  partner_logo?: string | null;
+  partners?: PartnerJoin | null;
   cover_image: string | null;
   summary: string | null;
   description: string | null;
@@ -34,10 +56,36 @@ export type PrivilegeRow = {
   category: PrivilegeCategory;
   discount_label: string | null;
   privilege_code: string | null;
+  code_mode?: CodeMode;
   is_active: boolean;
   valid_from: string;
   valid_until: string | null;
   sort_order: number;
+};
+
+export type PromoCodeRow = {
+  id: string;
+  privilege_id: string;
+  code: string;
+  status: PromoCodeStatus;
+  claimed_by: string | null;
+  claimed_at: string | null;
+  expires_at: string | null;
+  redeemed_at: string | null;
+  created_at: string;
+};
+
+export type PromoCodeWithPrivilegeRow = PromoCodeRow & {
+  privileges: {
+    title: string;
+    discount_label: string | null;
+    partners: {
+      name: string;
+      logo_url: string | null;
+    } | null;
+    partner_name?: string;
+    partner_logo?: string | null;
+  } | null;
 };
 
 export type CommunityMomentRow = {
@@ -70,14 +118,32 @@ export function mapProfileToMember(row: ProfileRow, fallbackEmail: string): Memb
   };
 }
 
+export function mapPartnerRow(row: PartnerRow): ShopPartner {
+  const count = row.privileges?.[0]?.count;
+  return {
+    id: row.id,
+    name: row.name,
+    logoUrl: row.logo_url ?? "",
+    websiteUrl: row.website_url ?? "",
+    description: row.description ?? "",
+    isActive: row.is_active,
+    sortOrder: row.sort_order,
+    privilegeCount: count !== undefined ? Number(count) : undefined,
+  };
+}
+
 export function mapPrivilegeRow(row: PrivilegeRow): Privilege {
   const vf = row.valid_from?.slice?.(0, 10) ?? String(row.valid_from);
   const vu = row.valid_until ? row.valid_until.slice(0, 10) : undefined;
+  const partner = row.partners;
+  const partnerName = partner?.name ?? row.partner_name ?? "";
+  const partnerLogo = partner?.logo_url ?? row.partner_logo ?? "";
   return {
     id: row.id,
+    partnerId: row.partner_id ?? partner?.id ?? "",
     title: row.title,
-    partnerName: row.partner_name,
-    partnerLogo: row.partner_logo ?? "",
+    partnerName,
+    partnerLogo,
     coverImage: row.cover_image ?? "",
     summary: row.summary ?? "",
     description: row.description ?? "",
@@ -90,6 +156,49 @@ export function mapPrivilegeRow(row: PrivilegeRow): Privilege {
     sortOrder: row.sort_order,
     discountLabel: row.discount_label ?? "",
     privilegeCode: row.privilege_code?.trim() ?? "",
+    codeMode: row.code_mode ?? "shared",
+  };
+}
+
+export function mapPromoCodeRow(row: PromoCodeRow): PromoCode {
+  return {
+    id: row.id,
+    privilegeId: row.privilege_id,
+    code: row.code,
+    status: row.status,
+    claimedBy: row.claimed_by ?? undefined,
+    claimedAt: row.claimed_at ?? undefined,
+    expiresAt: row.expires_at ?? undefined,
+    redeemedAt: row.redeemed_at ?? undefined,
+    createdAt: row.created_at,
+  };
+}
+
+export function mapMemberPromoCodeRow(row: PromoCodeWithPrivilegeRow): MemberPromoCode {
+  const base = mapPromoCodeRow(row);
+  const priv = row.privileges;
+  const partnerName = priv?.partners?.name ?? priv?.partner_name ?? "";
+  const partnerLogo = priv?.partners?.logo_url ?? priv?.partner_logo ?? "";
+  return {
+    ...base,
+    privilegeTitle: priv?.title ?? "",
+    partnerName,
+    partnerLogo,
+    discountLabel: priv?.discount_label ?? "",
+  };
+}
+
+export function mapPromoCodeStats(row: {
+  total: number;
+  available: number;
+  claimed: number;
+  redeemed: number;
+}): PromoCodeStats {
+  return {
+    total: Number(row.total) || 0,
+    available: Number(row.available) || 0,
+    claimed: Number(row.claimed) || 0,
+    redeemed: Number(row.redeemed) || 0,
   };
 }
 
