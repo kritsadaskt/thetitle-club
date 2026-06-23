@@ -84,7 +84,7 @@ export const MOCK_PRIVILEGES: Privilege[] = [
     description:
       "Enjoy a 15% discount on room charges and a 15% discount on medication costs for both inpatient and outpatient services at BDMS-affiliated private hospitals in Phuket, including Bangkok Hospital Phuket.",
     terms:
-      "• Valid for THE TITLE CLUB members only\n• Present your Digital Membership Card at reception\n• Discount applies to room charges and medication only\n• Cannot be combined with other promotions or insurance coverage\n• Valid for member and immediate family members",
+      "• Valid for THE TITLE members only\n• Present your Digital Membership Card at reception\n• Discount applies to room charges and medication only\n• Cannot be combined with other promotions or insurance coverage\n• Valid for member and immediate family members",
     howToRedeem:
       "1. Open your Membership Card on the app\n2. Show the QR Code to the hospital reception\n3. Staff will verify your membership\n4. Discount will be applied to your bill",
     category: "health",
@@ -105,9 +105,9 @@ export const MOCK_PRIVILEGES: Privilege[] = [
     description:
       "Receive special discounted rates on a one-day boat trip with SAWANU, perfect for island hopping, sightseeing, and relaxing by the sea around Phuket's stunning islands.",
     terms:
-      "• Valid for THE TITLE CLUB members and up to 3 guests\n• Advance booking required (minimum 48 hours)\n• Subject to weather conditions\n• Life jackets provided\n• Includes snorkeling equipment",
+      "• Valid for THE TITLE members and up to 3 guests\n• Advance booking required (minimum 48 hours)\n• Subject to weather conditions\n• Life jackets provided\n• Includes snorkeling equipment",
     howToRedeem:
-      "1. Contact SAWANU via Line or phone to book\n2. Mention THE TITLE CLUB membership\n3. Show your Membership Card on the day\n4. Enjoy your trip!",
+      "1. Contact SAWANU via Line or phone to book\n2. Mention THE TITLE membership\n3. Show your Membership Card on the day\n4. Enjoy your trip!",
     category: "lifestyle",
     isActive: true,
     validFrom: "2024-01-01",
@@ -128,7 +128,7 @@ export const MOCK_PRIVILEGES: Privilege[] = [
     terms:
       "• Valid for walk-in guests only (not applicable for online bookings)\n• Discount applies per person\n• Maximum 5 guests per membership per visit\n• Children under 3 years old are free\n• No re-entry once exited",
     howToRedeem:
-      "1. Go to the ticket counter at Splash Beach Resort\n2. Inform staff you are a THE TITLE CLUB member\n3. Show your QR Code on the Membership Card\n4. Enjoy the water park!",
+      "1. Go to the ticket counter at Splash Beach Resort\n2. Inform staff you are a THE TITLE member\n3. Show your QR Code on the Membership Card\n4. Enjoy the water park!",
     category: "lifestyle",
     isActive: true,
     validFrom: "2024-01-01",
@@ -147,9 +147,9 @@ export const MOCK_PRIVILEGES: Privilege[] = [
     description:
       "Enjoy 10% off professional villa and condo cleaning services by Clean Pro Phuket. Experienced, insured, and trusted by The Title residents.",
     terms:
-      "• Valid for THE TITLE CLUB members only\n• Minimum booking: 3-hour session\n• Discount on labor cost only\n• Advance booking required\n• Available Monday–Saturday",
+      "• Valid for THE TITLE members only\n• Minimum booking: 3-hour session\n• Discount on labor cost only\n• Advance booking required\n• Available Monday–Saturday",
     howToRedeem:
-      "1. Call or Line Clean Pro Phuket to schedule\n2. Mention THE TITLE CLUB membership\n3. Staff will verify at time of service\n4. Discount applied to invoice",
+      "1. Call or Line Clean Pro Phuket to schedule\n2. Mention THE TITLE membership\n3. Staff will verify at time of service\n4. Discount applied to invoice",
     category: "service",
     isActive: true,
     validFrom: "2024-01-01",

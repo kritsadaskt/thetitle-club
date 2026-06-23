@@ -91,7 +91,7 @@ export default async function LandingPage() {
               <span className="text-primary font-semibold">Our Community.</span>
             </h1>
             <p className="text-lg text-white/70 max-w-lg leading-relaxed mb-10">
-              At THE TITLE, we believe that owning a home is more than holding a title — it is becoming part of a family. THE TITLE CLUB is our exclusive community designed to bring residents together through curated experiences, lifestyle privileges, and meaningful connections. Because here, every title belongs to a family.
+              At THE TITLE, we believe that owning a home is more than holding a title — it is becoming part of a family. THE TITLE is our exclusive community designed to bring residents together through curated experiences, lifestyle privileges, and meaningful connections. Because here, every title belongs to a family.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               {isSignedIn ? (

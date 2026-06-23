@@ -54,7 +54,7 @@ export default function PrivilegesPage() {
     <div className="p-6 lg:p-10 max-w-5xl mx-auto">
       <h1 className="text-2xl font-light text-forest mb-1">Exclusive Privileges</h1>
       <p className="text-ink-muted text-sm mb-8">
-        {list.filter((p) => p.isActive).length} benefits available for THE TITLE CLUB members
+        {list.filter((p) => p.isActive).length} benefits available for THE TITLE members
       </p>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-8">
