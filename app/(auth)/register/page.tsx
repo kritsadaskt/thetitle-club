@@ -273,7 +273,7 @@ export default function RegisterPage() {
         {/* Header */}
         <div className="text-center mb-10">
           <Link href="/" className="section-eyebrow text-primary-dark hover:text-primary transition-colors">
-            The Title CLUB
+            The Title
           </Link>
           <h1 className="text-3xl font-light text-forest mt-2">Become Part of the Family</h1>
           <p className="text-ink-light text-sm mt-2">Complete the form below to apply for membership</p>

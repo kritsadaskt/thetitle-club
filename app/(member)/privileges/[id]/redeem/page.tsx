@@ -120,7 +120,7 @@ export default function RedeemPage() {
         <div className="bg-cream-100 border-4 border-cream-200 p-5 rounded-3xl shadow-2xl mb-7 min-h-[240px] min-w-[240px] flex items-center justify-center">
           {!qrValue ? (
             <p className="text-forest-900 text-sm px-4 py-8 max-w-[220px]">
-              No privilege code configured. Please contact THE TITLE CLUB support.
+              No privilege code configured. Please contact THE TITLE support.
             </p>
           ) : displayMode === "qr" ? (
             <QRCodeCanvas

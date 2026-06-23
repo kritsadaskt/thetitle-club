@@ -4,14 +4,14 @@ import { AuthProvider } from "@/lib/auth-context";
 import { SpeedInsights } from "@vercel/speed-insights/next"
 
 export const metadata: Metadata = {
-  title: "THE TITLE CLUB",
+  title: "THE TITLE",
   description: "Exclusive community for The Title Residence residents",
   openGraph: {
-    title: "THE TITLE CLUB",
+    title: "THE TITLE",
     description: "Exclusive community for The Title Residence residents",
     type: "website",
     url: "https://thetitleresidence.com/club",
-    siteName: "THE TITLE CLUB",
+    siteName: "THE TITLE",
     locale: "en_US",
     images: [
       {

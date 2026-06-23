@@ -104,7 +104,7 @@ export default function CardPage() {
       </div>
 
       <p className="text-ink-muted text-xs text-center mt-6">
-        This card is for THE TITLE CLUB members only. Do not share your QR code.
+        This card is for THE TITLE members only. Do not share your QR code.
       </p>
     </div>
   );
