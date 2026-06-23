@@ -262,7 +262,7 @@ export default async function LandingPage() {
       <footer className="bg-neutral-700 py-10 border-t border-white/5">
         <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
           <div>
-            <span className="text-primary font-semibold tracking-[3px] text-sm">THE TITLE CLUB</span>
+            <span className="text-primary font-semibold tracking-[3px] text-sm">THE TITLE</span>
             <p className="text-white text-xs mt-1">thetitleresidence.com/club</p>
           </div>
           <p className="text-white">
