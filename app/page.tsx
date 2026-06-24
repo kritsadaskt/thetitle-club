@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { MOCK_PARTNERS } from "@/lib/mock-data";
 import { createClient } from "@/lib/supabase/server";
 import {
   mapPrivilegeRow,
   mapCommunityRow,
+  mapPartnerRow,
   type PrivilegeRow,
   type CommunityMomentRow,
+  type PartnerRow,
 } from "@/lib/supabase/mappers";
 import { categoryLabel, categoryColor } from "@/lib/utils";
 
@@ -36,7 +37,7 @@ export default async function LandingPage() {
 
   const { data: privRows } = await supabase
     .from("privileges")
-    .select("*")
+    .select("*, partners(id, name, logo_url, website_url)")
     .eq("is_active", true)
     .order("sort_order");
   const { data: commRows } = await supabase
@@ -44,9 +45,16 @@ export default async function LandingPage() {
     .select("*")
     .eq("is_published", true)
     .order("sort_order");
+  const { data: partnerRows } = await supabase
+    .from("partners")
+    .select("*")
+    .eq("is_active", true)
+    .order("sort_order")
+    .order("name");
 
   const privileges = (privRows ?? []).map((r) => mapPrivilegeRow(r as PrivilegeRow));
   const community = (commRows ?? []).map((r) => mapCommunityRow(r as CommunityMomentRow));
+  const partners = (partnerRows ?? []).map((r) => mapPartnerRow(r as PartnerRow));
 
   const featuredPrivileges = privileges.filter((p) => p.isActive).slice(0, 3);
   const featuredCommunity = community.filter((c) => c.isPublished).slice(0, 5);
@@ -241,16 +249,23 @@ export default async function LandingPage() {
             <h2 className="text-4xl font-light text-forest">Our Partners</h2>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {MOCK_PARTNERS.map((partner) => (
-              <Link href={partner.link} target="_blank" key={partner.id} className="w-full h-auto flex items-center justify-center">
-                {partner.imageUrl ? (
+            {partners.map((partner) => (
+              <Link
+                href={partner.websiteUrl || "#"}
+                target={partner.websiteUrl ? "_blank" : undefined}
+                key={partner.id}
+                className="w-full h-auto flex items-center justify-center"
+              >
+                {partner.logoUrl ? (
                   <img
-                    src={partner.imageUrl}
+                    src={partner.logoUrl}
                     alt={partner.name}
                     className="object-contain object-center w-2/3 h-auto"
                   />
                 ) : (
-                  <div className="w-2/3 aspect-3/2 bg-cream-200 rounded" aria-hidden />
+                  <div className="w-2/3 aspect-3/2 bg-cream-200 rounded flex items-center justify-center text-ink-muted text-sm">
+                    {partner.name}
+                  </div>
                 )}
               </Link>
             ))}

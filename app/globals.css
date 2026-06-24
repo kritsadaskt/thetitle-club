@@ -86,6 +86,21 @@
   ::file-selector-button {
     border-color: var(--color-gray-200, currentcolor);
   }
+
+  a,
+  button:not(:disabled),
+  [role="button"]:not(:disabled),
+  [role="tab"],
+  [role="link"],
+  label[for],
+  summary {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [role="button"][aria-disabled="true"] {
+    cursor: not-allowed;
+  }
 }
 
 /* ── Design Tokens ───────────────────────────── */
@@ -171,7 +186,7 @@ body {
 
 /* ── Buttons ─────────────────────────────────── */
 .btn {
-  @apply font-semibold px-6 py-3 rounded-lg
+  @apply font-semibold px-6 py-3 rounded-lg cursor-pointer
          shadow-primary-sm hover:shadow-primary-md hover:bg-primary-300
          active:bg-primary-400 transition-all duration-200
          disabled:opacity-50 disabled:cursor-not-allowed;

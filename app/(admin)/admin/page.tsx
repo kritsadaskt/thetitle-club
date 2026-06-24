@@ -4,15 +4,16 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { createClient } from "@/lib/supabase/client";
-import { fetchAllPrivileges } from "@/lib/supabase/data";
+import { fetchAllPartners, fetchAllPrivileges } from "@/lib/supabase/data";
 import { mapProfileToMember, type ProfileRow } from "@/lib/supabase/mappers";
-import type { Member, Privilege } from "@/lib/types";
+import type { Member } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
-import { Users, Gift, CheckCircle, XCircle, Clock, LogOut, TrendingUp, ArrowLeft } from "lucide-react";
+import { Users, Gift, CheckCircle, XCircle, Clock, LogOut, ArrowLeft, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { PartnersTab } from "@/components/admin/partners-tab";
 
-type Tab = "members" | "privileges";
+type Tab = "members" | "partners";
 
 const STATUS_STYLES: Record<string, string> = {
   active: "bg-emerald-50 text-emerald-700 border-emerald-200",
@@ -27,18 +28,17 @@ export default function AdminPage() {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("members");
   const [members, setMembers] = useState<Member[]>([]);
-  const [privileges, setPrivileges] = useState<Privilege[]>([]);
-  const [codeDrafts, setCodeDrafts] = useState<Record<string, string>>({});
-  const [savingCodeId, setSavingCodeId] = useState<string | null>(null);
-  const [codeSaveError, setCodeSaveError] = useState<string | null>(null);
+  const [partnerCount, setPartnerCount] = useState(0);
+  const [activePrivilegeCount, setActivePrivilegeCount] = useState(0);
   const [dataLoading, setDataLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     const supabase = createClient();
     setLoadError(null);
-    const [mRes, privs] = await Promise.all([
+    const [mRes, partners, privs] = await Promise.all([
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
+      fetchAllPartners(),
       fetchAllPrivileges(),
     ]);
     if (mRes.error) {
@@ -47,29 +47,10 @@ export default function AdminPage() {
     } else if (mRes.data) {
       setMembers(mRes.data.map((row) => mapProfileToMember(row as ProfileRow, "")));
     }
-    setPrivileges(privs);
-    setCodeDrafts(Object.fromEntries(privs.map((p) => [p.id, p.privilegeCode])));
+    setPartnerCount(partners.length);
+    setActivePrivilegeCount(privs.filter((p) => p.isActive).length);
     setDataLoading(false);
   }, []);
-
-  const savePrivilegeCode = async (privilegeId: string) => {
-    setCodeSaveError(null);
-    setSavingCodeId(privilegeId);
-    const supabase = createClient();
-    const code = codeDrafts[privilegeId]?.trim() ?? "";
-    const { error } = await supabase
-      .from("privileges")
-      .update({ privilege_code: code || null })
-      .eq("id", privilegeId);
-    setSavingCodeId(null);
-    if (error) {
-      setCodeSaveError(error.message);
-      return;
-    }
-    setPrivileges((prev) =>
-      prev.map((p) => (p.id === privilegeId ? { ...p, privilegeCode: code } : p))
-    );
-  };
 
   useEffect(() => {
     if (!isLoading && !isAdmin) router.replace("/login");
@@ -109,7 +90,6 @@ export default function AdminPage() {
     );
   }
 
-  /** DB default is pending_verification; pending_approval is optional middle state — show both in queue */
   const pending = members.filter(
     (m) =>
       !m.isAdmin &&
@@ -155,12 +135,8 @@ export default function AdminPage() {
             { label: "Total Members", value: members.length, icon: Users, color: "bg-forest-50 text-forest-700" },
             { label: "Active", value: active.length, icon: CheckCircle, color: "bg-emerald-50 text-emerald-700" },
             { label: "Pending review", value: pending.length, icon: Clock, color: "bg-amber-50 text-amber-700" },
-            {
-              label: "Privileges Active",
-              value: privileges.filter((p) => p.isActive).length,
-              icon: Gift,
-              color: "bg-primary/10 text-primary-dark",
-            },
+            { label: "Partners", value: partnerCount, icon: Building2, color: "bg-sky-50 text-sky-700" },
+            { label: "Privileges Active", value: activePrivilegeCount, icon: Gift, color: "bg-primary/10 text-primary-dark" },
           ].map(({ label, value, icon: Icon, color }) => (
             <div key={label} className="bg-white border border-cream-300 rounded-2xl p-5 shadow-card">
               <div className="flex items-center gap-3 mb-3">
@@ -175,7 +151,7 @@ export default function AdminPage() {
         </div>
 
         <div className="flex gap-1 mb-6 bg-white border border-cream-300 rounded-xl p-1 w-fit shadow-sm">
-          {(["members", "privileges"] as Tab[]).map((t) => (
+          {(["members", "partners"] as Tab[]).map((t) => (
             <button
               key={t}
               type="button"
@@ -285,82 +261,7 @@ export default function AdminPage() {
           </div>
         )}
 
-        {tab === "privileges" && (
-          <div>
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-ink-muted text-xs tracking-[2px] uppercase font-semibold">All Privileges</h2>
-              <button type="button" className="btn-primary text-xs px-4 py-2">
-                + Add Privilege
-              </button>
-            </div>
-            {codeSaveError && (
-              <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-                Could not save privilege code: {codeSaveError}
-              </div>
-            )}
-            <p className="text-ink-muted text-xs mb-4 max-w-2xl">
-              Privilege code is the plain text encoded in the member redeem QR. Partners scan this value at checkout.
-            </p>
-            <div className="bg-white border border-cream-300 rounded-2xl overflow-x-auto shadow-card">
-              <table className="w-full text-sm min-w-[900px]">
-                <thead>
-                  <tr className="border-b border-cream-300 bg-cream-100">
-                    {["Privilege", "Partner", "Privilege code (QR)", "Discount", "Status"].map((h) => (
-                      <th key={h} className="px-5 py-3.5 text-left text-ink-muted text-xs font-semibold tracking-wide">
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-cream-200">
-                  {privileges.map((p) => (
-                    <tr key={p.id} className="hover:bg-cream-100/60 transition-colors">
-                      <td className="px-5 py-3.5 text-forest font-medium">{p.title}</td>
-                      <td className="px-5 py-3.5 text-ink-light">{p.partnerName}</td>
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-2 max-w-xs">
-                          <input
-                            type="text"
-                            value={codeDrafts[p.id] ?? ""}
-                            onChange={(e) =>
-                              setCodeDrafts((prev) => ({ ...prev, [p.id]: e.target.value }))
-                            }
-                            placeholder="e.g. TTC-BDMS-15"
-                            className="flex-1 min-w-0 rounded-lg border border-cream-300 bg-cream-50 px-3 py-1.5 text-xs font-mono text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-                          />
-                          <button
-                            type="button"
-                            disabled={savingCodeId === p.id}
-                            onClick={() => void savePrivilegeCode(p.id)}
-                            className="shrink-0 rounded-lg bg-forest-900 px-3 py-1.5 text-xs font-medium text-cream-100 hover:bg-forest-800 disabled:opacity-50 transition-colors"
-                          >
-                            {savingCodeId === p.id ? "…" : "Save"}
-                          </button>
-                        </div>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <span className="bg-primary/15 text-primary-dark text-xs font-bold px-2.5 py-1 rounded-lg border border-primary/20">
-                          {p.discountLabel}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <span
-                          className={`text-xs px-2.5 py-0.5 rounded-full border font-medium ${
-                            p.isActive
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                              : "bg-gray-100 text-gray-500 border-gray-200"
-                          }`}
-                        >
-                          {p.isActive ? "Active" : "Inactive"}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+        {tab === "partners" && <PartnersTab />}
       </div>
     </div>
   );
