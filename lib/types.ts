@@ -7,7 +7,13 @@ export type MemberStatus =
 
 export type ResidentStatus = "owner" | "tenant";
 
-export type PrivilegeCategory = "health" | "fnb" | "service" | "lifestyle";
+export interface PrivilegeCategory {
+  id: number;
+  label: string;
+  key: string;
+  color: string;
+  sortOrder?: number;
+}
 
 export type CodeMode = "shared" | "unique_pool";
 
@@ -45,11 +51,13 @@ export interface Privilege {
   description: string;   // full
   terms: string;
   howToRedeem: string;
+  categoryId: number;
   category: PrivilegeCategory;
   isActive: boolean;
   validFrom: string;
   validUntil?: string;
   sortOrder: number;
+  createdAt: string;
   discountLabel: string; // e.g. "15% OFF"
   /** Encoded in redeem QR; set by admin (maps to privileges.privilege_code) */
   privilegeCode: string;
@@ -109,6 +117,7 @@ export interface ShopPartner {
   description: string;
   isActive: boolean;
   sortOrder: number;
+  createdAt: string;
   privilegeCount?: number;
 }
 
@@ -121,13 +130,20 @@ export interface CreatePartnerInput {
   sortOrder?: number;
 }
 
+export interface CreatePrivilegeCategoryInput {
+  label: string;
+  key: string;
+  color: string;
+  sortOrder?: number;
+}
+
 export interface CreatePrivilegeInput {
   title: string;
   summary?: string;
   description?: string;
   terms?: string;
   howToRedeem?: string;
-  category: PrivilegeCategory;
+  categoryId: number;
   discountLabel?: string;
   coverImage?: string;
   validFrom?: string;

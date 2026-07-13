@@ -8,6 +8,7 @@ import {
   type CommunityMomentRow,
   type PartnerRow,
 } from "@/lib/supabase/mappers";
+import { PUBLIC_PRIVILEGE_SELECT } from "@/lib/supabase/queries";
 import { categoryLabel, categoryColor } from "@/lib/utils";
 
 export default async function LandingPage() {
@@ -37,8 +38,9 @@ export default async function LandingPage() {
 
   const { data: privRows } = await supabase
     .from("privileges")
-    .select("*, partners(id, name, logo_url, website_url)")
+    .select(PUBLIC_PRIVILEGE_SELECT)
     .eq("is_active", true)
+    .eq("partners.is_active", true)
     .order("sort_order");
   const { data: commRows } = await supabase
     .from("community_moments")

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { CreatePartnerInput } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { ImageUploadField } from "./image-upload-field";
 
 type Props = {
   open: boolean;
@@ -10,7 +11,7 @@ type Props = {
   title: string;
   submitLabel: string;
   onClose: () => void;
-  onSubmit: (input: CreatePartnerInput) => Promise<{ ok: boolean; error?: string }>;
+  onSubmit: (input: CreatePartnerInput, logoFile?: File | null) => Promise<{ ok: boolean; error?: string }>;
 };
 
 const EMPTY: CreatePartnerInput = {
@@ -31,8 +32,24 @@ export function AddPartnerForm({
   onSubmit,
 }: Props) {
   const [form, setForm] = useState<CreatePartnerInput>(initial ?? EMPTY);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const logoFileRef = useRef<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleLogoFileChange = (file: File | null) => {
+    logoFileRef.current = file;
+    setLogoFile(file);
+  };
+
+  // Reset only when the modal opens — not on every parent re-render (initial is a new object each time).
+  useEffect(() => {
+    if (!open) return;
+    setForm(initial ?? EMPTY);
+    logoFileRef.current = null;
+    setLogoFile(null);
+    setError(null);
+  }, [open]);
 
   if (!open) return null;
 
@@ -48,7 +65,7 @@ export function AddPartnerForm({
     }
     setSaving(true);
     setError(null);
-    const res = await onSubmit(form);
+    const res = await onSubmit(form, logoFileRef.current ?? logoFile);
     setSaving(false);
     if (!res.ok) {
       setError(res.error ?? "Could not save partner.");
@@ -58,9 +75,16 @@ export function AddPartnerForm({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-forest-900/50 backdrop-blur-sm">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-forest-900/50 backdrop-blur-sm"
+      onClick={() => {
+        if (!saving) onClose();
+      }}
+      role="presentation"
+    >
       <form
         onSubmit={(e) => void handleSubmit(e)}
+        onClick={(e) => e.stopPropagation()}
         className="bg-white rounded-2xl border border-cream-300 shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
       >
         <div className="px-6 py-5 border-b border-cream-200">
@@ -81,15 +105,14 @@ export function AddPartnerForm({
               className="mt-1.5 w-full rounded-lg border border-cream-300 bg-cream-50 px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
             />
           </label>
-          <label className="block">
-            <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">Logo URL</span>
-            <input
-              value={form.logoUrl ?? ""}
-              onChange={(e) => set("logoUrl", e.target.value)}
-              placeholder="https://..."
-              className="mt-1.5 w-full rounded-lg border border-cream-300 bg-cream-50 px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-            />
-          </label>
+          <ImageUploadField
+            label="Logo"
+            hint="JPEG, PNG, WebP, or GIF — max 500 KB"
+            maxSizeBytes={500 * 1024}
+            currentUrl={form.logoUrl || undefined}
+            disabled={saving}
+            onFileChange={handleLogoFileChange}
+          />
           <label className="block">
             <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">Website URL</span>
             <input
@@ -140,7 +163,7 @@ export function AddPartnerForm({
           <button
             type="submit"
             disabled={saving}
-            className={cn("btn-primary text-sm px-5 py-2", saving && "opacity-60")}
+            className={cn("btn-primary text-sm px-5 py-2 rounded-xl font-semibold", saving && "opacity-60")}
           >
             {saving ? "Saving…" : submitLabel}
           </button>

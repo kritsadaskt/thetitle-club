@@ -12,8 +12,9 @@ import { Users, Gift, CheckCircle, XCircle, Clock, LogOut, ArrowLeft, Building2,
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { PartnersTab } from "@/components/admin/partners-tab";
+import { CategoriesTab } from "@/components/admin/categories-tab";
 
-type Tab = "members" | "partners";
+type Tab = "members" | "partners" | "categories";
 
 const STATUS_STYLES: Record<string, string> = {
   active: "bg-emerald-50 text-emerald-700 border-emerald-200",
@@ -242,7 +243,7 @@ export default function AdminPage() {
         </div>
 
         <div className="flex gap-1 mb-6 bg-white border border-cream-300 rounded-xl p-1 w-fit shadow-sm">
-          {(["members", "partners"] as Tab[]).map((t) => (
+          {(["members", "partners", "categories"] as Tab[]).map((t) => (
             <button
               key={t}
               type="button"
@@ -367,6 +368,8 @@ export default function AdminPage() {
         )}
 
         {tab === "partners" && <PartnersTab />}
+
+        {tab === "categories" && <CategoriesTab />}
       </div>
     </div>
   );

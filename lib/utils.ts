@@ -11,20 +11,24 @@ export function formatDate(dateStr: string) {
   });
 }
 
-export function categoryLabel(cat: string) {
-  return {
-    health: "Health & Wellness",
-    fnb: "F&B",
-    service: "Service",
-    lifestyle: "Lifestyle",
-  }[cat] ?? cat;
+import type { PrivilegeCategory } from "@/lib/types";
+
+export function categoryLabel(cat: Pick<PrivilegeCategory, "label">): string {
+  return cat.label;
 }
 
-export function categoryColor(cat: string) {
-  return {
-    health:    "bg-emerald-900/40 text-emerald-400 border-emerald-700/40",
-    fnb:       "bg-amber-900/40 text-amber-400 border-amber-700/40",
-    service:   "bg-sky-900/40 text-sky-400 border-sky-700/40",
-    lifestyle: "bg-purple-900/40 text-purple-400 border-purple-700/40",
-  }[cat] ?? "bg-gray-900/40 text-gray-400 border-gray-700/40";
+export function categoryColor(cat: Pick<PrivilegeCategory, "color">): string {
+  return cat.color;
+}
+
+/** Admin lists: active first, then newest created first within each group. */
+export function sortAdminByActiveThenCreated<
+  T extends { isActive: boolean; createdAt?: string },
+>(items: T[]): T[] {
+  return [...items].sort((a, b) => {
+    if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
+    const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return tb - ta;
+  });
 }

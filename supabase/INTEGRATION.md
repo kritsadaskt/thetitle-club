@@ -168,20 +168,23 @@ where id = (
 
 ---
 
-## 10. Storage (ถ้าต้องการ upload รูป)
+## 10. Storage (`club-assets` bucket)
 
-Supabase Dashboard → **Storage** → New bucket ชื่อ `club-assets` (public)
+1. Supabase Dashboard → **Storage** → New bucket ชื่อ `club-assets` (public)
+2. Run `supabase/storage-club-assets.sql` ใน SQL Editor (ตั้ง RLS + MIME types)
+
+Admin UI อัปโหลดผ่าน `lib/supabase/storage.ts`:
+
+- Partner logo → `logos/{partnerId}.{ext}` → `partners.logo_url`
+- Privilege cover → `privileges/{privilegeId}.{ext}` → `privileges.cover_image`
 
 ```ts
-// Upload partner logo
-const { data } = await supabase.storage
-  .from("club-assets")
-  .upload(`logos/${file.name}`, file);
+import { uploadPartnerLogo, uploadPrivilegeCover } from "@/lib/supabase/storage";
 
-const publicUrl = supabase.storage
-  .from("club-assets")
-  .getPublicUrl(data!.path).data.publicUrl;
+const { ok, url, error } = await uploadPartnerLogo(partnerId, file);
 ```
+
+หรือใช้ helper ใน `lib/supabase/data.ts`: `createPartnerWithLogo`, `updatePartnerWithLogo`, `createPrivilegeWithCover`, `updatePrivilegeCover`
 
 ---
 
@@ -195,3 +198,4 @@ const publicUrl = supabase.storage
 6. แทนที่ `auth-context.tsx`
 7. แทนที่ data fetching ทีละหน้า (Privileges → Community → Admin)
 8. ตั้ง admin user ด้วย SQL
+9. Run `privilege_categories.sql` (หมวดหมู่ privilege แบบตาราง + migrate จาก enum เดิม)

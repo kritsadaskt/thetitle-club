@@ -73,6 +73,13 @@ export const MOCK_MEMBERS: Member[] = [
   },
 ];
 
+const MOCK_CATEGORIES = {
+  health: { id: 1, label: "Health & Wellness", key: "health", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  fnb: { id: 2, label: "F&B", key: "fnb", color: "bg-amber-50 text-amber-700 border-amber-200" },
+  service: { id: 3, label: "Service", key: "service", color: "bg-sky-50 text-sky-700 border-sky-200" },
+  lifestyle: { id: 4, label: "Lifestyle", key: "lifestyle", color: "bg-purple-50 text-purple-700 border-purple-200" },
+} as const;
+
 export const MOCK_PRIVILEGES: Privilege[] = [
   {
     id: "priv-001",
@@ -88,11 +95,13 @@ export const MOCK_PRIVILEGES: Privilege[] = [
       "• Valid for THE TITLE members only\n• Present your Digital Membership Card at reception\n• Discount applies to room charges and medication only\n• Cannot be combined with other promotions or insurance coverage\n• Valid for member and immediate family members",
     howToRedeem:
       "1. Open your Membership Card on the app\n2. Show the QR Code to the hospital reception\n3. Staff will verify your membership\n4. Discount will be applied to your bill",
-    category: "health",
+    categoryId: MOCK_CATEGORIES.health.id,
+    category: MOCK_CATEGORIES.health,
     isActive: true,
     validFrom: "2024-01-01",
     validUntil: "2024-12-31",
     sortOrder: 1,
+    createdAt: "2024-01-15T00:00:00.000Z",
     discountLabel: "15% OFF",
     privilegeCode: "TTC-BDMS-15",
     codeMode: "shared",
@@ -111,11 +120,13 @@ export const MOCK_PRIVILEGES: Privilege[] = [
       "• Valid for THE TITLE members and up to 3 guests\n• Advance booking required (minimum 48 hours)\n• Subject to weather conditions\n• Life jackets provided\n• Includes snorkeling equipment",
     howToRedeem:
       "1. Contact SAWANU via Line or phone to book\n2. Mention THE TITLE membership\n3. Show your Membership Card on the day\n4. Enjoy your trip!",
-    category: "lifestyle",
+    categoryId: MOCK_CATEGORIES.lifestyle.id,
+    category: MOCK_CATEGORIES.lifestyle,
     isActive: true,
     validFrom: "2024-01-01",
     validUntil: "2024-12-31",
     sortOrder: 2,
+    createdAt: "2024-02-10T00:00:00.000Z",
     discountLabel: "Special Rate",
     privilegeCode: "TTC-SAWANU",
     codeMode: "shared",
@@ -134,11 +145,13 @@ export const MOCK_PRIVILEGES: Privilege[] = [
       "• Valid for walk-in guests only (not applicable for online bookings)\n• Discount applies per person\n• Maximum 5 guests per membership per visit\n• Children under 3 years old are free\n• No re-entry once exited",
     howToRedeem:
       "1. Go to the ticket counter at Splash Beach Resort\n2. Inform staff you are a THE TITLE member\n3. Show your QR Code on the Membership Card\n4. Enjoy the water park!",
-    category: "lifestyle",
+    categoryId: MOCK_CATEGORIES.lifestyle.id,
+    category: MOCK_CATEGORIES.lifestyle,
     isActive: true,
     validFrom: "2024-01-01",
     validUntil: "2024-12-31",
     sortOrder: 3,
+    createdAt: "2024-03-05T00:00:00.000Z",
     discountLabel: "10–15% OFF",
     privilegeCode: "TTC-SPLASH-10",
     codeMode: "shared",
@@ -157,10 +170,12 @@ export const MOCK_PRIVILEGES: Privilege[] = [
       "• Valid for THE TITLE members only\n• Minimum booking: 3-hour session\n• Discount on labor cost only\n• Advance booking required\n• Available Monday–Saturday",
     howToRedeem:
       "1. Call or Line Clean Pro Phuket to schedule\n2. Mention THE TITLE membership\n3. Staff will verify at time of service\n4. Discount applied to invoice",
-    category: "service",
+    categoryId: MOCK_CATEGORIES.service.id,
+    category: MOCK_CATEGORIES.service,
     isActive: true,
     validFrom: "2024-01-01",
     sortOrder: 4,
+    createdAt: "2024-04-01T00:00:00.000Z",
     discountLabel: "10% OFF",
     privilegeCode: "TTC-CLEAN-10",
     codeMode: "shared",

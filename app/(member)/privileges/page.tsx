@@ -2,26 +2,28 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import type { Privilege } from "@/lib/types";
-import { PrivilegeCategory } from "@/lib/types";
-import { fetchActivePrivileges } from "@/lib/supabase/data";
+import type { Privilege, PrivilegeCategory } from "@/lib/types";
+import { fetchActivePrivileges, fetchAllPrivilegeCategories } from "@/lib/supabase/data";
 import { categoryLabel, categoryColor } from "@/lib/utils";
 import { ChevronRight, Search } from "lucide-react";
 
-const ALL_CATS: (PrivilegeCategory | "all")[] = ["all", "health", "lifestyle", "service", "fnb"];
-
 export default function PrivilegesPage() {
-  const [cat, setCat] = useState<PrivilegeCategory | "all">("all");
+  const [cat, setCat] = useState<number | "all">("all");
   const [query, setQuery] = useState("");
   const [list, setList] = useState<Privilege[]>([]);
+  const [categoryFilters, setCategoryFilters] = useState<PrivilegeCategory[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const rows = await fetchActivePrivileges();
+      const [rows, categories] = await Promise.all([
+        fetchActivePrivileges(),
+        fetchAllPrivilegeCategories(),
+      ]);
       if (!cancelled) {
         setList(rows);
+        setCategoryFilters(categories);
         setLoading(false);
       }
     })();
@@ -30,17 +32,19 @@ export default function PrivilegesPage() {
     };
   }, []);
 
-  const filtered = list.filter((p) => {
-    if (!p.isActive) return false;
-    if (cat !== "all" && p.category !== cat) return false;
-    if (
-      query &&
-      !p.title.toLowerCase().includes(query.toLowerCase()) &&
-      !p.partnerName.toLowerCase().includes(query.toLowerCase())
-    )
-      return false;
-    return true;
-  }).sort((a, b) => a.sortOrder - b.sortOrder);
+  const filtered = list
+    .filter((p) => {
+      if (!p.isActive) return false;
+      if (cat !== "all" && p.categoryId !== cat) return false;
+      if (
+        query &&
+        !p.title.toLowerCase().includes(query.toLowerCase()) &&
+        !p.partnerName.toLowerCase().includes(query.toLowerCase())
+      )
+        return false;
+      return true;
+    })
+    .sort((a, b) => a.sortOrder - b.sortOrder);
 
   if (loading) {
     return (
@@ -68,18 +72,29 @@ export default function PrivilegesPage() {
           />
         </div>
         <div className="flex gap-2 overflow-x-auto">
-          {ALL_CATS.map((c) => (
+          <button
+            type="button"
+            onClick={() => setCat("all")}
+            className={`px-4 py-2.5 rounded-xl text-xs whitespace-nowrap transition-all border font-medium ${
+              cat === "all"
+                ? "bg-forest-900 text-cream-100 border-forest-900"
+                : "border-cream-300 text-ink-light bg-white hover:border-forest-300 hover:text-forest shadow-sm"
+            }`}
+          >
+            All
+          </button>
+          {categoryFilters.map((c) => (
             <button
-              key={c}
+              key={c.id}
               type="button"
-              onClick={() => setCat(c)}
+              onClick={() => setCat(c.id)}
               className={`px-4 py-2.5 rounded-xl text-xs whitespace-nowrap transition-all border font-medium ${
-                cat === c
+                cat === c.id
                   ? "bg-forest-900 text-cream-100 border-forest-900"
                   : "border-cream-300 text-ink-light bg-white hover:border-forest-300 hover:text-forest shadow-sm"
               }`}
             >
-              {c === "all" ? "All" : categoryLabel(c)}
+              {c.label}
             </button>
           ))}
         </div>
@@ -95,13 +110,13 @@ export default function PrivilegesPage() {
               href={`/privileges/${priv.id}`}
               className="group bg-white border border-cream-300 rounded-2xl overflow-hidden card-hover shadow-card flex flex-col"
             >
-              <div className="relative h-44 overflow-hidden flex-shrink-0">
+              <div className="relative w-full aspect-video overflow-hidden shrink-0">
                 <img
                   src={priv.coverImage}
                   alt={priv.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-forest-900/50 to-transparent" />
+                <div className="absolute inset-0 bg-linear-to-t from-forest-900/50 to-transparent" />
                 <span className="absolute top-3 right-3 bg-primary text-forest-900 text-xs font-bold px-3 py-1 rounded-full shadow-primary-sm">
                   {priv.discountLabel}
                 </span>
@@ -117,7 +132,7 @@ export default function PrivilegesPage() {
                   <img
                     src={priv.partnerLogo}
                     alt={priv.partnerName}
-                    className="w-14 h-9 object-contain bg-cream-200 rounded-lg p-1 flex-shrink-0"
+                    className="w-14 h-9 object-contain bg-cream-200 rounded-lg p-1 shrink-0"
                   />
                   <div>
                     <p className="text-ink-muted text-xs">{priv.partnerName}</p>
