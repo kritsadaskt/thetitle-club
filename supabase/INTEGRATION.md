@@ -115,30 +115,30 @@ await supabase
 
 ## 7. Registration Flow
 
-Registration form → `supabase.auth.signUp()` → Supabase ส่ง email verification → trigger `on_auth_user_created` สร้าง profile row อัตโนมัติ → admin approve
+**Supabase Auth:** ปิด **Confirm email** ที่ Authentication → Providers → Email
+
+Registration form → `supabase.auth.signUp()` → trigger `on_auth_user_created` สร้าง profile (`pending_approval`) → admin approve → n8n ส่ง welcome email
 
 ```ts
 // register/page.tsx
 const { data, error } = await supabase.auth.signUp({
   email: form.email,
-  password: form.password, // ต้องเพิ่ม password field ใน form
+  password: form.password,
   options: {
-    data: { full_name: form.fullName }, // ส่งเข้า raw_user_meta_data
-    emailRedirectTo: `${window.location.origin}/club/verify`,
+    data: { full_name: form.fullName, /* ... */ }, // raw_user_meta_data
   },
 });
 
-// หลัง signUp สำเร็จ → update profile ด้วยข้อมูล form ที่เหลือ
+// หลัง signUp → update profile + signOut (รอ admin approve)
 await supabase.from("profiles").update({
   gender: form.gender,
-  age: parseInt(form.age),
-  nationality: form.nationality,
-  phone: form.phone,
-  whatsapp: form.whatsapp,
-  resident_status: form.residentStatus,
-  project_name: form.projectName,
+  status: "pending_approval",
+  /* ... */
 }).eq("id", data.user!.id);
+await supabase.auth.signOut();
 ```
+
+รัน SQL (ครั้งเดียว): `supabase/admin_approval_only.sql` และ `supabase/handle_new_user_extended.sql`
 
 ---
 

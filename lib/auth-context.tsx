@@ -36,7 +36,7 @@ function memberCanAccessMemberArea(status: MemberStatus): boolean {
   if (status === "rejected" || status === "suspended") return false;
   if (status === "active") return true;
   if (bypassMembershipApproval()) {
-    return status === "pending_verification" || status === "pending_approval";
+    return status === "pending_approval";
   }
   return false;
 }

@@ -1,5 +1,5 @@
--- Replace signup trigger so profile fields are filled from auth.users.raw_user_meta_data
--- when email confirmation is enabled (no client session on first signUp).
+-- Profile fields are filled from auth.users.raw_user_meta_data on signUp.
+-- New members start as pending_approval (admin must approve before login).
 -- Run in Supabase SQL Editor after schema.sql.
 
 create or replace function public.handle_new_user()
@@ -19,7 +19,8 @@ begin
     phone,
     whatsapp,
     resident_status,
-    project_name
+    project_name,
+    status
   )
   values (
     new.id,
@@ -43,7 +44,8 @@ begin
       then (new.raw_user_meta_data->>'resident_status')::resident_status
       else null
     end,
-    nullif(trim(new.raw_user_meta_data->>'project_name'), '')
+    nullif(trim(new.raw_user_meta_data->>'project_name'), ''),
+    'pending_approval'
   );
   return new;
 end;
