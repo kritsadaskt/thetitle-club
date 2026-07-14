@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { createPartner, fetchAllPartners } from "@/lib/supabase/data";
+import { createPartnerWithLogo, fetchAllPartners } from "@/lib/supabase/data";
 import type { ShopPartner } from "@/lib/types";
 import { Building2, ChevronRight, Plus } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, sortAdminByActiveThenCreated } from "@/lib/utils";
 import { AddPartnerForm } from "./add-partner-form";
 import { PartnerDetail } from "./partner-detail";
 
@@ -37,7 +37,11 @@ export function PartnersTab() {
         partner={selected}
         onBack={() => setSelectedId(null)}
         onPartnerUpdated={(updated) => {
-          setPartners((prev) => prev.map((p) => (p.id === updated.id ? { ...p, ...updated } : p)));
+          setPartners((prev) =>
+            sortAdminByActiveThenCreated(
+              prev.map((p) => (p.id === updated.id ? { ...p, ...updated } : p))
+            )
+          );
         }}
       />
     );
@@ -78,13 +82,13 @@ export function PartnersTab() {
               onClick={() => setSelectedId(p.id)}
               className="bg-white border border-cream-300 rounded-2xl p-5 shadow-card text-left hover:border-primary/40 hover:shadow-md transition-all flex items-center gap-4"
             >
-              <div className="w-14 h-10 rounded-lg border border-cream-300 bg-cream-100 flex items-center justify-center shrink-0 overflow-hidden">
-                {p.logoUrl ? (
-                  <img src={p.logoUrl} alt={p.name} className="max-w-full max-h-full object-contain p-1" />
-                ) : (
+              {p.logoUrl ? (
+                <img src={p.logoUrl} alt={p.name} className="w-20 h-auto object-contain p-1 rounded-lg" />
+              ) : (
+                <div className="w-14 h-10 rounded-lg border border-cream-300 bg-cream-100 flex items-center justify-center shrink-0 overflow-hidden">
                   <span className="text-forest font-bold">{p.name.charAt(0)}</span>
-                )}
-              </div>
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <p className="text-forest font-medium truncate">{p.name}</p>
                 <p className="text-ink-muted text-xs mt-0.5">
@@ -112,8 +116,8 @@ export function PartnersTab() {
         title="Add Partner"
         submitLabel="Create Partner"
         onClose={() => setShowAddPartner(false)}
-        onSubmit={async (input) => {
-          const res = await createPartner(input);
+        onSubmit={async (input, logoFile) => {
+          const res = await createPartnerWithLogo(input, logoFile);
           if (!res.ok) return { ok: false, error: res.error };
           await handlePartnerCreated();
           return { ok: true };

@@ -187,7 +187,7 @@ export default function RegisterPage() {
     setSubmitError("");
     setLoading(true);
     const supabase = createClient();
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const autoApprove = process.env.NEXT_PUBLIC_BYPASS_MEMBERSHIP_APPROVAL === "true";
     const meta = {
       full_name: form.fullName.trim(),
       gender: form.gender,
@@ -201,18 +201,26 @@ export default function RegisterPage() {
     const { data, error } = await supabase.auth.signUp({
       email: form.email.trim(),
       password: form.password,
-      options: {
-        emailRedirectTo: `${origin}/club/login`,
-        data: meta,
-      },
+      options: { data: meta },
     });
     if (error) {
       setSubmitError(error.message);
       setLoading(false);
       return;
     }
-    if (data.session?.user) {
-      const autoApprove = process.env.NEXT_PUBLIC_BYPASS_MEMBERSHIP_APPROVAL === "true";
+    if (!data.user) {
+      setSubmitError("Registration failed. Please try again.");
+      setLoading(false);
+      return;
+    }
+    if (!data.session && !autoApprove) {
+      setSubmitError(
+        "Registration could not be completed. Disable “Confirm email” in Supabase Auth settings (Authentication → Providers → Email)."
+      );
+      setLoading(false);
+      return;
+    }
+    if (data.session) {
       const { error: upErr } = await supabase.from("profiles").update({
         full_name: meta.full_name,
         email: form.email.trim(),
@@ -223,17 +231,18 @@ export default function RegisterPage() {
         whatsapp: meta.whatsapp,
         resident_status: meta.resident_status as "owner" | "tenant",
         project_name: meta.project_name,
+        status: autoApprove ? "active" : "pending_approval",
         ...(autoApprove
-          ? {
-              status: "active" as const,
-              approved_at: new Date().toISOString(),
-            }
+          ? { approved_at: new Date().toISOString() }
           : {}),
-      }).eq("id", data.session.user.id);
+      }).eq("id", data.user.id);
       if (upErr) {
         setSubmitError(upErr.message);
         setLoading(false);
         return;
+      }
+      if (!autoApprove) {
+        await supabase.auth.signOut();
       }
     }
     setLoading(false);
@@ -249,14 +258,14 @@ export default function RegisterPage() {
         <div className="w-20 h-20 rounded-full bg-forest-50 border-2 border-forest-100 flex items-center justify-center mx-auto mb-6">
           <CheckCircle className="w-9 h-9 text-forest-700" strokeWidth={1.5} />
         </div>
-        <h2 className="text-2xl font-light text-forest mb-3">Check Your Email</h2>
+        <h2 className="text-2xl font-light text-forest mb-3">Application Submitted</h2>
         <p className="text-ink-light mb-2">
-          We&apos;ve sent a verification link to{" "}
+          Thank you for registering with{" "}
           <strong className="text-ink">{form.email}</strong>
         </p>
         <p className="text-ink-muted text-sm mb-8 leading-relaxed">
-          Click the link to verify your email. Our team will then review your application —
-          you&apos;ll receive a welcome email once approved.
+          Our team will review your application. You&apos;ll receive a welcome email once
+          approved — then you can sign in to access your membership.
         </p>
         <Link href="/login" className="btn-primary inline-block px-8">Back to Sign In</Link>
       </div>
@@ -299,7 +308,7 @@ export default function RegisterPage() {
           {/* ── Section 1: Personal ── */}
           <div>
             <h3 className="text-xs tracking-[3px] uppercase font-semibold text-forest mb-5 flex items-center gap-2">
-              <span className="w-5 h-px bg-primary flex-shrink-0" />Personal Information
+              <span className="w-5 h-px bg-primary shrink-0" />Personal Information
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
@@ -349,7 +358,7 @@ export default function RegisterPage() {
           {/* ── Section 2: Contact ── */}
           <div>
             <h3 className="text-xs tracking-[3px] uppercase font-semibold text-forest mb-5 flex items-center gap-2">
-              <span className="w-5 h-px bg-primary flex-shrink-0" />Contact Details
+              <span className="w-5 h-px bg-primary shrink-0" />Contact Details
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="sm:col-span-2">
@@ -398,7 +407,7 @@ export default function RegisterPage() {
           {/* ── Section 3: Property ── */}
           <div>
             <h3 className="text-xs tracking-[3px] uppercase font-semibold text-forest mb-5 flex items-center gap-2">
-              <span className="w-5 h-px bg-primary flex-shrink-0" />Property Details
+              <span className="w-5 h-px bg-primary shrink-0" />Property Details
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Resident Status *" error={errors.residentStatus}>

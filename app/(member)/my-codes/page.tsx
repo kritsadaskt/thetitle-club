@@ -150,8 +150,17 @@ function PromoCodeCard({
       </div>
 
       {confirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-forest-900/60 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-cream-300">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-forest-900/60 backdrop-blur-sm"
+          onClick={() => {
+            if (!redeeming) setConfirmOpen(false);
+          }}
+          role="presentation"
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-cream-300"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h4 className="text-forest font-semibold text-lg mb-2">ยืนยันการใช้สิทธิ์</h4>
             <p className="text-ink-light text-sm mb-6">
               คุณใช้สิทธิ์นี้ที่ร้านแล้วใช่หรือไม่? โค้ด{" "}

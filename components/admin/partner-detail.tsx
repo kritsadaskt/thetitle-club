@@ -3,13 +3,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
-  createPrivilege,
+  createPrivilegeWithCover,
   fetchPrivilegesByPartner,
-  updatePartner,
+  updatePartnerWithLogo,
 } from "@/lib/supabase/data";
 import type { CreatePartnerInput, CreatePrivilegeInput, Privilege, ShopPartner } from "@/lib/types";
 import { ArrowLeft, Pencil, Plus } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, sortAdminByActiveThenCreated } from "@/lib/utils";
 import { AddPartnerForm } from "./add-partner-form";
 import { AddPrivilegeForm } from "./add-privilege-form";
 import { PrivilegePromoPanel } from "./privilege-promo-panel";
@@ -60,10 +60,10 @@ export function PartnerDetail({ partner, onBack, onPartnerUpdated }: Props) {
     );
   };
 
-  const handleCreatePrivilege = async (input: CreatePrivilegeInput) => {
-    const res = await createPrivilege(partner.id, input);
+  const handleCreatePrivilege = async (input: CreatePrivilegeInput, coverFile?: File | null) => {
+    const res = await createPrivilegeWithCover(partner.id, input, coverFile);
     if (!res.ok) return { ok: false, error: res.error };
-    setPrivileges((prev) => [...prev, res.data].sort((a, b) => a.sortOrder - b.sortOrder));
+    setPrivileges((prev) => sortAdminByActiveThenCreated([...prev, res.data]));
     setCodeDrafts((prev) => ({ ...prev, [res.data.id]: res.data.privilegeCode }));
     onPartnerUpdated({
       ...partner,
@@ -72,8 +72,8 @@ export function PartnerDetail({ partner, onBack, onPartnerUpdated }: Props) {
     return { ok: true };
   };
 
-  const handleUpdatePartner = async (input: CreatePartnerInput) => {
-    const res = await updatePartner(partner.id, input);
+  const handleUpdatePartner = async (input: CreatePartnerInput, logoFile?: File | null) => {
+    const res = await updatePartnerWithLogo(partner.id, input, logoFile);
     if (!res.ok) return { ok: false, error: res.error };
     onPartnerUpdated(res.data);
     return { ok: true };
@@ -90,13 +90,13 @@ export function PartnerDetail({ partner, onBack, onPartnerUpdated }: Props) {
       </button>
 
       <div className="bg-white border border-cream-300 rounded-2xl p-5 mb-6 shadow-card flex flex-col sm:flex-row gap-4 sm:items-center">
-        <div className="w-20 h-14 rounded-xl border border-cream-300 bg-cream-100 flex items-center justify-center shrink-0 overflow-hidden">
-          {partner.logoUrl ? (
-            <img src={partner.logoUrl} alt={partner.name} className="max-w-full max-h-full object-contain p-1" />
-          ) : (
-            <span className="text-forest font-bold text-lg">{partner.name.charAt(0)}</span>
-          )}
-        </div>
+        {partner.logoUrl ? (
+          <img src={partner.logoUrl} alt={partner.name} className="w-20 h-auto object-contain p-1 rounded-lg" />
+        ) : (
+          <div className="w-14 h-10 rounded-lg border border-cream-300 bg-cream-100 flex items-center justify-center shrink-0 overflow-hidden">
+            <span className="text-forest font-bold">{partner.name.charAt(0)}</span>
+          </div>
+        )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <h2 className="text-xl font-light text-forest">{partner.name}</h2>
@@ -172,7 +172,11 @@ export function PartnerDetail({ partner, onBack, onPartnerUpdated }: Props) {
           }
           onSaveSharedCode={savePrivilegeCode}
           onPrivilegeUpdate={(id, patch) =>
-            setPrivileges((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)))
+            setPrivileges((prev) =>
+              sortAdminByActiveThenCreated(
+                prev.map((p) => (p.id === id ? { ...p, ...patch } : p))
+              )
+            )
           }
           savingCodeId={savingCodeId}
         />

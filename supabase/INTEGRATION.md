@@ -115,30 +115,30 @@ await supabase
 
 ## 7. Registration Flow
 
-Registration form → `supabase.auth.signUp()` → Supabase ส่ง email verification → trigger `on_auth_user_created` สร้าง profile row อัตโนมัติ → admin approve
+**Supabase Auth:** ปิด **Confirm email** ที่ Authentication → Providers → Email
+
+Registration form → `supabase.auth.signUp()` → trigger `on_auth_user_created` สร้าง profile (`pending_approval`) → admin approve → n8n ส่ง welcome email
 
 ```ts
 // register/page.tsx
 const { data, error } = await supabase.auth.signUp({
   email: form.email,
-  password: form.password, // ต้องเพิ่ม password field ใน form
+  password: form.password,
   options: {
-    data: { full_name: form.fullName }, // ส่งเข้า raw_user_meta_data
-    emailRedirectTo: `${window.location.origin}/club/verify`,
+    data: { full_name: form.fullName, /* ... */ }, // raw_user_meta_data
   },
 });
 
-// หลัง signUp สำเร็จ → update profile ด้วยข้อมูล form ที่เหลือ
+// หลัง signUp → update profile + signOut (รอ admin approve)
 await supabase.from("profiles").update({
   gender: form.gender,
-  age: parseInt(form.age),
-  nationality: form.nationality,
-  phone: form.phone,
-  whatsapp: form.whatsapp,
-  resident_status: form.residentStatus,
-  project_name: form.projectName,
+  status: "pending_approval",
+  /* ... */
 }).eq("id", data.user!.id);
+await supabase.auth.signOut();
 ```
+
+รัน SQL (ครั้งเดียว): `supabase/admin_approval_only.sql` และ `supabase/handle_new_user_extended.sql`
 
 ---
 
@@ -168,20 +168,23 @@ where id = (
 
 ---
 
-## 10. Storage (ถ้าต้องการ upload รูป)
+## 10. Storage (`club-assets` bucket)
 
-Supabase Dashboard → **Storage** → New bucket ชื่อ `club-assets` (public)
+1. Supabase Dashboard → **Storage** → New bucket ชื่อ `club-assets` (public)
+2. Run `supabase/storage-club-assets.sql` ใน SQL Editor (ตั้ง RLS + MIME types)
+
+Admin UI อัปโหลดผ่าน `lib/supabase/storage.ts`:
+
+- Partner logo → `logos/{partnerId}.{ext}` → `partners.logo_url`
+- Privilege cover → `privileges/{privilegeId}.{ext}` → `privileges.cover_image`
 
 ```ts
-// Upload partner logo
-const { data } = await supabase.storage
-  .from("club-assets")
-  .upload(`logos/${file.name}`, file);
+import { uploadPartnerLogo, uploadPrivilegeCover } from "@/lib/supabase/storage";
 
-const publicUrl = supabase.storage
-  .from("club-assets")
-  .getPublicUrl(data!.path).data.publicUrl;
+const { ok, url, error } = await uploadPartnerLogo(partnerId, file);
 ```
+
+หรือใช้ helper ใน `lib/supabase/data.ts`: `createPartnerWithLogo`, `updatePartnerWithLogo`, `createPrivilegeWithCover`, `updatePrivilegeCover`
 
 ---
 
@@ -195,3 +198,4 @@ const publicUrl = supabase.storage
 6. แทนที่ `auth-context.tsx`
 7. แทนที่ data fetching ทีละหน้า (Privileges → Community → Admin)
 8. ตั้ง admin user ด้วย SQL
+9. Run `privilege_categories.sql` (หมวดหมู่ privilege แบบตาราง + migrate จาก enum เดิม)

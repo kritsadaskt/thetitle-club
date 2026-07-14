@@ -143,9 +143,10 @@ export default function PrivilegeDetailPage() {
 
       <section className="mb-7">
         <h2 className="text-forest font-semibold mb-3">About This Privilege</h2>
-        <p className="text-ink-light leading-relaxed">{priv.description}</p>
+        <p className="text-ink-light leading-relaxed whitespace-pre-line">{priv.description}</p>
       </section>
 
+      {priv.howToRedeem && (
       <section className="mb-7 bg-forest-50 border border-forest-100 rounded-2xl p-5">
         <h2 className="text-forest font-semibold mb-4 flex items-center gap-2">
           <Ticket size={15} className="text-primary-dark" />
@@ -154,13 +155,15 @@ export default function PrivilegeDetailPage() {
         <div className="space-y-3">
           {(priv.howToRedeem || "").split("\n").map((step, i) => (
             <div key={i} className="flex items-start gap-3 text-sm text-ink-light">
-              <CheckCircle size={14} className="text-forest-500 flex-shrink-0 mt-0.5" strokeWidth={2} />
+              <CheckCircle size={14} className="text-forest-500 shrink-0 mt-0.5" strokeWidth={2} />
               {step.replace(/^\d+\.\s*/, "")}
             </div>
-          ))}
-        </div>
-      </section>
+            ))}
+          </div>
+        </section>
+      )}
 
+      {priv.terms && (
       <section className="mb-10">
         <h2 className="text-forest font-semibold mb-3">Terms & Conditions</h2>
         <div className="space-y-2">
@@ -169,8 +172,9 @@ export default function PrivilegeDetailPage() {
               {t}
             </p>
           ))}
-        </div>
-      </section>
+          </div>
+        </section>
+      )}
 
       <div className="sticky bottom-6">
         {!isUniquePool ? (
