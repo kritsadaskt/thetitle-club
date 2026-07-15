@@ -258,16 +258,14 @@ export default function RegisterPage() {
         <div className="w-20 h-20 rounded-full bg-forest-50 border-2 border-forest-100 flex items-center justify-center mx-auto mb-6">
           <CheckCircle className="w-9 h-9 text-forest-700" strokeWidth={1.5} />
         </div>
-        <h2 className="text-2xl font-light text-forest mb-3">Application Submitted</h2>
+        <h2 className="text-2xl font-light text-forest mb-3">Registration Successful!</h2>
         <p className="text-ink-light mb-2">
           Thank you for registering with{" "}
           <strong className="text-ink">{form.email}</strong>
         </p>
-        <p className="text-ink-muted text-sm mb-8 leading-relaxed">
-          Our team will review your application. You&apos;ll receive a welcome email once
-          approved — then you can sign in to access your membership.
-        </p>
-        <Link href="/login" className="btn-primary inline-block px-8">Back to Sign In</Link>
+        <p className="text-ink-light mb-2">Your registration is complete.</p>
+        <p className="text-ink-muted text-sm mb-8 leading-relaxed">A welcome email will be sent to your inbox shortly. Simply sign in and start enjoying your exclusive The Title  member privileges.</p>
+        <Link href="/login" className="btn-primary inline-block px-8 py-4 rounded-lg">Back to Sign In</Link>
       </div>
     </div>
   );
