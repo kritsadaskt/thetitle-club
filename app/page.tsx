@@ -72,9 +72,14 @@ export default async function LandingPage() {
           </div>
           <div className="flex items-center gap-4">
             {isSignedIn ? (
+              <>
               <Link href={memberEntryHref} className="btn-primary font-semibold px-5 py-2.5 rounded-lg">
                 {memberEntryLabel}
               </Link>
+              <Link href="/logout" className="btn-outline-primary text-sm">
+                Log out
+              </Link>
+              </>
             ) : (
               <>
                 <Link href="/login" className="text-sm text-ink-light hover:text-primary-dark transition-colors font-medium">
@@ -175,7 +180,8 @@ export default async function LandingPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {featuredPrivileges.map((priv) => (
-              <div key={priv.id} className="card card-hover overflow-hidden">
+              <Link href={`/privileges/${priv.id}`} key={priv.id}>
+              <div key={priv.id} className="card card-hover h-full overflow-hidden">
                 {/* Cover image */}
                 <div className="relative h-44 overflow-hidden">
                   {priv.coverImage ? (
@@ -202,12 +208,19 @@ export default async function LandingPage() {
                   <p className="text-ink-light text-sm leading-relaxed">{priv.summary}</p>
                 </div>
               </div>
+              </Link>
             ))}
           </div>
           <div className="text-center mt-10">
-            <Link href="/register" className="btn-outline-primary text-sm">
-              Join to See All {privileges.length} Privileges →
-            </Link>
+            {isSignedIn ? (
+              <Link href="/privileges" className="btn-outline-primary text-sm">
+                View All {privileges.length} Privileges →
+              </Link>
+            ) : (
+              <Link href="/register" className="btn-outline-primary text-sm">
+                Join to See All {privileges.length} Privileges →
+              </Link>
+            )}
           </div>
         </div>
       </section>
