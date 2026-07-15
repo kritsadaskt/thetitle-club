@@ -39,7 +39,9 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
       <aside className="hidden lg:flex flex-col w-60 bg-deep-blue fixed inset-y-0 left-0 z-30" style={{ backgroundImage: "url('/club/club-bg.webp')" }}>
         {/* Logo */}
         <div className="px-6 py-6 border-b border-white/8">
-          <img src="/club/title-club-logo_mockup-white.webp" alt="The Title" className="w-24 h-auto object-contain mx-auto" />
+          <Link href="/">
+            <img src="/club/title-club-logo_mockup-white.webp" alt="The Title" className="w-24 h-auto object-contain mx-auto" />
+          </Link>
         </div>
 
         {/* Nav links */}

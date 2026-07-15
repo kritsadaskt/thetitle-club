@@ -226,7 +226,7 @@ export default function MyCodesPage() {
         <p className="section-eyebrow text-primary-dark mb-1">My Privileges</p>
         <h1 className="text-3xl font-light text-forest flex items-center gap-3">
           <Tag size={24} className="text-primary-dark" strokeWidth={1.5} />
-          โค้ดโปรโมชันของฉัน
+          View My Codes
         </h1>
         <p className="text-ink-muted text-sm mt-2">
           Codes you claimed are reserved for 24 hours. Confirm use after redeeming at the partner.

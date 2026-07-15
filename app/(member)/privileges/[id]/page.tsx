@@ -196,7 +196,7 @@ export default function PrivilegeDetailPage() {
             className="btn-primary w-full text-center text-base flex items-center justify-center gap-2 py-4 shadow-primary-md"
           >
             <Tag size={18} />
-            ดูโค้ดของฉัน
+            My Codes
           </Link>
         ) : claimState === "redeemed" ? (
           <button
