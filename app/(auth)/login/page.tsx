@@ -64,12 +64,6 @@ export default function LoginPage() {
           <h2 className="text-3xl font-light text-forest mb-2">Welcome back</h2>
           <p className="text-ink-light text-sm mb-8">Sign in to your membership account</p>
 
-          {/* Demo hint */}
-          <div className="bg-forest-50 border border-forest-100 rounded-xl p-3.5 mb-7 text-xs text-forest-600">
-            <strong className="text-forest-700">Demo — </strong>
-            somchai@example.com / password123 &nbsp;·&nbsp; admin@thetitleresidence.com / admin123
-          </div>
-
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="label-text">Email Address</label>
