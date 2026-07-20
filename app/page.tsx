@@ -10,6 +10,7 @@ import {
 } from "@/lib/supabase/mappers";
 import { PUBLIC_PRIVILEGE_SELECT } from "@/lib/supabase/queries";
 import { categoryLabel, categoryColor } from "@/lib/utils";
+import { LandingNavAuth } from "@/components/landing-nav-auth";
 
 export default async function LandingPage() {
   const supabase = await createClient();
@@ -71,25 +72,11 @@ export default async function LandingPage() {
             <img src="/club/title-club-logo_mockup-dark.webp" alt="The Title" className="w-20 h-auto object-contain" />
           </div>
           <div className="flex items-center gap-4">
-            {isSignedIn ? (
-              <>
-              <Link href={memberEntryHref} className="btn-primary font-semibold px-5 py-2.5 rounded-lg">
-                {memberEntryLabel}
-              </Link>
-              <Link href="/logout" className="btn-outline-primary text-sm">
-                Log out
-              </Link>
-              </>
-            ) : (
-              <>
-                <Link href="/login" className="text-sm text-ink-light hover:text-primary-dark transition-colors font-medium">
-                  Sign In
-                </Link>
-                <Link href="/register" className="btn-primary font-semibold px-5 py-2.5 rounded-lg">
-                  Become a Member
-                </Link>
-              </>
-            )}
+            <LandingNavAuth
+              isSignedIn={isSignedIn}
+              memberEntryHref={memberEntryHref}
+              memberEntryLabel={memberEntryLabel}
+            />
           </div>
         </div>
       </nav>
