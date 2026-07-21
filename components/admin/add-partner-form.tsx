@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { CreatePartnerInput } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { ActiveToggle } from "./active-toggle";
 import { ImageUploadField } from "./image-upload-field";
 
 type Props = {
@@ -131,26 +132,13 @@ export function AddPartnerForm({
               className="mt-1.5 w-full rounded-lg border border-cream-300 bg-cream-50 px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
             />
           </label>
-          <div className="flex gap-4">
-            <label className="flex items-center gap-2 text-sm text-forest">
-              <input
-                type="checkbox"
-                checked={form.isActive ?? true}
-                onChange={(e) => set("isActive", e.target.checked)}
-                className="rounded border-cream-300"
-              />
-              Active
-            </label>
-            <label className="flex items-center gap-2 text-sm text-forest">
-              <span className="text-ink-muted text-xs">Sort</span>
-              <input
-                type="number"
-                value={form.sortOrder ?? 0}
-                onChange={(e) => set("sortOrder", Number(e.target.value))}
-                className="w-20 rounded-lg border border-cream-300 bg-cream-50 px-2 py-1 text-sm"
-              />
-            </label>
-          </div>
+          <label className="self-end pb-2 flex flex-col gap-3">
+            <span className="text-ink-muted text-xs font-semibold tracking-wid">Set this partner as active or inactive also effect it&apos;s privileges.</span>
+            <ActiveToggle
+              checked={form.isActive ?? true}
+              onChange={(checked) => set("isActive", checked)}
+            />
+          </label>
         </div>
         <div className="px-6 py-4 border-t border-cream-200 flex gap-3 justify-end">
           <button
