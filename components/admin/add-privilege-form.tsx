@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { fetchAllPrivilegeCategories } from "@/lib/supabase/data";
 import type { CreatePrivilegeInput, Privilege, PrivilegeCategory } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { ActiveToggle } from "./active-toggle";
 import { ImageUploadField } from "./image-upload-field";
 
 const EMPTY: CreatePrivilegeInput = {
@@ -260,24 +261,11 @@ export function AddPrivilegeForm({
               </select>
             </label>
           )}
-          <label className={cn("flex items-end gap-2 pb-2 text-sm text-forest", hideCodeMode && "sm:col-span-2")}>
-            <input
-              type="checkbox"
-              checked={form.isActive ?? true}
-              onChange={(e) => set("isActive", e.target.checked)}
-              className="rounded border-cream-300"
-            />
-            Active
-          </label>
-          <label className="block">
-            <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">Sort order</span>
-            <input
-              type="number"
-              value={form.sortOrder ?? 0}
-              onChange={(e) => set("sortOrder", Number(e.target.value))}
-              className="mt-1.5 w-full rounded-lg border border-cream-300 bg-cream-50 px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-            />
-          </label>
+          <ActiveToggle
+            className={cn("self-end pb-2", hideCodeMode && "sm:col-span-2")}
+            checked={form.isActive ?? true}
+            onChange={(checked) => set("isActive", checked)}
+          />
         </div>
         <div className="px-6 py-4 border-t border-cream-200 flex gap-3 justify-end">
           <button
