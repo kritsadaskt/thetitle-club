@@ -11,6 +11,7 @@ import {
 import { PUBLIC_PRIVILEGE_SELECT } from "@/lib/supabase/queries";
 import { categoryLabel, categoryColor } from "@/lib/utils";
 import { LandingNavAuth } from "@/components/landing-nav-auth";
+import HowToJoinSection from "@/components/ui/howtojoinsection";
 
 export default async function LandingPage() {
   const supabase = await createClient();
@@ -156,7 +157,7 @@ export default async function LandingPage() {
       </section>
 
       {/* ─── PRIVILEGES (Ivory) ───────────────────── */}
-      <section className="py-28 bg-cream-200">
+      <section className="py-20 bg-cream-200">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
             <p className="section-eyebrow text-primary-dark mb-4">Member Benefits</p>
@@ -211,6 +212,8 @@ export default async function LandingPage() {
           </div>
         </div>
       </section>
+
+      <HowToJoinSection />
 
       {/* ─── CTA (Midnight Green) ─────────────────── */}
       <section className="py-28 relative overflow-hidden">
