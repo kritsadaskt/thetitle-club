@@ -6,6 +6,7 @@ import type { Privilege, PrivilegeCategory } from "@/lib/types";
 import { fetchActivePrivileges, fetchAllPrivilegeCategories } from "@/lib/supabase/data";
 import { categoryLabel, categoryColor } from "@/lib/utils";
 import { ChevronRight, Search } from "lucide-react";
+import Image from "next/image";
 
 export default function PrivilegesPage() {
   const [cat, setCat] = useState<number | "all">("all");
@@ -58,7 +59,7 @@ export default function PrivilegesPage() {
     <div className="p-6 lg:p-10 max-w-5xl mx-auto">
       <h1 className="text-2xl font-light text-forest mb-1">Exclusive Privileges</h1>
       <p className="text-ink-muted text-sm mb-8">
-        {list.filter((p) => p.isActive).length} benefits available for THE TITLE members
+        {list.filter((p) => p.isActive).length} benefits available for THE TITLE members <a href="#how_to_redeem_img" className="underline">How to Redeem ?</a>
       </p>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-8">
@@ -153,6 +154,9 @@ export default function PrivilegesPage() {
           ))}
         </div>
       )}
+
+      <div className="h-12" />
+      <Image src="/club/how-to-redeem_all.webp" id="how_to_redeem_img" alt="How to Redeem" width={1000} height={1000} className="w-full rounded-xl" />
     </div>
   );
 }
