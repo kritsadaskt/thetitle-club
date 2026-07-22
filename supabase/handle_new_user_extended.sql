@@ -20,6 +20,7 @@ begin
     whatsapp,
     resident_status,
     project_name,
+    house_number,
     status
   )
   values (
@@ -45,6 +46,7 @@ begin
       else null
     end,
     nullif(trim(new.raw_user_meta_data->>'project_name'), ''),
+    nullif(trim(new.raw_user_meta_data->>'house_number'), ''),
     'pending_approval'
   );
   return new;
