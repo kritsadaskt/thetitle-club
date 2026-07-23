@@ -71,7 +71,7 @@ export default function PrivilegeDetailPage() {
       return;
     }
     setClaimState("claimed");
-    router.push("/my-codes");
+    router.push(`/privileges/${priv.id}/redeem`);
   };
 
   if (priv === undefined) {
@@ -192,11 +192,11 @@ export default function PrivilegeDetailPage() {
           </div>
         ) : claimState === "claimed" ? (
           <Link
-            href="/my-codes"
+            href={`/privileges/${priv.id}/redeem`}
             className="btn-primary w-full text-center text-base flex items-center justify-center gap-2 py-4 shadow-primary-md"
           >
-            <Tag size={18} />
-            Claim this privilege
+            <Ticket size={18} />
+            Use This Privilege
           </Link>
         ) : claimState === "redeemed" ? (
           <button

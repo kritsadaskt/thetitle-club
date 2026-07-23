@@ -1,25 +1,36 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { notFound, useParams } from "next/navigation";
+import { notFound, useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { fetchPrivilegeById } from "@/lib/supabase/data";
+import {
+  fetchMemberPromoCodeForPrivilege,
+  fetchPrivilegeById,
+  redeemPromoCode,
+} from "@/lib/supabase/data";
 import { createClient } from "@/lib/supabase/client";
-import type { Privilege } from "@/lib/types";
+import type { MemberPromoCode, Privilege } from "@/lib/types";
 import { QRCodeCanvas } from "qrcode.react";
 import Link from "next/link";
-import { ArrowLeft, QrCode, ShieldCheck, Type } from "lucide-react";
+import { ArrowLeft, Clock, QrCode, ShieldCheck, Tag, Type } from "lucide-react";
 import { buildRedeemQrValue } from "@/lib/qr";
+import { formatCountdown } from "@/lib/promo-code-import";
 import { cn } from "@/lib/utils";
 
 type DisplayMode = "qr" | "text";
 
 export default function RedeemPage() {
   const params = useParams();
+  const router = useRouter();
   const id = typeof params?.id === "string" ? params.id : "";
   const { member } = useAuth();
   const [priv, setPriv] = useState<Privilege | null | undefined>(undefined);
+  const [memberCode, setMemberCode] = useState<MemberPromoCode | null | undefined>(undefined);
   const [displayMode, setDisplayMode] = useState<DisplayMode>("qr");
+  const [countdown, setCountdown] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [redeeming, setRedeeming] = useState(false);
+  const [redeemError, setRedeemError] = useState<string | null>(null);
   const loggedRef = useRef(false);
 
   useEffect(() => {
@@ -27,15 +38,31 @@ export default function RedeemPage() {
     let cancelled = false;
     void (async () => {
       const row = await fetchPrivilegeById(id);
-      if (!cancelled) setPriv(row);
+      if (cancelled) return;
+      setPriv(row);
+
+      if (!row) return;
+
+      if (row.codeMode === "unique_pool") {
+        const code = await fetchMemberPromoCodeForPrivilege(id);
+        if (cancelled) return;
+        if (!code || code.status !== "claimed") {
+          router.replace(`/privileges/${id}`);
+          return;
+        }
+        setMemberCode(code);
+      } else {
+        setMemberCode(null);
+      }
     })();
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [id, router]);
 
   useEffect(() => {
     if (!member || !priv || loggedRef.current) return;
+    if (priv.codeMode === "unique_pool" && memberCode === undefined) return;
     loggedRef.current = true;
     const supabase = createClient();
     void supabase.from("redemption_logs").insert({
@@ -43,9 +70,20 @@ export default function RedeemPage() {
       privilege_id: priv.id,
       method: "qr",
     });
-  }, [member, priv]);
+  }, [member, priv, memberCode]);
 
-  if (priv === undefined) {
+  const isUniquePool = priv?.codeMode === "unique_pool";
+  const expiresAt = memberCode?.expiresAt;
+
+  useEffect(() => {
+    if (!isUniquePool || !expiresAt) return;
+    const tick = () => setCountdown(formatCountdown(expiresAt));
+    tick();
+    const timer = setInterval(tick, 1000);
+    return () => clearInterval(timer);
+  }, [isUniquePool, expiresAt]);
+
+  if (priv === undefined || (priv?.codeMode === "unique_pool" && memberCode === undefined)) {
     return (
       <div className="fixed inset-0 bg-forest-900 z-50 flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
@@ -55,7 +93,25 @@ export default function RedeemPage() {
 
   if (!priv || !member) return notFound();
 
-  const qrValue = buildRedeemQrValue(priv.privilegeCode);
+  const codeValue =
+    priv.codeMode === "unique_pool" && memberCode
+      ? memberCode.code
+      : priv.privilegeCode;
+  const qrValue = buildRedeemQrValue(codeValue);
+
+  const handleRedeem = async () => {
+    if (!memberCode) return;
+    setRedeeming(true);
+    setRedeemError(null);
+    const res = await redeemPromoCode(memberCode.id);
+    setRedeeming(false);
+    if (!res.ok) {
+      setRedeemError(res.error);
+      return;
+    }
+    setConfirmOpen(false);
+    router.push("/my-codes");
+  };
 
   return (
     <div className="fixed inset-0 bg-forest-900 z-50 flex flex-col">
@@ -81,9 +137,18 @@ export default function RedeemPage() {
         <p className="text-primary font-semibold text-xl">{priv.partnerName}</p>
         <p className="text-white/50 text-sm mb-5">{priv.title}</p>
 
-        <div className="bg-primary/15 border border-primary/30 rounded-full px-7 py-2.5 mb-6 shadow-primary-sm">
+        <div className="bg-primary/15 border border-primary/30 rounded-full px-7 py-2.5 mb-5 shadow-primary-sm">
           <p className="text-primary font-bold tracking-widest">{priv.discountLabel}</p>
         </div>
+
+        {isUniquePool && expiresAt && (
+          <div className="mb-5 flex items-center gap-2 text-amber-200 text-xs bg-amber-500/10 border border-amber-400/30 rounded-full px-4 py-2">
+            <Clock size={13} />
+            <span>
+              Expires in <strong className="font-mono">{countdown}</strong>
+            </span>
+          </div>
+        )}
 
         {qrValue && (
           <div
@@ -96,21 +161,21 @@ export default function RedeemPage() {
                 { id: "qr" as const, label: "QR Code", icon: QrCode },
                 { id: "text" as const, label: "Text", icon: Type },
               ] as const
-            ).map(({ id, label, icon: Icon }) => (
+            ).map(({ id: modeId, label, icon: Icon }) => (
               <button
-                key={id}
+                key={modeId}
                 type="button"
                 role="tab"
-                aria-selected={displayMode === id}
-                onClick={() => setDisplayMode(id)}
+                aria-selected={displayMode === modeId}
+                onClick={() => setDisplayMode(modeId)}
                 className={cn(
                   "flex items-center gap-2 px-5 py-2 rounded-full text-xs font-medium transition-all",
-                  displayMode === id
+                  displayMode === modeId
                     ? "bg-primary text-forest-900 shadow-primary-sm"
                     : "text-white/50 hover:text-white/80"
                 )}
               >
-                <Icon size={14} strokeWidth={displayMode === id ? 2 : 1.5} />
+                <Icon size={14} strokeWidth={displayMode === modeId ? 2 : 1.5} />
                 {label}
               </button>
             ))}
@@ -150,7 +215,69 @@ export default function RedeemPage() {
             ? "Show this QR to partner staff to scan your privilege code."
             : "Tell partner staff this code or show this screen for manual entry."}
         </p>
+
+        {isUniquePool && memberCode && (
+          <div className="mt-8 w-full max-w-sm space-y-3">
+            {redeemError && (
+              <p className="text-red-300 text-xs">{redeemError}</p>
+            )}
+            <button
+              type="button"
+              onClick={() => setConfirmOpen(true)}
+              className="btn-primary w-full py-3.5 text-sm font-semibold"
+            >
+              <span className="text-xs font-normal opacity-80">(For staff)</span> Mark as Used
+            </button>
+            <Link
+              href="/my-codes"
+              className="flex items-center justify-center gap-2 text-white/45 hover:text-white/75 text-sm transition-colors py-2"
+            >
+              <Tag size={14} />
+              Back to My Codes
+            </Link>
+          </div>
+        )}
       </div>
+
+      {confirmOpen && memberCode && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-forest-900/70 backdrop-blur-sm"
+          onClick={() => {
+            if (!redeeming) setConfirmOpen(false);
+          }}
+          role="presentation"
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-cream-300"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h4 className="text-forest font-semibold text-lg mb-2">Confirm Use</h4>
+            <p className="text-ink-light text-sm mb-6">
+              Have you used this privilege at the partner? The code{" "}
+              <span className="font-mono font-semibold text-forest">{memberCode.code}</span> cannot
+              be used again.
+            </p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setConfirmOpen(false)}
+                disabled={redeeming}
+                className="flex-1 rounded-xl border border-cream-300 py-2.5 text-sm text-ink-light hover:bg-cream-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={redeeming}
+                onClick={() => void handleRedeem()}
+                className="flex-1 rounded-xl bg-forest-900 py-2.5 text-sm text-cream-100 hover:bg-forest-800 disabled:opacity-50"
+              >
+                {redeeming ? "Confirming…" : "Confirm"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
