@@ -132,14 +132,14 @@ function PromoCodeCard({
         {isActive && (
           <>
             <p className="text-ink-muted text-xs mb-3 text-center">
-              Show this code to partner staff, then confirm once you have used the privilege.
+              Show this code to partner staff, then confirm once you have used the privilege. Code will be returned to the pool if not used within 24 hours.
             </p>
             <button
               type="button"
               onClick={() => setConfirmOpen(true)}
               className="btn-primary w-full py-3 text-sm"
             >
-              ใช้สิทธิ์เรียบร้อย
+              <span className="text-xs">(For staff)</span> <b>Mark as Used</b>
             </button>
           </>
         )}
@@ -161,10 +161,9 @@ function PromoCodeCard({
             className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-cream-300"
             onClick={(e) => e.stopPropagation()}
           >
-            <h4 className="text-forest font-semibold text-lg mb-2">ยืนยันการใช้สิทธิ์</h4>
+            <h4 className="text-forest font-semibold text-lg mb-2">Confirm Use</h4>
             <p className="text-ink-light text-sm mb-6">
-              คุณใช้สิทธิ์นี้ที่ร้านแล้วใช่หรือไม่? โค้ด{" "}
-              <span className="font-mono font-semibold text-forest">{item.code}</span> จะไม่สามารถใช้ซ้ำได้
+              Have you used this privilege at the partner? The code <span className="font-mono font-semibold text-forest">{item.code}</span> cannot be used again.
             </p>
             <div className="flex gap-3">
               <button
@@ -172,7 +171,7 @@ function PromoCodeCard({
                 onClick={() => setConfirmOpen(false)}
                 className="flex-1 rounded-xl border border-cream-300 py-2.5 text-sm text-ink-light hover:bg-cream-50"
               >
-                ยกเลิก
+                Cancel
               </button>
               <button
                 type="button"
@@ -180,7 +179,7 @@ function PromoCodeCard({
                 onClick={() => void handleRedeem()}
                 className="flex-1 rounded-xl bg-forest-900 py-2.5 text-sm text-cream-100 hover:bg-forest-800 disabled:opacity-50"
               >
-                {redeeming ? "กำลังยืนยัน…" : "ยืนยัน"}
+                {redeeming ? "Confirming…" : "Confirm"}
               </button>
             </div>
           </div>
