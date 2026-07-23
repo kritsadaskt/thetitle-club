@@ -202,11 +202,11 @@ export default async function LandingPage() {
           <div className="text-center mt-10">
             {isSignedIn ? (
               <Link href="/privileges" className="btn-outline-primary text-sm">
-                View All {privileges.length} Privileges →
+                View All Privileges →
               </Link>
             ) : (
               <Link href="/register" className="btn-outline-primary text-sm">
-                Join to See All {privileges.length} Privileges →
+                Join to See All Privileges →
               </Link>
             )}
           </div>
