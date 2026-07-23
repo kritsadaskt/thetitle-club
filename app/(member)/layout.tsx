@@ -33,7 +33,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
   );
 
   return (
-    <div className="min-h-screen bg-cream-100 flex">
+    <div className="min-h-screen bg-cream-100 flex overflow-x-hidden">
 
       {/* ── SIDEBAR desktop (Midnight Green) ── */}
       <aside className="hidden lg:flex flex-col w-60 bg-deep-blue fixed inset-y-0 left-0 z-30" style={{ backgroundImage: "url('/club/club-bg.webp')" }}>
@@ -123,7 +123,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
       )}
 
       {/* ── MAIN CONTENT (Cream) ── */}
-      <main className="flex-1 lg:ml-60 pt-14 lg:pt-0 min-h-screen">
+      <main className="flex-1 lg:ml-60 pt-14 lg:pt-0 min-h-screen min-w-0 overflow-x-hidden">
         {children}
       </main>
     </div>
