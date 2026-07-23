@@ -71,7 +71,7 @@ export default function PrivilegeDetailPage() {
       return;
     }
     setClaimState("claimed");
-    router.push("/my-codes");
+    router.push(`/privileges/${priv.id}/redeem`);
   };
 
   if (priv === undefined) {
@@ -192,11 +192,11 @@ export default function PrivilegeDetailPage() {
           </div>
         ) : claimState === "claimed" ? (
           <Link
-            href="/my-codes"
+            href={`/privileges/${priv.id}/redeem`}
             className="btn-primary w-full text-center text-base flex items-center justify-center gap-2 py-4 shadow-primary-md"
           >
-            <Tag size={18} />
-            My Codes
+            <Ticket size={18} />
+            Use This Privilege
           </Link>
         ) : claimState === "redeemed" ? (
           <button
@@ -208,7 +208,7 @@ export default function PrivilegeDetailPage() {
             )}
           >
             <CheckCircle size={18} />
-            ใช้สิทธิ์แล้ว
+            Privilege used
           </button>
         ) : claimState === "sold_out" ? (
           <button
@@ -219,7 +219,7 @@ export default function PrivilegeDetailPage() {
               "bg-cream-200 text-ink-muted border border-cream-300 cursor-not-allowed"
             )}
           >
-            โค้ดหมดแล้ว
+            No codes available
           </button>
         ) : (
           <>
@@ -234,12 +234,12 @@ export default function PrivilegeDetailPage() {
             >
               {claiming ? (
                 <>
-                  <Loader2 size={18} className="animate-spin" /> กำลังรับโค้ด…
+                  <Loader2 size={18} className="animate-spin" /> Claiming…
                 </>
               ) : (
                 <>
                   <Tag size={18} />
-                  รับโค้ดโปรโมชัน
+                  Claim This Privilege
                 </>
               )}
             </button>
