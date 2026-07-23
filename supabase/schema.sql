@@ -54,6 +54,7 @@ create table if not exists profiles (
   -- Property
   resident_status  resident_status,
   project_name     text,
+  house_number     text,
 
   -- Membership
   status           member_status not null default 'pending_verification',

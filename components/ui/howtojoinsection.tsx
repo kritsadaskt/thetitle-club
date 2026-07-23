@@ -69,7 +69,7 @@ function HowToJoinSection() {
               </div>
             </div>
             <div className="col-span-1">
-              <Image src="/club/how-to-redeem-3.webp" alt="How to Redeem" width={1000} height={1000} />
+              <Image src="/club/how-to-redeem-4.webp" alt="How to Redeem" width={1000} height={1000} />
               <div className="text-center text-white text-sm mt-4">
                 Choose Your Preferred<br />
                 Privilege and Tap<br />
@@ -77,7 +77,7 @@ function HowToJoinSection() {
               </div>
             </div>
             <div className="col-span-1">
-              <Image src="/club/how-to-redeem-4.webp" alt="How to Redeem" width={1000} height={1000} />
+              <Image src="/club/how-to-redeem-3.webp" alt="How to Redeem" width={1000} height={1000} />
               <div className="text-center text-white text-sm mt-4">
               <span className="text-lime-400">Show Your QR Code or Privilege Code</span><br />
               to the Merchant<br />

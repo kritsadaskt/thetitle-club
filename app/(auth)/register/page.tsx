@@ -134,18 +134,50 @@ function Field({
   label,
   children,
   error,
+  id,
 }: {
   label: string;
   children: React.ReactNode;
   error?: string;
+  id?: string;
 }) {
   return (
-    <div>
-      <label className="label-text">{label}</label>
+    <div id={id ? `field-${id}` : undefined}>
+      <label className="label-text" htmlFor={id}>{label}</label>
       {children}
       {error && <p className="text-red-600 text-xs mt-1">{error}</p>}
     </div>
   );
+}
+
+const FIELD_ORDER = [
+  "fullName",
+  "gender",
+  "nationality",
+  "email",
+  "password",
+  "confirmPassword",
+  "phone",
+  "whatsapp",
+  "residentStatus",
+  "projectName",
+  "houseNumber",
+  "consent",
+] as const;
+
+function focusFirstInvalidField(errs: Record<string, string>) {
+  const first = FIELD_ORDER.find((key) => errs[key]);
+  if (!first) return;
+
+  const wrapper = document.getElementById(`field-${first}`);
+  wrapper?.scrollIntoView({ behavior: "smooth", block: "center" });
+
+  window.setTimeout(() => {
+    const control =
+      document.getElementById(first) ??
+      wrapper?.querySelector<HTMLElement>("input, textarea, select, [tabindex]");
+    control?.focus({ preventScroll: true });
+  }, 300);
 }
 
 /* ── Component ── */
@@ -153,9 +185,9 @@ export default function RegisterPage() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading]   = useState(false);
   const [form, setForm] = useState({
-    fullName: "", gender: "", age: "", nationality: "",
+    fullName: "", gender: "", nationality: "",
     email: "", password: "", confirmPassword: "", phone: "", whatsapp: "",
-    residentStatus: "", projectName: "", consent: false,
+    residentStatus: "", projectName: "", houseNumber: "", consent: false,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitError, setSubmitError] = useState("");
@@ -166,15 +198,14 @@ export default function RegisterPage() {
     const e: Record<string, string> = {};
     if (!form.fullName.trim())        e.fullName       = "Full name is required";
     if (!form.gender)                  e.gender          = "Please select gender";
-    if (!form.age || +form.age < 18)   e.age             = "Must be 18 or older";
     if (!form.nationality)             e.nationality     = "Please select nationality";
     if (!form.email.includes("@"))     e.email           = "Valid email required";
     if (form.password.length < 8)      e.password        = "Password must be at least 8 characters";
     if (form.password !== form.confirmPassword) e.confirmPassword = "Passwords do not match";
-    if (!form.phone.trim())            e.phone           = "Phone number required";
     if (!form.whatsapp.trim())         e.whatsapp        = "WhatsApp number required";
     if (!form.residentStatus)          e.residentStatus  = "Please select status";
     if (!form.projectName)             e.projectName     = "Please select project";
+    if (!form.houseNumber.trim())      e.houseNumber     = "House number is required";
     if (!form.consent)                 e.consent         = "Please accept the terms";
     return e;
   }
@@ -182,7 +213,11 @@ export default function RegisterPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const errs = validate();
-    if (Object.keys(errs).length > 0) { setErrors(errs); return; }
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      focusFirstInvalidField(errs);
+      return;
+    }
     setErrors({});
     setSubmitError("");
     setLoading(true);
@@ -191,12 +226,12 @@ export default function RegisterPage() {
     const meta = {
       full_name: form.fullName.trim(),
       gender: form.gender,
-      age: form.age,
       nationality: form.nationality,
       phone: form.phone.trim(),
       whatsapp: form.whatsapp.trim(),
       resident_status: form.residentStatus,
       project_name: form.projectName,
+      house_number: form.houseNumber.trim(),
     };
     const { data, error } = await supabase.auth.signUp({
       email: form.email.trim(),
@@ -213,38 +248,40 @@ export default function RegisterPage() {
       setLoading(false);
       return;
     }
-    if (!data.session && !autoApprove) {
+    if (!data.session) {
       setSubmitError(
         "Registration could not be completed. Disable “Confirm email” in Supabase Auth settings (Authentication → Providers → Email)."
       );
       setLoading(false);
       return;
     }
-    if (data.session) {
-      const { error: upErr } = await supabase.from("profiles").update({
-        full_name: meta.full_name,
-        email: form.email.trim(),
-        gender: meta.gender as "male" | "female" | "other",
-        age: parseInt(form.age, 10),
-        nationality: meta.nationality,
-        phone: meta.phone,
-        whatsapp: meta.whatsapp,
-        resident_status: meta.resident_status as "owner" | "tenant",
-        project_name: meta.project_name,
-        status: autoApprove ? "active" : "pending_approval",
-        ...(autoApprove
-          ? { approved_at: new Date().toISOString() }
-          : {}),
-      }).eq("id", data.user.id);
-      if (upErr) {
-        setSubmitError(upErr.message);
-        setLoading(false);
-        return;
-      }
-      if (!autoApprove) {
-        await supabase.auth.signOut();
+    const approvedAt = new Date().toISOString();
+    const { error: upErr } = await supabase.from("profiles").update({
+      full_name: meta.full_name,
+      email: form.email.trim(),
+      gender: meta.gender as "male" | "female" | "other",
+      nationality: meta.nationality,
+      phone: meta.phone || null,
+      whatsapp: meta.whatsapp,
+      resident_status: meta.resident_status as "owner" | "tenant",
+      project_name: meta.project_name,
+      house_number: meta.house_number,
+      status: autoApprove ? "active" : "pending_approval",
+      ...(autoApprove ? { approved_at: approvedAt } : {}),
+    }).eq("id", data.user.id);
+    if (upErr) {
+      setSubmitError(upErr.message);
+      setLoading(false);
+      return;
+    }
+    if (autoApprove) {
+      try {
+        await fetch("/club/api/members/welcome", { method: "POST" });
+      } catch {
+        // Registration succeeded; welcome email is best-effort
       }
     }
+    await supabase.auth.signOut();
     setLoading(false);
     setSubmitted(true);
   }
@@ -310,16 +347,17 @@ export default function RegisterPage() {
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-              <Field label="Full Name *" error={errors.fullName}>
-                <input className="input-field" placeholder="e.g. John Smith"
+              <Field label="Full Name *" error={errors.fullName} id="fullName">
+                <input id="fullName" className="input-field" placeholder="e.g. John Smith"
                   value={form.fullName} onChange={(e) => set("fullName", e.target.value)} />
               </Field>
 
               <div /> {/* spacer */}
 
-              <Field label="Gender *" error={errors.gender}>
+              <Field label="Gender *" error={errors.gender} id="gender">
                 <Select<Opt>
                   instanceId="gender"
+                  inputId="gender"
                   options={GENDER_OPTIONS}
                   value={findOpt(GENDER_OPTIONS, form.gender)}
                   onChange={(opt) => set("gender", opt?.value ?? "")}
@@ -329,15 +367,11 @@ export default function RegisterPage() {
                 />
               </Field>
 
-              <Field label="Age *" error={errors.age}>
-                <input className="input-field" type="number" min="18" max="120" placeholder="e.g. 35"
-                  value={form.age} onChange={(e) => set("age", e.target.value)} />
-              </Field>
-
               <div className="sm:col-span-2">
-                <Field label="Nationality *" error={errors.nationality}>
+                <Field label="Nationality *" error={errors.nationality} id="nationality">
                   <Select<Opt>
                     instanceId="nationality"
+                    inputId="nationality"
                     options={NATIONALITY_OPTIONS}
                     value={findOpt(NATIONALITY_OPTIONS, form.nationality)}
                     onChange={(opt) => set("nationality", opt?.value ?? "")}
@@ -360,14 +394,14 @@ export default function RegisterPage() {
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="sm:col-span-2">
-                <Field label="Email Address *" error={errors.email}>
-                  <input className="input-field" type="email" placeholder="you@example.com"
+                <Field label="Email Address *" error={errors.email} id="email">
+                  <input id="email" className="input-field" type="email" placeholder="you@example.com"
                     value={form.email} onChange={(e) => set("email", e.target.value)} />
                 </Field>
               </div>
-              <Field label="Password *" error={errors.password}>
+              <Field label="Password *" error={errors.password} id="password">
                 <div className="relative">
-                  <input className="input-field pr-11" type={showPw ? "text" : "password"}
+                  <input id="password" className="input-field pr-11" type={showPw ? "text" : "password"}
                     autoComplete="new-password" placeholder="At least 8 characters"
                     value={form.password} onChange={(e) => set("password", e.target.value)} />
                   <button type="button" tabIndex={-1}
@@ -377,9 +411,9 @@ export default function RegisterPage() {
                   </button>
                 </div>
               </Field>
-              <Field label="Confirm Password *" error={errors.confirmPassword}>
+              <Field label="Confirm Password *" error={errors.confirmPassword} id="confirmPassword">
                 <div className="relative">
-                  <input className="input-field pr-11" type={showPw2 ? "text" : "password"}
+                  <input id="confirmPassword" className="input-field pr-11" type={showPw2 ? "text" : "password"}
                     autoComplete="new-password" placeholder="Repeat password"
                     value={form.confirmPassword} onChange={(e) => set("confirmPassword", e.target.value)} />
                   <button type="button" tabIndex={-1}
@@ -389,12 +423,12 @@ export default function RegisterPage() {
                   </button>
                 </div>
               </Field>
-              <Field label="Phone Number *" error={errors.phone}>
-                <input className="input-field" type="tel" placeholder="+66 8x xxx xxxx"
+              <Field label="Phone Number" error={errors.phone} id="phone">
+                <input id="phone" className="input-field" type="tel" placeholder="+66 8x xxx xxxx"
                   value={form.phone} onChange={(e) => set("phone", e.target.value)} />
               </Field>
-              <Field label="WhatsApp Number *" error={errors.whatsapp}>
-                <input className="input-field" type="tel" placeholder="+7 999 xxx xx xx"
+              <Field label="WhatsApp Number *" error={errors.whatsapp} id="whatsapp">
+                <input id="whatsapp" className="input-field" type="tel" placeholder="+7 999 xxx xx xx"
                   value={form.whatsapp} onChange={(e) => set("whatsapp", e.target.value)} />
               </Field>
             </div>
@@ -408,9 +442,10 @@ export default function RegisterPage() {
               <span className="w-5 h-px bg-primary shrink-0" />Property Details
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Field label="Resident Status *" error={errors.residentStatus}>
+              <Field label="Resident Status *" error={errors.residentStatus} id="residentStatus">
                 <Select<Opt>
                   instanceId="residentStatus"
+                  inputId="residentStatus"
                   options={RESIDENT_OPTIONS}
                   value={findOpt(RESIDENT_OPTIONS, form.residentStatus)}
                   onChange={(opt) => set("residentStatus", opt?.value ?? "")}
@@ -419,9 +454,10 @@ export default function RegisterPage() {
                   isSearchable={false}
                 />
               </Field>
-              <Field label="Project / Property *" error={errors.projectName}>
+              <Field label="Project / Property *" error={errors.projectName} id="projectName">
                 <Select<Opt>
                   instanceId="projectName"
+                  inputId="projectName"
                   options={PROJECT_OPTIONS}
                   value={findOpt(PROJECT_OPTIONS, form.projectName)}
                   onChange={(opt) => set("projectName", opt?.value ?? "")}
@@ -430,15 +466,21 @@ export default function RegisterPage() {
                   isSearchable={false}
                 />
               </Field>
+              <div className="sm:col-span-2">
+                <Field label="House Number *" error={errors.houseNumber} id="houseNumber">
+                  <input id="houseNumber" className="input-field" type="text" placeholder="e.g. A-12"
+                    value={form.houseNumber} onChange={(e) => set("houseNumber", e.target.value)} />
+                </Field>
+              </div>
             </div>
           </div>
 
           <div className="divider" />
 
           {/* ── Consent ── */}
-          <div>
+          <div id="field-consent">
             <label className="flex items-start gap-3 cursor-pointer">
-              <input type="checkbox" checked={form.consent}
+              <input id="consent" type="checkbox" checked={form.consent}
                 onChange={(e) => set("consent", e.target.checked)}
                 className="mt-0.5 accent-forest-700 w-4 h-4" />
               <span className="text-sm text-ink-light leading-relaxed">
