@@ -110,6 +110,12 @@ async function loadMemberFromUser(
   return { member, isAdmin: profile.is_admin };
 }
 
+/** Recovery session must stay alive so the user can set a new password. */
+function isPasswordResetPath(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.location.pathname.endsWith("/reset-password");
+}
+
 /** Applies session to React state. Signs out if profile missing or member not allowed. */
 async function syncAuthState(
   supabase: ReturnType<typeof createClient>,
@@ -120,6 +126,11 @@ async function syncAuthState(
     data: { session },
   } = await supabase.auth.getSession();
   if (!session?.user) {
+    setMember(null);
+    setIsAdmin(false);
+    return;
+  }
+  if (isPasswordResetPath()) {
     setMember(null);
     setIsAdmin(false);
     return;
@@ -163,7 +174,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(() => {
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setMember(null);
+        setIsAdmin(false);
+        setIsLoading(false);
+        return;
+      }
       void (async () => {
         await syncAuthState(supabase, setMember, setIsAdmin);
         setIsLoading(false);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
@@ -14,6 +14,12 @@ export default function LoginPage() {
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resetStatus, setResetStatus] = useState<"success" | "invalid" | null>(null);
+
+  useEffect(() => {
+    const reset = new URLSearchParams(window.location.search).get("reset");
+    if (reset === "success" || reset === "invalid") setResetStatus(reset);
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -64,6 +70,21 @@ export default function LoginPage() {
           <h2 className="text-3xl font-light text-forest mb-2">Welcome back</h2>
           <p className="text-ink-light text-sm mb-8">Sign in to your membership account</p>
 
+          {resetStatus === "success" && (
+            <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm px-4 py-3 rounded-xl mb-6">
+              Your password has been updated. You can sign in with your new password.
+            </div>
+          )}
+          {resetStatus === "invalid" && (
+            <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl mb-6">
+              This reset link is invalid or has expired.{" "}
+              <Link href="/forgot-password" className="font-medium underline underline-offset-2">
+                Request a new one
+              </Link>
+              .
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="label-text">Email Address</label>
@@ -72,7 +93,15 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="label-text">Password</label>
+              <div className="flex items-center justify-between gap-3 mb-1.5">
+                <label className="label-text mb-0">Password</label>
+                <Link
+                  href="/forgot-password"
+                  className="text-xs text-primary-dark font-medium hover:text-primary transition-colors"
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <div className="relative">
                 <input type={showPw ? "text" : "password"} className="input-field pr-12"
                   placeholder="••••••••" value={password}
