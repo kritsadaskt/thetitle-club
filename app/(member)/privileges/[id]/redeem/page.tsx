@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { notFound, useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -8,7 +8,6 @@ import {
   fetchPrivilegeById,
   redeemPromoCode,
 } from "@/lib/supabase/data";
-import { createClient } from "@/lib/supabase/client";
 import type { MemberPromoCode, Privilege } from "@/lib/types";
 import { QRCodeCanvas } from "qrcode.react";
 import Link from "next/link";
@@ -31,7 +30,6 @@ export default function RedeemPage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [redeeming, setRedeeming] = useState(false);
   const [redeemError, setRedeemError] = useState<string | null>(null);
-  const loggedRef = useRef(false);
 
   useEffect(() => {
     if (!id) return;
@@ -59,18 +57,6 @@ export default function RedeemPage() {
       cancelled = true;
     };
   }, [id, router]);
-
-  useEffect(() => {
-    if (!member || !priv || loggedRef.current) return;
-    if (priv.codeMode === "unique_pool" && memberCode === undefined) return;
-    loggedRef.current = true;
-    const supabase = createClient();
-    void supabase.from("redemption_logs").insert({
-      member_id: member.id,
-      privilege_id: priv.id,
-      method: "qr",
-    });
-  }, [member, priv, memberCode]);
 
   const isUniquePool = priv?.codeMode === "unique_pool";
   const expiresAt = memberCode?.expiresAt;
@@ -103,7 +89,9 @@ export default function RedeemPage() {
     if (!memberCode) return;
     setRedeeming(true);
     setRedeemError(null);
-    const res = await redeemPromoCode(memberCode.id);
+    const res = await redeemPromoCode(memberCode.id, {
+      method: displayMode === "text" ? "visual" : "qr",
+    });
     setRedeeming(false);
     if (!res.ok) {
       setRedeemError(res.error);
