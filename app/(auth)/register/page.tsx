@@ -234,7 +234,7 @@ export default function RegisterPage() {
       whatsapp: form.whatsapp.trim(),
       is_agent: form.isAgent,
       resident_status: form.isAgent ? null : form.residentStatus,
-      project_name: form.isAgent ? null : form.projectName,
+      project_name: form.isAgent ? "AGENT" : form.projectName,
       house_number: form.isAgent ? null : form.houseNumber.trim(),
     };
     const { data, error } = await supabase.auth.signUp({
