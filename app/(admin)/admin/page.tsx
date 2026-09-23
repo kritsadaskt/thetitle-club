@@ -8,13 +8,32 @@ import { fetchAllPartners, fetchAllPrivileges } from "@/lib/supabase/data";
 import { mapProfileToMember, type ProfileRow } from "@/lib/supabase/mappers";
 import type { Member } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
-import { Users, Gift, CheckCircle, XCircle, Clock, LogOut, ArrowLeft, Building2, RefreshCw } from "lucide-react";
+import { Users, Gift, CheckCircle, XCircle, Clock, LogOut, ArrowLeft, Building2, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { PartnersTab } from "@/components/admin/partners-tab";
 import { CategoriesTab } from "@/components/admin/categories-tab";
 
 type Tab = "members" | "partners" | "categories";
+
+const MEMBER_PAGE_SIZE = 10;
+
+function memberPageItems(page: number, pageCount: number): (number | "gap")[] {
+  if (pageCount <= 7) {
+    return Array.from({ length: pageCount }, (_, index) => index + 1);
+  }
+
+  const visible = [1, pageCount, page - 1, page, page + 1]
+    .filter((n) => n >= 1 && n <= pageCount)
+    .sort((a, b) => a - b);
+  const unique = [...new Set(visible)];
+  const items: (number | "gap")[] = [];
+  unique.forEach((n, index) => {
+    if (index > 0 && n - unique[index - 1] > 1) items.push("gap");
+    items.push(n);
+  });
+  return items;
+}
 
 const STATUS_STYLES: Record<string, string> = {
   active: "bg-emerald-50 text-emerald-700 border-emerald-200",
@@ -23,6 +42,77 @@ const STATUS_STYLES: Record<string, string> = {
   suspended: "bg-red-50 text-red-600 border-red-200",
   rejected: "bg-gray-100 text-gray-500 border-gray-200",
 };
+
+function MemberPagination({
+  page,
+  pageSize,
+  total,
+  onPageChange,
+}: {
+  page: number;
+  pageSize: number;
+  total: number;
+  onPageChange: (page: number) => void;
+}) {
+  if (total === 0) return null;
+
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const start = (page - 1) * pageSize + 1;
+  const end = Math.min(page * pageSize, total);
+
+  return (
+    <div className="flex flex-col gap-3 border-t border-cream-300 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-xs text-ink-muted">
+        Showing <span className="font-medium text-forest">{start}–{end}</span> of {total}
+      </p>
+      {pageCount > 1 && (
+        <div className="flex flex-wrap items-center gap-1">
+          <button
+            type="button"
+            onClick={() => onPageChange(page - 1)}
+            disabled={page <= 1}
+            aria-label="Previous page"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-cream-300 text-forest hover:bg-cream-100 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <ChevronLeft size={14} />
+          </button>
+          {memberPageItems(page, pageCount).map((item, index) =>
+            item === "gap" ? (
+              <span key={`gap-${index}`} className="px-1 text-xs text-ink-muted" aria-hidden>
+                …
+              </span>
+            ) : (
+              <button
+                key={item}
+                type="button"
+                onClick={() => onPageChange(item)}
+                aria-label={`Page ${item}`}
+                aria-current={item === page ? "page" : undefined}
+                className={cn(
+                  "inline-flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-xs font-medium",
+                  item === page
+                    ? "bg-forest-900 text-cream-100"
+                    : "border border-cream-300 text-ink-light hover:bg-cream-100 hover:text-forest"
+                )}
+              >
+                {item}
+              </button>
+            )
+          )}
+          <button
+            type="button"
+            onClick={() => onPageChange(page + 1)}
+            disabled={page >= pageCount}
+            aria-label="Next page"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-cream-300 text-forest hover:bg-cream-100 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <ChevronRight size={14} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function isPendingReview(member: Member) {
   return (
@@ -43,6 +133,7 @@ export default function AdminPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [memberPage, setMemberPage] = useState(1);
 
   const loadData = useCallback(async ({ showSpinner = true }: { showSpinner?: boolean } = {}) => {
     const supabase = createClient();
@@ -117,24 +208,6 @@ export default function AdminPage() {
     if (!error) await loadData({ showSpinner: false });
   };
 
-  const reopenForReview = async (memberId: string) => {
-    setActionError(null);
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        status: "pending_approval",
-        approved_at: null,
-        approved_by: null,
-      })
-      .eq("id", memberId);
-    if (error) {
-      setActionError(error.message);
-      return;
-    }
-    await loadData({ showSpinner: false });
-  };
-
   if (isLoading || !isAdmin) {
     return (
       <div className="min-h-screen bg-cream-100 flex items-center justify-center">
@@ -145,44 +218,12 @@ export default function AdminPage() {
 
   const pending = members.filter(isPendingReview);
   const active = members.filter((m) => m.status === "active");
-
-  const memberActions = (m: Member) => {
-    if (m.isAdmin) return null;
-    if (isPendingReview(m)) {
-      return (
-        <div className="flex gap-2 justify-end">
-          <button
-            type="button"
-            onClick={() => void approve(m.id)}
-            disabled={approvingId === m.id}
-            className="flex items-center gap-1 bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60 text-xs px-3 py-1.5 rounded-lg font-medium"
-          >
-            <CheckCircle size={11} />
-            {approvingId === m.id ? "…" : "Approve"}
-          </button>
-          <button
-            type="button"
-            onClick={() => void reject(m.id)}
-            className="flex items-center gap-1 border border-red-200 text-red-600 hover:bg-red-50 text-xs px-3 py-1.5 rounded-lg font-medium"
-          >
-            <XCircle size={11} /> Reject
-          </button>
-        </div>
-      );
-    }
-    if (m.status === "active") {
-      return (
-        <button
-          type="button"
-          onClick={() => void reopenForReview(m.id)}
-          className="text-xs text-amber-700 hover:text-amber-900 border border-amber-200 hover:bg-amber-50 px-3 py-1.5 rounded-lg font-medium"
-        >
-          Reopen review
-        </button>
-      );
-    }
-    return null;
-  };
+  const memberPageCount = Math.max(1, Math.ceil(members.length / MEMBER_PAGE_SIZE));
+  const currentMemberPage = Math.min(memberPage, memberPageCount);
+  const pagedMembers = members.slice(
+    (currentMemberPage - 1) * MEMBER_PAGE_SIZE,
+    currentMemberPage * MEMBER_PAGE_SIZE
+  );
 
   return (
     <div className="min-h-screen bg-cream-100">
@@ -324,10 +365,11 @@ export default function AdminPage() {
                   </button>
                 </h2>
                 <div className="bg-white border border-cream-300 rounded-2xl overflow-hidden shadow-card">
+                  <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-cream-300 bg-cream-100">
-                        {["Name", "Email", "Member ID", "Status", "Project", "Joined", "Actions"].map((h) => (
+                        {["Name", "Member ID", "Status", "Project", "Joined"].map((h) => (
                           <th key={h} className="px-5 py-3.5 text-left text-ink-muted text-xs font-semibold tracking-wide">
                             {h}
                           </th>
@@ -335,17 +377,19 @@ export default function AdminPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-cream-200">
-                      {members.map((m) => (
+                      {pagedMembers.map((m) => (
                         <tr key={m.id} className="hover:bg-cream-100/60 transition-colors">
                           <td className="px-5 py-3.5">
                             <div className="flex items-center gap-3">
-                              <div className="w-7 h-7 rounded-full bg-forest-900 flex items-center justify-center text-primary text-xs font-bold">
+                              <div className="w-7 h-7 rounded-full bg-forest-900 flex items-center justify-center text-primary text-xs font-bold shrink-0">
                                 {m.fullName.charAt(0)}
                               </div>
-                              <span className="text-forest font-medium">{m.fullName}</span>
+                              <div className="min-w-0">
+                                <p className="text-forest font-medium">{m.fullName}</p>
+                                <p className="text-ink-muted text-xs mt-0.5 truncate">{m.email || "—"}</p>
+                              </div>
                             </div>
                           </td>
-                          <td className="px-5 py-3.5 text-ink-light text-xs">{m.email || "—"}</td>
                           <td className="px-5 py-3.5 text-ink-light font-mono text-xs">{m.memberId}</td>
                           <td className="px-5 py-3.5">
                             <span
@@ -356,11 +400,17 @@ export default function AdminPage() {
                           </td>
                           <td className="px-5 py-3.5 text-ink-muted text-xs">{m.projectName}</td>
                           <td className="px-5 py-3.5 text-ink-muted text-xs">{formatDate(m.createdAt)}</td>
-                          <td className="px-5 py-3.5">{memberActions(m)}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
+                  </div>
+                  <MemberPagination
+                    page={currentMemberPage}
+                    pageSize={MEMBER_PAGE_SIZE}
+                    total={members.length}
+                    onPageChange={setMemberPage}
+                  />
                 </div>
               </>
             )}

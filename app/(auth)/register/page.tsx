@@ -130,6 +130,19 @@ const RESIDENT_OPTIONS: Opt[] = [
   { value: "tenant", label: "Tenant" },
 ];
 
+type AccountType = "residence" | "agent" | "staff";
+
+const ACCOUNT_TYPES: { value: AccountType; label: string }[] = [
+  { value: "residence", label: "Residence" },
+  { value: "agent", label: "Agent" },
+  { value: "staff", label: "The Title Staff" },
+];
+
+const ACCOUNT_PROJECT_NAME: Record<Exclude<AccountType, "residence">, string> = {
+  agent: "AGENT",
+  staff: "The Title Staff",
+};
+
 function Field({
   label,
   children,
@@ -187,6 +200,7 @@ export default function RegisterPage() {
   const [form, setForm] = useState({
     fullName: "", gender: "", nationality: "",
     email: "", password: "", confirmPassword: "", phone: "", whatsapp: "",
+    accountType: "residence" as AccountType,
     residentStatus: "", projectName: "", houseNumber: "", consent: false,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -203,9 +217,11 @@ export default function RegisterPage() {
     if (form.password.length < 8)      e.password        = "Password must be at least 8 characters";
     if (form.password !== form.confirmPassword) e.confirmPassword = "Passwords do not match";
     if (!form.whatsapp.trim())         e.whatsapp        = "WhatsApp number required";
-    if (!form.residentStatus)          e.residentStatus  = "Please select status";
-    if (!form.projectName)             e.projectName     = "Please select project";
-    if (!form.houseNumber.trim())      e.houseNumber     = "House number is required";
+    if (form.accountType === "residence") {
+      if (!form.residentStatus)        e.residentStatus  = "Please select status";
+      if (!form.projectName)           e.projectName     = "Please select project";
+      if (!form.houseNumber.trim())    e.houseNumber     = "House number is required";
+    }
     if (!form.consent)                 e.consent         = "Please accept the terms";
     return e;
   }
@@ -223,15 +239,20 @@ export default function RegisterPage() {
     setLoading(true);
     const supabase = createClient();
     const autoApprove = process.env.NEXT_PUBLIC_BYPASS_MEMBERSHIP_APPROVAL === "true";
+    const isResidence = form.accountType === "residence";
+    const projectName =
+      form.accountType === "residence" ? form.projectName : ACCOUNT_PROJECT_NAME[form.accountType];
     const meta = {
       full_name: form.fullName.trim(),
       gender: form.gender,
       nationality: form.nationality,
       phone: form.phone.trim(),
       whatsapp: form.whatsapp.trim(),
-      resident_status: form.residentStatus,
-      project_name: form.projectName,
-      house_number: form.houseNumber.trim(),
+      account_type: form.accountType,
+      is_agent: form.accountType === "agent",
+      resident_status: isResidence ? form.residentStatus : null,
+      project_name: projectName,
+      house_number: isResidence ? form.houseNumber.trim() : null,
     };
     const { data, error } = await supabase.auth.signUp({
       email: form.email.trim(),
@@ -263,7 +284,7 @@ export default function RegisterPage() {
       nationality: meta.nationality,
       phone: meta.phone || null,
       whatsapp: meta.whatsapp,
-      resident_status: meta.resident_status as "owner" | "tenant",
+      resident_status: meta.resident_status as "owner" | "tenant" | null,
       project_name: meta.project_name,
       house_number: meta.house_number,
       status: autoApprove ? "active" : "pending_approval",
@@ -287,6 +308,19 @@ export default function RegisterPage() {
   }
 
   const set = (k: string, v: string | boolean) => setForm((f) => ({ ...f, [k]: v }));
+
+  function selectAccountType(next: AccountType) {
+    setForm((current) => ({ ...current, accountType: next }));
+    if (next !== "residence") {
+      setErrors((current) => {
+        const nextErrors = { ...current };
+        delete nextErrors.residentStatus;
+        delete nextErrors.projectName;
+        delete nextErrors.houseNumber;
+        return nextErrors;
+      });
+    }
+  }
 
   /* ── Success screen ── */
   if (submitted) return (
@@ -325,7 +359,7 @@ export default function RegisterPage() {
 
         {/* Step indicator */}
         <div className="flex items-center justify-center gap-2 mb-8">
-          {["Personal", "Contact", "Property"].map((s, i) => (
+          {["Personal", "Contact", form.accountType === "residence" ? "Property" : form.accountType === "agent" ? "Agent" : "Staff"].map((s, i) => (
             <div key={s} className="flex items-center gap-2">
               <div className="flex items-center gap-1.5">
                 <span className="w-6 h-6 rounded-full bg-forest-900 text-cream-100 text-[11px] flex items-center justify-center font-semibold">
@@ -436,44 +470,81 @@ export default function RegisterPage() {
 
           <div className="divider" />
 
-          {/* ── Section 3: Property ── */}
           <div>
             <h3 className="text-xs tracking-[3px] uppercase font-semibold text-forest mb-5 flex items-center gap-2">
-              <span className="w-5 h-px bg-primary shrink-0" />Property Details
+              <span className="w-5 h-px bg-primary shrink-0" />Account Type
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Field label="Resident Status *" error={errors.residentStatus} id="residentStatus">
-                <Select<Opt>
-                  instanceId="residentStatus"
-                  inputId="residentStatus"
-                  options={RESIDENT_OPTIONS}
-                  value={findOpt(RESIDENT_OPTIONS, form.residentStatus)}
-                  onChange={(opt) => set("residentStatus", opt?.value ?? "")}
-                  placeholder="Select..."
-                  styles={selectStyles}
-                  isSearchable={false}
-                />
-              </Field>
-              <Field label="Project / Property *" error={errors.projectName} id="projectName">
-                <Select<Opt>
-                  instanceId="projectName"
-                  inputId="projectName"
-                  options={PROJECT_OPTIONS}
-                  value={findOpt(PROJECT_OPTIONS, form.projectName)}
-                  onChange={(opt) => set("projectName", opt?.value ?? "")}
-                  placeholder="Select..."
-                  styles={selectStyles}
-                  isSearchable={false}
-                />
-              </Field>
-              <div className="sm:col-span-2">
-                <Field label="House Number *" error={errors.houseNumber} id="houseNumber">
-                  <input id="houseNumber" className="input-field" type="text" placeholder="e.g. A-12"
-                    value={form.houseNumber} onChange={(e) => set("houseNumber", e.target.value)} />
-                </Field>
-              </div>
+            <div role="radiogroup" aria-label="Account type" className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {ACCOUNT_TYPES.map((option) => {
+                const selected = form.accountType === option.value;
+                return (
+                  <label
+                    key={option.value}
+                    className={`flex items-center gap-3 rounded-xl border px-4 py-3.5 cursor-pointer transition-colors ${
+                      selected
+                        ? "border-primary bg-primary/10"
+                        : "border-cream-300 bg-cream-50 hover:border-primary/50"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="accountType"
+                      value={option.value}
+                      checked={selected}
+                      onChange={() => selectAccountType(option.value)}
+                      className="accent-forest-700 w-4 h-4 shrink-0"
+                    />
+                    <span className="text-sm font-medium text-forest">{option.label}</span>
+                  </label>
+                );
+              })}
             </div>
           </div>
+
+          {form.accountType === "residence" && (
+            <>
+              <div className="divider" />
+
+              {/* ── Section 3: Property (residents only) ── */}
+              <div>
+                <h3 className="text-xs tracking-[3px] uppercase font-semibold text-forest mb-5 flex items-center gap-2">
+                  <span className="w-5 h-px bg-primary shrink-0" />Property Details
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Field label="Resident Status *" error={errors.residentStatus} id="residentStatus">
+                    <Select<Opt>
+                      instanceId="residentStatus"
+                      inputId="residentStatus"
+                      options={RESIDENT_OPTIONS}
+                      value={findOpt(RESIDENT_OPTIONS, form.residentStatus)}
+                      onChange={(opt) => set("residentStatus", opt?.value ?? "")}
+                      placeholder="Select..."
+                      styles={selectStyles}
+                      isSearchable={false}
+                    />
+                  </Field>
+                  <Field label="Project / Property *" error={errors.projectName} id="projectName">
+                    <Select<Opt>
+                      instanceId="projectName"
+                      inputId="projectName"
+                      options={PROJECT_OPTIONS}
+                      value={findOpt(PROJECT_OPTIONS, form.projectName)}
+                      onChange={(opt) => set("projectName", opt?.value ?? "")}
+                      placeholder="Select..."
+                      styles={selectStyles}
+                      isSearchable={false}
+                    />
+                  </Field>
+                  <div className="sm:col-span-2">
+                    <Field label="House Number *" error={errors.houseNumber} id="houseNumber">
+                      <input id="houseNumber" className="input-field" type="text" placeholder="e.g. A-12"
+                        value={form.houseNumber} onChange={(e) => set("houseNumber", e.target.value)} />
+                    </Field>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
 
           <div className="divider" />
 
