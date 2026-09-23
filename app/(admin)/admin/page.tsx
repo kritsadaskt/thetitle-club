@@ -208,24 +208,6 @@ export default function AdminPage() {
     if (!error) await loadData({ showSpinner: false });
   };
 
-  const reopenForReview = async (memberId: string) => {
-    setActionError(null);
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        status: "pending_approval",
-        approved_at: null,
-        approved_by: null,
-      })
-      .eq("id", memberId);
-    if (error) {
-      setActionError(error.message);
-      return;
-    }
-    await loadData({ showSpinner: false });
-  };
-
   if (isLoading || !isAdmin) {
     return (
       <div className="min-h-screen bg-cream-100 flex items-center justify-center">
@@ -242,44 +224,6 @@ export default function AdminPage() {
     (currentMemberPage - 1) * MEMBER_PAGE_SIZE,
     currentMemberPage * MEMBER_PAGE_SIZE
   );
-
-  const memberActions = (m: Member) => {
-    if (m.isAdmin) return null;
-    if (isPendingReview(m)) {
-      return (
-        <div className="flex gap-2 justify-end">
-          <button
-            type="button"
-            onClick={() => void approve(m.id)}
-            disabled={approvingId === m.id}
-            className="flex items-center gap-1 bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60 text-xs px-3 py-1.5 rounded-lg font-medium"
-          >
-            <CheckCircle size={11} />
-            {approvingId === m.id ? "…" : "Approve"}
-          </button>
-          <button
-            type="button"
-            onClick={() => void reject(m.id)}
-            className="flex items-center gap-1 border border-red-200 text-red-600 hover:bg-red-50 text-xs px-3 py-1.5 rounded-lg font-medium"
-          >
-            <XCircle size={11} /> Reject
-          </button>
-        </div>
-      );
-    }
-    if (m.status === "active") {
-      return (
-        <button
-          type="button"
-          onClick={() => void reopenForReview(m.id)}
-          className="text-xs text-amber-700 hover:text-amber-900 border border-amber-200 hover:bg-amber-50 px-3 py-1.5 rounded-lg font-medium"
-        >
-          Reopen review
-        </button>
-      );
-    }
-    return null;
-  };
 
   return (
     <div className="min-h-screen bg-cream-100">
@@ -425,7 +369,7 @@ export default function AdminPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-cream-300 bg-cream-100">
-                        {["Name", "Email", "Member ID", "Status", "Project", "Joined", "Actions"].map((h) => (
+                        {["Name", "Member ID", "Status", "Project", "Joined"].map((h) => (
                           <th key={h} className="px-5 py-3.5 text-left text-ink-muted text-xs font-semibold tracking-wide">
                             {h}
                           </th>
@@ -437,13 +381,15 @@ export default function AdminPage() {
                         <tr key={m.id} className="hover:bg-cream-100/60 transition-colors">
                           <td className="px-5 py-3.5">
                             <div className="flex items-center gap-3">
-                              <div className="w-7 h-7 rounded-full bg-forest-900 flex items-center justify-center text-primary text-xs font-bold">
+                              <div className="w-7 h-7 rounded-full bg-forest-900 flex items-center justify-center text-primary text-xs font-bold shrink-0">
                                 {m.fullName.charAt(0)}
                               </div>
-                              <span className="text-forest font-medium">{m.fullName}</span>
+                              <div className="min-w-0">
+                                <p className="text-forest font-medium">{m.fullName}</p>
+                                <p className="text-ink-muted text-xs mt-0.5 truncate">{m.email || "—"}</p>
+                              </div>
                             </div>
                           </td>
-                          <td className="px-5 py-3.5 text-ink-light text-xs">{m.email || "—"}</td>
                           <td className="px-5 py-3.5 text-ink-light font-mono text-xs">{m.memberId}</td>
                           <td className="px-5 py-3.5">
                             <span
@@ -454,7 +400,6 @@ export default function AdminPage() {
                           </td>
                           <td className="px-5 py-3.5 text-ink-muted text-xs">{m.projectName}</td>
                           <td className="px-5 py-3.5 text-ink-muted text-xs">{formatDate(m.createdAt)}</td>
-                          <td className="px-5 py-3.5">{memberActions(m)}</td>
                         </tr>
                       ))}
                     </tbody>

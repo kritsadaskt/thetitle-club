@@ -130,6 +130,19 @@ const RESIDENT_OPTIONS: Opt[] = [
   { value: "tenant", label: "Tenant" },
 ];
 
+type AccountType = "residence" | "agent" | "staff";
+
+const ACCOUNT_TYPES: { value: AccountType; label: string }[] = [
+  { value: "residence", label: "Residence" },
+  { value: "agent", label: "Agent" },
+  { value: "staff", label: "The Title Staff" },
+];
+
+const ACCOUNT_PROJECT_NAME: Record<Exclude<AccountType, "residence">, string> = {
+  agent: "AGENT",
+  staff: "The Title Staff",
+};
+
 function Field({
   label,
   children,
@@ -187,7 +200,7 @@ export default function RegisterPage() {
   const [form, setForm] = useState({
     fullName: "", gender: "", nationality: "",
     email: "", password: "", confirmPassword: "", phone: "", whatsapp: "",
-    isAgent: false,
+    accountType: "residence" as AccountType,
     residentStatus: "", projectName: "", houseNumber: "", consent: false,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -204,7 +217,7 @@ export default function RegisterPage() {
     if (form.password.length < 8)      e.password        = "Password must be at least 8 characters";
     if (form.password !== form.confirmPassword) e.confirmPassword = "Passwords do not match";
     if (!form.whatsapp.trim())         e.whatsapp        = "WhatsApp number required";
-    if (!form.isAgent) {
+    if (form.accountType === "residence") {
       if (!form.residentStatus)        e.residentStatus  = "Please select status";
       if (!form.projectName)           e.projectName     = "Please select project";
       if (!form.houseNumber.trim())    e.houseNumber     = "House number is required";
@@ -226,16 +239,20 @@ export default function RegisterPage() {
     setLoading(true);
     const supabase = createClient();
     const autoApprove = process.env.NEXT_PUBLIC_BYPASS_MEMBERSHIP_APPROVAL === "true";
+    const isResidence = form.accountType === "residence";
+    const projectName =
+      form.accountType === "residence" ? form.projectName : ACCOUNT_PROJECT_NAME[form.accountType];
     const meta = {
       full_name: form.fullName.trim(),
       gender: form.gender,
       nationality: form.nationality,
       phone: form.phone.trim(),
       whatsapp: form.whatsapp.trim(),
-      is_agent: form.isAgent,
-      resident_status: form.isAgent ? null : form.residentStatus,
-      project_name: form.isAgent ? "AGENT" : form.projectName,
-      house_number: form.isAgent ? null : form.houseNumber.trim(),
+      account_type: form.accountType,
+      is_agent: form.accountType === "agent",
+      resident_status: isResidence ? form.residentStatus : null,
+      project_name: projectName,
+      house_number: isResidence ? form.houseNumber.trim() : null,
     };
     const { data, error } = await supabase.auth.signUp({
       email: form.email.trim(),
@@ -292,10 +309,9 @@ export default function RegisterPage() {
 
   const set = (k: string, v: string | boolean) => setForm((f) => ({ ...f, [k]: v }));
 
-  function toggleAgent() {
-    const next = !form.isAgent;
-    set("isAgent", next);
-    if (next) {
+  function selectAccountType(next: AccountType) {
+    setForm((current) => ({ ...current, accountType: next }));
+    if (next !== "residence") {
       setErrors((current) => {
         const nextErrors = { ...current };
         delete nextErrors.residentStatus;
@@ -343,7 +359,7 @@ export default function RegisterPage() {
 
         {/* Step indicator */}
         <div className="flex items-center justify-center gap-2 mb-8">
-          {(form.isAgent ? ["Personal", "Contact", "Agent"] : ["Personal", "Contact", "Property"]).map((s, i) => (
+          {["Personal", "Contact", form.accountType === "residence" ? "Property" : form.accountType === "agent" ? "Agent" : "Staff"].map((s, i) => (
             <div key={s} className="flex items-center gap-2">
               <div className="flex items-center gap-1.5">
                 <span className="w-6 h-6 rounded-full bg-forest-900 text-cream-100 text-[11px] flex items-center justify-center font-semibold">
@@ -454,39 +470,38 @@ export default function RegisterPage() {
 
           <div className="divider" />
 
-          {/* ── Account type: Agent toggle sits before property details ── */}
           <div>
             <h3 className="text-xs tracking-[3px] uppercase font-semibold text-forest mb-5 flex items-center gap-2">
               <span className="w-5 h-px bg-primary shrink-0" />Account Type
             </h3>
-            <div className="flex items-center justify-between gap-4 rounded-xl border border-cream-300 bg-cream-50 px-4 py-4">
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-forest">I am an Agent</p>
-                <p id="agent-help" className="text-xs text-ink-muted mt-1 leading-relaxed">
-                  Property details are for residents only. Turn this on to register as an agent without a project or house number.
-                </p>
-              </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={form.isAgent}
-                aria-label="I am an Agent"
-                aria-describedby="agent-help"
-                onClick={toggleAgent}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
-                  form.isAgent ? "bg-primary" : "bg-cream-300"
-                }`}
-              >
-                <span
-                  className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
-                    form.isAgent ? "translate-x-5.5" : "translate-x-0.5"
-                  }`}
-                />
-              </button>
+            <div role="radiogroup" aria-label="Account type" className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {ACCOUNT_TYPES.map((option) => {
+                const selected = form.accountType === option.value;
+                return (
+                  <label
+                    key={option.value}
+                    className={`flex items-center gap-3 rounded-xl border px-4 py-3.5 cursor-pointer transition-colors ${
+                      selected
+                        ? "border-primary bg-primary/10"
+                        : "border-cream-300 bg-cream-50 hover:border-primary/50"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="accountType"
+                      value={option.value}
+                      checked={selected}
+                      onChange={() => selectAccountType(option.value)}
+                      className="accent-forest-700 w-4 h-4 shrink-0"
+                    />
+                    <span className="text-sm font-medium text-forest">{option.label}</span>
+                  </label>
+                );
+              })}
             </div>
           </div>
 
-          {!form.isAgent && (
+          {form.accountType === "residence" && (
             <>
               <div className="divider" />
 
