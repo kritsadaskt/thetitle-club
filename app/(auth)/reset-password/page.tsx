@@ -19,13 +19,70 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     const supabase = createClient();
+    let settled = false;
+    let timeoutId: number | undefined;
+    let subscription: { unsubscribe: () => void } | undefined;
+
+    function markReady(sessionExists: boolean) {
+      if (settled) return;
+      settled = true;
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+      setHasSession(sessionExists);
+      setChecking(false);
+    }
+
     void (async () => {
+      // Implicit / hash recovery links: #access_token=...&type=recovery
+      if (window.location.hash.includes("access_token")) {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (session) {
+          markReady(true);
+          window.history.replaceState(null, "", window.location.pathname);
+          return;
+        }
+      }
+
+      // PKCE code landed on this page instead of /auth/callback
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get("code");
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (!error) {
+          markReady(true);
+          window.history.replaceState(null, "", window.location.pathname);
+          return;
+        }
+      }
+
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      setHasSession(!!session);
-      setChecking(false);
+      if (session) {
+        markReady(true);
+        return;
+      }
+
+      // Cookies / PASSWORD_RECOVERY can arrive slightly after first paint
+      timeoutId = window.setTimeout(() => {
+        void supabase.auth.getSession().then(({ data }) => {
+          markReady(!!data.session);
+        });
+      }, 2500);
+
+      const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
+        if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN" || nextSession) {
+          markReady(!!nextSession);
+        }
+      });
+      subscription = data.subscription;
     })();
+
+    return () => {
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+      subscription?.unsubscribe();
+    };
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {

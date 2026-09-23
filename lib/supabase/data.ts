@@ -381,13 +381,28 @@ export type RedeemPromoCodeResult =
   | { ok: true; code: PromoCode }
   | { ok: false; error: string };
 
-export async function redeemPromoCode(codeId: string): Promise<RedeemPromoCodeResult> {
+export async function redeemPromoCode(
+  codeId: string,
+  options?: { method?: "qr" | "visual" }
+): Promise<RedeemPromoCodeResult> {
   const supabase = createClient();
   const { data, error } = await supabase.rpc("redeem_promo_code", {
     p_code_id: codeId,
   });
   if (error) return { ok: false, error: error.message };
-  return { ok: true, code: mapPromoCodeRow(data as PromoCodeRow) };
+  const code = mapPromoCodeRow(data as PromoCodeRow);
+
+  const { data: userData } = await supabase.auth.getUser();
+  const memberId = userData.user?.id;
+  if (memberId) {
+    await supabase.from("redemption_logs").insert({
+      member_id: memberId,
+      privilege_id: code.privilegeId,
+      method: options?.method ?? "qr",
+    });
+  }
+
+  return { ok: true, code };
 }
 
 export async function fetchPromoCodeStats(privilegeId: string): Promise<PromoCodeStats> {
