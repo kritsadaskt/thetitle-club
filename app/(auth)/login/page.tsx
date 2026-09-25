@@ -41,7 +41,7 @@ export default function LoginPage() {
 
       <div className="flex flex-col justify-between gap-10">
         <div className="relative">
-          <img src="/club/title-club-logo_mockup-white.webp" alt="The Title" className="w-32 h-auto object-contain" />
+          <img src={process.env.NEXT_PUBLIC_LOGO_IMAGE_URL_WHITE} alt="The Title" className="w-32 h-auto object-contain" />
         </div>
 
         <div className="relative">
