@@ -70,7 +70,7 @@ export default async function LandingPage() {
       <nav className="fixed top-0 inset-x-0 z-50 bg-white backdrop-blur-md border-b border-cream-300">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div>
-            <img src="/club/title-club-logo_mockup-dark.webp" alt="The Title" className="w-20 h-auto object-contain" />
+            <img src="/club/the-title-club_logo-400p.webp" alt="The Title" className="w-20 h-auto object-contain" />
           </div>
           <div className="flex items-center gap-4">
             <LandingNavAuth
@@ -279,11 +279,10 @@ export default async function LandingPage() {
       </section>
 
       {/* ─── FOOTER ──────────────────────────────── */}
-      <footer className="bg-neutral-700 py-10 border-t border-white/5">
+      <footer className="bg-neutral-700 py-5 border-t border-white/5">
         <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
           <div>
-            <span className="text-primary font-semibold tracking-[3px] text-sm">THE TITLE</span>
-            <p className="text-white text-xs mt-1">thetitleresidence.com/club</p>
+            <img src={process.env.NEXT_PUBLIC_LOGO_IMAGE_URL_WHITE} alt="The Title" className="w-20 h-auto object-contain" />
           </div>
           <p className="text-white">
             © {new Date().getFullYear()} The Title Residence. All rights reserved.
