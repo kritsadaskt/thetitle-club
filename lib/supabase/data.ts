@@ -1,7 +1,11 @@
 import type {
+  ClubEvent,
+  CreateEventInput,
   CreatePartnerInput,
   CreatePrivilegeCategoryInput,
   CreatePrivilegeInput,
+  EventRegistrant,
+  EventRegistration,
   MemberPromoCode,
   Privilege,
   PrivilegeCategory,
@@ -9,10 +13,14 @@ import type {
   PromoCodeStats,
   ShopPartner,
 } from "@/lib/types";
+import { ensureEventSlug, isUpcomingOrOngoing } from "@/lib/events";
 import { createClient } from "./client";
-import { uploadPartnerLogo, uploadPrivilegeCover } from "./storage";
+import { uploadEventCover, uploadPartnerLogo, uploadPrivilegeCover } from "./storage";
 import {
   mapCommunityRow,
+  mapEventRegistrantRow,
+  mapEventRegistrationRow,
+  mapEventRow,
   mapMemberPromoCodeRow,
   mapPartnerRow,
   mapPrivilegeCategoryRow,
@@ -20,6 +28,9 @@ import {
   mapPromoCodeRow,
   mapPromoCodeStats,
   type CommunityMomentRow,
+  type EventRegistrantRow,
+  type EventRegistrationRow,
+  type EventRow,
   type PartnerRow,
   type PrivilegeCategoryRow,
   type PrivilegeRow,
@@ -525,4 +536,209 @@ export async function deletePrivilegeCategory(id: number): Promise<{ ok: boolean
   const { error } = await supabase.from("privilege_categories").delete().eq("id", id);
   if (error) return { ok: false, error: error.message };
   return { ok: true };
+}
+
+const EVENT_REGISTRANT_SELECT =
+  "id, event_id, member_id, registered_at, cancelled_at, profiles!event_registrations_member_id_fkey(member_id, full_name, email, phone)";
+
+function eventWriteError(message: string): string {
+  if (/events_slug_unique|duplicate key value/i.test(message)) {
+    return "That link slug is already in use.";
+  }
+  if (/events_ends_after_start/i.test(message)) {
+    return "End time must be after the start time.";
+  }
+  if (/events_slug_format/i.test(message)) {
+    return "Slug can use lowercase letters, numbers, and hyphens only.";
+  }
+  if (/row-level security/i.test(message)) {
+    return "Registration is closed for this event.";
+  }
+  return message;
+}
+
+function eventPatch(input: Partial<CreateEventInput>): Record<string, unknown> {
+  const patch: Record<string, unknown> = {};
+  if (input.title !== undefined) patch.title = input.title.trim();
+  if (input.slug !== undefined) patch.slug = ensureEventSlug(input.title ?? "", input.slug);
+  if (input.description !== undefined) patch.description = input.description.trim() || null;
+  if (input.location !== undefined) patch.location = input.location.trim() || null;
+  if (input.coverImage !== undefined) patch.cover_image = input.coverImage.trim() || null;
+  if (input.startsAt !== undefined) patch.starts_at = input.startsAt;
+  if (input.endsAt !== undefined) patch.ends_at = input.endsAt || null;
+  if (input.isActive !== undefined) patch.is_active = input.isActive;
+  return patch;
+}
+
+export async function fetchUpcomingEvents(): Promise<ClubEvent[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("events")
+    .select("*")
+    .eq("is_active", true)
+    .order("starts_at", { ascending: true });
+  if (error) return [];
+  return (data ?? [])
+    .map((row) => mapEventRow(row as EventRow))
+    .filter((event) => isUpcomingOrOngoing(event));
+}
+
+export async function fetchAllEvents(): Promise<ClubEvent[]> {
+  const supabase = createClient();
+  let query = supabase.from("events").select("*");
+  for (const { column, ascending } of ADMIN_ACTIVE_CREATED_ORDER) {
+    query = query.order(column, { ascending });
+  }
+  const { data, error } = await query;
+  if (error) return [];
+  return (data ?? []).map((row) => mapEventRow(row as EventRow));
+}
+
+export async function fetchEventBySlug(slug: string): Promise<ClubEvent | null> {
+  const supabase = createClient();
+  const { data, error } = await supabase.from("events").select("*").eq("slug", slug).maybeSingle();
+  if (error || !data) return null;
+  return mapEventRow(data as EventRow);
+}
+
+export async function createEvent(input: CreateEventInput): Promise<MutateResult<ClubEvent>> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("events")
+    .insert({
+      title: input.title.trim(),
+      slug: ensureEventSlug(input.title, input.slug),
+      description: input.description?.trim() || null,
+      location: input.location?.trim() || null,
+      cover_image: input.coverImage?.trim() || null,
+      starts_at: input.startsAt,
+      ends_at: input.endsAt || null,
+      is_active: input.isActive ?? true,
+    })
+    .select("*")
+    .single();
+  if (error) return { ok: false, error: eventWriteError(error.message) };
+  return { ok: true, data: mapEventRow(data as EventRow) };
+}
+
+export async function updateEvent(
+  id: string,
+  input: Partial<CreateEventInput>
+): Promise<MutateResult<ClubEvent>> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("events")
+    .update(eventPatch(input))
+    .eq("id", id)
+    .select("*")
+    .single();
+  if (error) return { ok: false, error: eventWriteError(error.message) };
+  return { ok: true, data: mapEventRow(data as EventRow) };
+}
+
+export async function createEventWithCover(
+  input: CreateEventInput,
+  coverFile?: File | null
+): Promise<MutateResult<ClubEvent>> {
+  const created = await createEvent(input);
+  if (!created.ok || !coverFile) return created;
+
+  const uploaded = await uploadEventCover(created.data.id, coverFile);
+  if (!uploaded.ok) {
+    return { ok: false, error: `Event created but cover upload failed: ${uploaded.error}` };
+  }
+  return updateEvent(created.data.id, { coverImage: uploaded.url });
+}
+
+export async function updateEventWithCover(
+  id: string,
+  input: Partial<CreateEventInput>,
+  coverFile?: File | null
+): Promise<MutateResult<ClubEvent>> {
+  if (coverFile) {
+    const uploaded = await uploadEventCover(id, coverFile);
+    if (!uploaded.ok) return { ok: false, error: uploaded.error };
+    input = { ...input, coverImage: uploaded.url };
+  }
+  return updateEvent(id, input);
+}
+
+export async function fetchMyEventRegistration(eventId: string): Promise<EventRegistration | null> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data, error } = await supabase
+    .from("event_registrations")
+    .select("*")
+    .eq("event_id", eventId)
+    .eq("member_id", user.id)
+    .maybeSingle();
+  if (error || !data) return null;
+  return mapEventRegistrationRow(data as EventRegistrationRow);
+}
+
+export async function registerForEvent(eventId: string): Promise<MutateResult<EventRegistration>> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Sign in to register." };
+
+  const existing = await fetchMyEventRegistration(eventId);
+  if (existing && !existing.cancelledAt) {
+    return { ok: true, data: existing };
+  }
+
+  if (existing) {
+    const { data, error } = await supabase
+      .from("event_registrations")
+      .update({ cancelled_at: null, registered_at: new Date().toISOString() })
+      .eq("id", existing.id)
+      .select("*")
+      .single();
+    if (error) return { ok: false, error: eventWriteError(error.message) };
+    return { ok: true, data: mapEventRegistrationRow(data as EventRegistrationRow) };
+  }
+
+  const { data, error } = await supabase
+    .from("event_registrations")
+    .insert({ event_id: eventId, member_id: user.id })
+    .select("*")
+    .single();
+  if (error) return { ok: false, error: eventWriteError(error.message) };
+  return { ok: true, data: mapEventRegistrationRow(data as EventRegistrationRow) };
+}
+
+export async function cancelEventRegistration(eventId: string): Promise<MutateResult<EventRegistration>> {
+  const supabase = createClient();
+  const existing = await fetchMyEventRegistration(eventId);
+  if (!existing || existing.cancelledAt) {
+    return { ok: false, error: "You are not registered for this event." };
+  }
+
+  const { data, error } = await supabase
+    .from("event_registrations")
+    .update({ cancelled_at: new Date().toISOString() })
+    .eq("id", existing.id)
+    .select("*")
+    .single();
+  if (error) return { ok: false, error: eventWriteError(error.message) };
+  return { ok: true, data: mapEventRegistrationRow(data as EventRegistrationRow) };
+}
+
+export async function fetchEventRegistrants(
+  eventId: string
+): Promise<{ rows: EventRegistrant[]; error?: string }> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("event_registrations")
+    .select(EVENT_REGISTRANT_SELECT)
+    .eq("event_id", eventId)
+    .is("cancelled_at", null)
+    .order("registered_at", { ascending: true });
+  if (error) return { rows: [], error: error.message };
+  return { rows: (data ?? []).map((row) => mapEventRegistrantRow(row as unknown as EventRegistrantRow)) };
 }

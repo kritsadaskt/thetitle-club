@@ -159,3 +159,44 @@ export interface Partner {
   imageUrl: string;
   link: string;
 }
+
+export interface ClubEvent {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  location: string;
+  coverImage: string;
+  startsAt: string;
+  endsAt?: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface CreateEventInput {
+  title: string;
+  slug: string;
+  description?: string;
+  location?: string;
+  coverImage?: string;
+  startsAt: string;
+  endsAt?: string | null;
+  isActive?: boolean;
+}
+
+export interface EventRegistration {
+  id: string;
+  eventId: string;
+  memberId: string;
+  registeredAt: string;
+  cancelledAt?: string;
+}
+
+export interface EventRegistrant {
+  id: string;
+  memberCode: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  registeredAt: string;
+}
