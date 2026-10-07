@@ -5,8 +5,8 @@ import { QRCodeCanvas } from "qrcode.react";
 import { ArrowLeft, Copy, Download, Pencil } from "lucide-react";
 import { absoluteAppUrl } from "@/lib/app-url";
 import { formatEventDateTime, formatEventSchedule } from "@/lib/events";
-import { fetchEventRegistrants, updateEventWithCover } from "@/lib/supabase/data";
-import type { ClubEvent, CreateEventInput, EventRegistrant } from "@/lib/types";
+import { fetchEventRegistrationLogs, fetchEventRegistrants, updateEventWithCover } from "@/lib/supabase/data";
+import type { ClubEvent, CreateEventInput, EventRegistrant, EventRegistrationLog } from "@/lib/types";
 import { ActiveToggle } from "./active-toggle";
 import { EventForm } from "./event-form";
 
@@ -18,6 +18,7 @@ type Props = {
 
 export function EventDetail({ event, onBack, onEventUpdated }: Props) {
   const [registrants, setRegistrants] = useState<EventRegistrant[]>([]);
+  const [logs, setLogs] = useState<EventRegistrationLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [showEdit, setShowEdit] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -27,9 +28,13 @@ export function EventDetail({ event, onBack, onEventUpdated }: Props) {
 
   const loadRegistrants = useCallback(async () => {
     setLoading(true);
-    const result = await fetchEventRegistrants(event.id);
+    const [result, history] = await Promise.all([
+      fetchEventRegistrants(event.id),
+      fetchEventRegistrationLogs(event.id),
+    ]);
     setRegistrants(result.rows);
-    setError(result.error ?? null);
+    setLogs(history.rows);
+    setError(result.error ?? history.error ?? null);
     setLoading(false);
   }, [event.id]);
 
@@ -74,9 +79,18 @@ export function EventDetail({ event, onBack, onEventUpdated }: Props) {
         formatEventDateTime(row.registeredAt),
       ]),
     ];
-    const sheet = XLSX.utils.aoa_to_sheet(rows);
+    const historyRows = [
+      ["Time", "Member ID", "Name", "Action"],
+      ...logs.map((row) => [
+        formatEventDateTime(row.occurredAt),
+        row.memberCode,
+        row.fullName,
+        row.action === "registered" ? "Registered" : "Cancelled",
+      ]),
+    ];
     const book = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(book, sheet, "Registrations");
+    XLSX.utils.book_append_sheet(book, XLSX.utils.aoa_to_sheet(rows), "Registrations");
+    XLSX.utils.book_append_sheet(book, XLSX.utils.aoa_to_sheet(historyRows), "History");
     XLSX.writeFile(book, `${event.slug}-registrations.xlsx`);
   };
 
@@ -187,6 +201,55 @@ export function EventDetail({ event, onBack, onEventUpdated }: Props) {
                     <td className="px-5 py-3.5 text-ink-muted text-xs">{row.phone || "—"}</td>
                     <td className="px-5 py-3.5 text-ink-muted text-xs whitespace-nowrap">
                       {formatEventDateTime(row.registeredAt)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <h3 className="text-ink-muted text-xs tracking-[2px] uppercase font-semibold mt-8 mb-3">
+        Registration history ({logs.length})
+      </h3>
+      <div className="bg-white border border-cream-300 rounded-2xl overflow-hidden shadow-card">
+        {loading ? (
+          <div className="flex justify-center py-16">
+            <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+          </div>
+        ) : logs.length === 0 ? (
+          <p className="text-ink-muted text-sm text-center py-12">No registration activity yet.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-cream-300 bg-cream-100">
+                  {["Time", "Member ID", "Name", "Action"].map((heading) => (
+                    <th key={heading} className="px-5 py-3.5 text-left text-ink-muted text-xs font-semibold tracking-wide">
+                      {heading}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-cream-200">
+                {logs.map((row) => (
+                  <tr key={row.id}>
+                    <td className="px-5 py-3.5 text-ink-muted text-xs whitespace-nowrap">
+                      {formatEventDateTime(row.occurredAt)}
+                    </td>
+                    <td className="px-5 py-3.5 font-mono text-xs text-ink-light">{row.memberCode || "—"}</td>
+                    <td className="px-5 py-3.5 text-forest font-medium">{row.fullName || "—"}</td>
+                    <td className="px-5 py-3.5 text-xs">
+                      <span
+                        className={
+                          row.action === "registered"
+                            ? "text-emerald-700"
+                            : "text-ink-muted"
+                        }
+                      >
+                        {row.action === "registered" ? "Registered" : "Cancelled"}
+                      </span>
                     </td>
                   </tr>
                 ))}

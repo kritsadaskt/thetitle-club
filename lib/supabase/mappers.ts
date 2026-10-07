@@ -1,4 +1,4 @@
-import type { ClubEvent, CommunityMoment, EventRegistrant, EventRegistration, Member, MemberPromoCode, Privilege, PromoCode, PromoCodeStats, ShopPartner } from "@/lib/types";
+import type { ClubEvent, CommunityMoment, EventRegistrant, EventRegistration, EventRegistrationAction, EventRegistrationLog, Member, MemberPromoCode, Privilege, PromoCode, PromoCodeStats, ShopPartner } from "@/lib/types";
 import type { CodeMode, MemberStatus, PrivilegeCategory, PromoCodeStatus, ResidentStatus } from "@/lib/types";
 import { FALLBACK_PRIVILEGE_CATEGORY } from "./queries";
 
@@ -284,6 +284,30 @@ export function mapEventRegistrationRow(row: EventRegistrationRow): EventRegistr
     memberId: row.member_id,
     registeredAt: row.registered_at,
     cancelledAt: row.cancelled_at ?? undefined,
+  };
+}
+
+export type EventRegistrationLogRow = {
+  id: string;
+  event_id: string;
+  member_id: string;
+  action: EventRegistrationAction;
+  occurred_at: string;
+  profiles: {
+    member_id: string;
+    full_name: string;
+  } | null;
+};
+
+export function mapEventRegistrationLogRow(row: EventRegistrationLogRow): EventRegistrationLog {
+  return {
+    id: row.id,
+    eventId: row.event_id,
+    memberId: row.member_id,
+    memberCode: row.profiles?.member_id ?? "",
+    fullName: row.profiles?.full_name ?? "",
+    action: row.action,
+    occurredAt: row.occurred_at,
   };
 }
 

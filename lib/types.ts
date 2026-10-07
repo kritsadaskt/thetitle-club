@@ -200,3 +200,15 @@ export interface EventRegistrant {
   phone: string;
   registeredAt: string;
 }
+
+export type EventRegistrationAction = "registered" | "cancelled";
+
+export interface EventRegistrationLog {
+  id: string;
+  eventId: string;
+  memberId: string;
+  memberCode: string;
+  fullName: string;
+  action: EventRegistrationAction;
+  occurredAt: string;
+}

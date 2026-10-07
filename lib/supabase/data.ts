@@ -6,6 +6,7 @@ import type {
   CreatePrivilegeInput,
   EventRegistrant,
   EventRegistration,
+  EventRegistrationLog,
   MemberPromoCode,
   Privilege,
   PrivilegeCategory,
@@ -19,6 +20,7 @@ import { uploadEventCover, uploadPartnerLogo, uploadPrivilegeCover } from "./sto
 import {
   mapCommunityRow,
   mapEventRegistrantRow,
+  mapEventRegistrationLogRow,
   mapEventRegistrationRow,
   mapEventRow,
   mapMemberPromoCodeRow,
@@ -29,6 +31,7 @@ import {
   mapPromoCodeStats,
   type CommunityMomentRow,
   type EventRegistrantRow,
+  type EventRegistrationLogRow,
   type EventRegistrationRow,
   type EventRow,
   type PartnerRow,
@@ -541,6 +544,9 @@ export async function deletePrivilegeCategory(id: number): Promise<{ ok: boolean
 const EVENT_REGISTRANT_SELECT =
   "id, event_id, member_id, registered_at, cancelled_at, profiles!event_registrations_member_id_fkey(member_id, full_name, email, phone)";
 
+const EVENT_LOG_SELECT =
+  "id, event_id, member_id, action, occurred_at, profiles!event_registration_logs_member_id_fkey(member_id, full_name)";
+
 function eventWriteError(message: string): string {
   if (/events_slug_unique|duplicate key value/i.test(message)) {
     return "That link slug is already in use.";
@@ -568,6 +574,23 @@ function eventPatch(input: Partial<CreateEventInput>): Record<string, unknown> {
   if (input.endsAt !== undefined) patch.ends_at = input.endsAt || null;
   if (input.isActive !== undefined) patch.is_active = input.isActive;
   return patch;
+}
+
+/** Event ids the signed-in member is currently registered for. Cancelled rows are excluded. */
+export async function fetchMyRegisteredEventIds(): Promise<Set<string>> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return new Set();
+
+  const { data, error } = await supabase
+    .from("event_registrations")
+    .select("event_id")
+    .eq("member_id", user.id)
+    .is("cancelled_at", null);
+  if (error || !data) return new Set();
+  return new Set(data.map((row) => row.event_id as string));
 }
 
 export async function fetchUpcomingEvents(): Promise<ClubEvent[]> {
@@ -741,4 +764,17 @@ export async function fetchEventRegistrants(
     .order("registered_at", { ascending: true });
   if (error) return { rows: [], error: error.message };
   return { rows: (data ?? []).map((row) => mapEventRegistrantRow(row as unknown as EventRegistrantRow)) };
+}
+
+export async function fetchEventRegistrationLogs(
+  eventId: string
+): Promise<{ rows: EventRegistrationLog[]; error?: string }> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("event_registration_logs")
+    .select(EVENT_LOG_SELECT)
+    .eq("event_id", eventId)
+    .order("occurred_at", { ascending: true });
+  if (error) return { rows: [], error: error.message };
+  return { rows: (data ?? []).map((row) => mapEventRegistrationLogRow(row as unknown as EventRegistrationLogRow)) };
 }

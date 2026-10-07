@@ -133,3 +133,118 @@ grant insert, update, delete on public.events to authenticated;
 grant select, insert, update, delete on public.event_registrations to authenticated;
 grant all on public.events to service_role;
 grant all on public.event_registrations to service_role;
+
+-- ── 4. event_registration_logs ──────────────────────────────
+-- Append-only history. event_registrations stays the current status.
+-- A trigger writes one row per register or cancel, including re-registration.
+do $$
+begin
+  create type public.event_registration_action as enum ('registered', 'cancelled');
+exception
+  when duplicate_object then null;
+end $$;
+
+create table if not exists public.event_registration_logs (
+  id              uuid        primary key default gen_random_uuid(),
+  event_id        uuid        not null references public.events(id) on delete cascade,
+  member_id       uuid        not null references public.profiles(id) on delete cascade,
+  registration_id uuid        references public.event_registrations(id) on delete set null,
+  action          public.event_registration_action not null,
+  occurred_at     timestamptz not null default now()
+);
+
+create index if not exists idx_event_registration_logs_timeline
+  on public.event_registration_logs (event_id, member_id, occurred_at);
+
+create or replace function public.log_event_registration_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if tg_op = 'INSERT' then
+    insert into public.event_registration_logs (
+      event_id, member_id, registration_id, action, occurred_at
+    ) values (
+      new.event_id,
+      new.member_id,
+      new.id,
+      'registered',
+      coalesce(new.registered_at, now())
+    );
+    return new;
+  end if;
+
+  if old.cancelled_at is null and new.cancelled_at is not null then
+    insert into public.event_registration_logs (
+      event_id, member_id, registration_id, action, occurred_at
+    ) values (
+      new.event_id,
+      new.member_id,
+      new.id,
+      'cancelled',
+      new.cancelled_at
+    );
+  elsif old.cancelled_at is not null and new.cancelled_at is null then
+    insert into public.event_registration_logs (
+      event_id, member_id, registration_id, action, occurred_at
+    ) values (
+      new.event_id,
+      new.member_id,
+      new.id,
+      'registered',
+      coalesce(new.registered_at, now())
+    );
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists event_registrations_log_change on public.event_registrations;
+create trigger event_registrations_log_change
+  after insert or update on public.event_registrations
+  for each row execute function public.log_event_registration_change();
+
+alter table public.event_registration_logs enable row level security;
+
+drop policy if exists "members: read own registration logs" on public.event_registration_logs;
+create policy "members: read own registration logs"
+  on public.event_registration_logs for select
+  to authenticated
+  using (member_id = auth.uid());
+
+drop policy if exists "admins: read registration logs" on public.event_registration_logs;
+create policy "admins: read registration logs"
+  on public.event_registration_logs for select
+  to authenticated
+  using (public.is_profile_admin());
+
+revoke all on public.event_registration_logs from public, anon, authenticated;
+grant select on public.event_registration_logs to authenticated;
+grant all on public.event_registration_logs to service_role;
+
+-- Existing rows only have the latest cycle. Record that cycle once.
+insert into public.event_registration_logs (event_id, member_id, registration_id, action, occurred_at)
+select r.event_id, r.member_id, r.id, 'registered', r.registered_at
+from public.event_registrations r
+where not exists (
+  select 1
+  from public.event_registration_logs l
+  where l.registration_id = r.id
+    and l.action = 'registered'
+    and l.occurred_at = r.registered_at
+);
+
+insert into public.event_registration_logs (event_id, member_id, registration_id, action, occurred_at)
+select r.event_id, r.member_id, r.id, 'cancelled', r.cancelled_at
+from public.event_registrations r
+where r.cancelled_at is not null
+  and not exists (
+    select 1
+    from public.event_registration_logs l
+    where l.registration_id = r.id
+      and l.action = 'cancelled'
+      and l.occurred_at = r.cancelled_at
+  );
