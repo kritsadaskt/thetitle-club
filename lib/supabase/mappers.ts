@@ -314,6 +314,7 @@ export function mapEventRegistrationLogRow(row: EventRegistrationLogRow): EventR
 export function mapEventRegistrantRow(row: EventRegistrantRow): EventRegistrant {
   return {
     id: row.id,
+    memberId: row.member_id,
     memberCode: row.profiles?.member_id ?? "",
     fullName: row.profiles?.full_name ?? "",
     email: row.profiles?.email ?? "",

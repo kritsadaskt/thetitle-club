@@ -194,6 +194,8 @@ export interface EventRegistration {
 
 export interface EventRegistrant {
   id: string;
+  /** profiles.id — used when admin resends confirm email to one registrant */
+  memberId: string;
   memberCode: string;
   fullName: string;
   email: string;

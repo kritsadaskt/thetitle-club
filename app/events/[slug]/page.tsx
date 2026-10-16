@@ -54,12 +54,18 @@ export default function EventPage() {
     setSaving(true);
     setError(null);
     const res = await registerForEvent(event.id);
-    setSaving(false);
     if (!res.ok) {
+      setSaving(false);
       setError(res.error);
       return;
     }
     setRegistration(res.data);
+    try {
+      await fetch(`/club/api/events/${event.id}/confirm-email`, { method: "POST" });
+    } catch {
+      // Registration succeeded; confirmation email is best-effort
+    }
+    setSaving(false);
   };
 
   const cancel = async () => {
