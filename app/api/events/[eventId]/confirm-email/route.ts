@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { absoluteAppUrlFromRequest } from "@/lib/app-url";
 import { sendConfirmEmailForRegistrant } from "@/lib/event-confirm-email";
+import { requestWantsTestWebhook } from "@/lib/n8n";
 import { createClient } from "@/lib/supabase/server";
 import type { EventRow, ProfileRow } from "@/lib/supabase/mappers";
 
@@ -60,13 +61,17 @@ export async function POST(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "Member has no email on profile" }, { status: 400 });
   }
 
-  const webhookResult = await sendConfirmEmailForRegistrant({
-    member,
-    email,
-    clubEvent,
-    registeredAt: registration.registered_at as string,
-    eventUrl: absoluteAppUrlFromRequest(request, `/events/${clubEvent.slug}`),
-  });
+  const useTestWebhook = requestWantsTestWebhook(request);
+  const webhookResult = await sendConfirmEmailForRegistrant(
+    {
+      member,
+      email,
+      clubEvent,
+      registeredAt: registration.registered_at as string,
+      eventUrl: absoluteAppUrlFromRequest(request, `/events/${clubEvent.slug}`),
+    },
+    { useTestWebhook }
+  );
 
   if (!webhookResult.ok) {
     console.error("[event-confirm-email] n8n webhook failed:", webhookResult.error);
@@ -76,5 +81,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
     );
   }
 
-  return NextResponse.json({ success: true, emailSent: true });
+  return NextResponse.json({
+    success: true,
+    emailSent: true,
+    usedTestWebhook: webhookResult.usedTestWebhook,
+  });
 }

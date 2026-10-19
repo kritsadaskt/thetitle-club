@@ -1,4 +1,4 @@
-import type { EventRegistrationConfirmedPayload } from "@/lib/n8n";
+import type { EventRegistrationConfirmedPayload, WebhookSendOptions } from "@/lib/n8n";
 import { sendEventRegistrationConfirmWebhook } from "@/lib/n8n";
 import type { EventRow, ProfileRow } from "@/lib/supabase/mappers";
 
@@ -34,12 +34,15 @@ export function buildEventRegistrationConfirmPayload(input: {
   };
 }
 
-export async function sendConfirmEmailForRegistrant(input: {
-  member: ProfileRow;
-  email: string;
-  clubEvent: EventRow;
-  registeredAt: string;
-  eventUrl: string;
-}) {
-  return sendEventRegistrationConfirmWebhook(buildEventRegistrationConfirmPayload(input));
+export async function sendConfirmEmailForRegistrant(
+  input: {
+    member: ProfileRow;
+    email: string;
+    clubEvent: EventRow;
+    registeredAt: string;
+    eventUrl: string;
+  },
+  options: WebhookSendOptions = {}
+) {
+  return sendEventRegistrationConfirmWebhook(buildEventRegistrationConfirmPayload(input), options);
 }

@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { sendMemberApprovedWebhook } from "@/lib/n8n";
+import { requestWantsTestWebhook, sendMemberApprovedWebhook } from "@/lib/n8n";
 import type { ProfileRow } from "@/lib/supabase/mappers";
 
 /** Sends the welcome (member_approved) email for the currently signed-in member. */
@@ -47,19 +47,23 @@ export async function POST(request: NextRequest) {
   const approvedAt = member.approved_at ?? new Date().toISOString();
   const loginUrl = new URL("/club/login", request.url).toString();
 
-  const webhookResult = await sendMemberApprovedWebhook({
-    event: "member_approved",
-    member: {
-      id: member.id,
-      email,
-      fullName: member.full_name,
-      memberId: member.member_id,
-      projectName: member.project_name ?? "",
-      residentStatus: member.resident_status ?? "",
-      approvedAt,
+  const useTestWebhook = requestWantsTestWebhook(request);
+  const webhookResult = await sendMemberApprovedWebhook(
+    {
+      event: "member_approved",
+      member: {
+        id: member.id,
+        email,
+        fullName: member.full_name,
+        memberId: member.member_id,
+        projectName: member.project_name ?? "",
+        residentStatus: member.resident_status ?? "",
+        approvedAt,
+      },
+      loginUrl,
     },
-    loginUrl,
-  });
+    { useTestWebhook }
+  );
 
   if (!webhookResult.ok) {
     console.error("[member-welcome] n8n webhook failed:", webhookResult.error);
@@ -69,5 +73,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  return NextResponse.json({ success: true, emailSent: true });
+  return NextResponse.json({
+    success: true,
+    emailSent: true,
+    usedTestWebhook: webhookResult.usedTestWebhook,
+  });
 }

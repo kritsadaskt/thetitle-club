@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { CheckCircle, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { clientWantsTestWebhook, withDevWebhookQuery } from "@/lib/n8n";
 import Select, { StylesConfig, GroupBase } from "react-select";
 
 /* ── react-select luxury theme ── */
@@ -297,7 +298,11 @@ export default function RegisterPage() {
     }
     if (autoApprove) {
       try {
-        await fetch("/club/api/members/welcome", { method: "POST" });
+        const welcomePath = withDevWebhookQuery(
+          "/club/api/members/welcome",
+          clientWantsTestWebhook()
+        );
+        await fetch(welcomePath, { method: "POST" });
       } catch {
         // Registration succeeded; welcome email is best-effort
       }

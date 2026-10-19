@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { CalendarDays, MapPin } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { formatEventSchedule, isRegistrationOpen } from "@/lib/events";
+import { clientWantsTestWebhook, withDevWebhookQuery } from "@/lib/n8n";
 import { cancelEventRegistration, fetchEventBySlug, fetchMyEventRegistration, registerForEvent } from "@/lib/supabase/data";
 import type { ClubEvent, EventRegistration } from "@/lib/types";
 
@@ -47,7 +48,9 @@ export default function EventPage() {
   const registered = Boolean(registration && !registration.cancelledAt);
   const membershipActive = member?.status === "active";
   const open = event ? isRegistrationOpen(event.startsAt) && event.isActive : false;
-  const loginHref = `/login?next=${encodeURIComponent(`/events/${slug}`)}`;
+  const useTestWebhook = clientWantsTestWebhook();
+  const eventPath = withDevWebhookQuery(`/events/${slug}`, useTestWebhook);
+  const loginHref = `/login?next=${encodeURIComponent(eventPath)}`;
 
   const register = async () => {
     if (!event) return;
@@ -61,7 +64,11 @@ export default function EventPage() {
     }
     setRegistration(res.data);
     try {
-      await fetch(`/club/api/events/${event.id}/confirm-email`, { method: "POST" });
+      const confirmPath = withDevWebhookQuery(
+        `/club/api/events/${event.id}/confirm-email`,
+        useTestWebhook
+      );
+      await fetch(confirmPath, { method: "POST" });
     } catch {
       // Registration succeeded; confirmation email is best-effort
     }
