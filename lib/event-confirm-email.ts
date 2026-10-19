@@ -12,6 +12,7 @@ export function buildEventRegistrationConfirmPayload(input: {
   const { member, email, clubEvent, registeredAt, eventUrl } = input;
   return {
     event: "event_registration_confirmed",
+    eventName: clubEvent.title,
     member: {
       id: member.id,
       email,

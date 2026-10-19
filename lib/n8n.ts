@@ -14,6 +14,8 @@ export type MemberApprovedPayload = {
 
 export type EventRegistrationConfirmedPayload = {
   event: "event_registration_confirmed";
+  /** Club event display name — convenient top-level field for n8n templates */
+  eventName: string;
   member: {
     id: string;
     email: string;
