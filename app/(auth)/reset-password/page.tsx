@@ -118,9 +118,9 @@ export default function ResetPasswordPage() {
         <div className="flex flex-col justify-between gap-10">
           <div className="relative">
             <img
-              src="/club/title-club-logo_mockup-white.webp"
+              src={process.env.NEXT_PUBLIC_LOGO_IMAGE_URL_WHITE}
               alt="The Title"
-              className="w-32 h-auto object-contain"
+              className="w-32 h-auto object-contain" 
             />
           </div>
 

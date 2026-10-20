@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import type { MemberStatus } from "./types";
 import { Member } from "./types";
+import { safeInternalPath } from "./app-url";
 import { createClient } from "./supabase/client";
 import { mapProfileToMember, type ProfileRow } from "./supabase/mappers";
 
@@ -19,7 +20,8 @@ interface AuthContextType {
   isLoading: boolean;
   login: (
     email: string,
-    password: string
+    password: string,
+    nextPath?: string | null
   ) => Promise<{ success: boolean; error?: string; redirectTo?: string }>;
   logout: () => Promise<void>;
   isAdmin: boolean;
@@ -190,7 +192,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, nextPath?: string | null) => {
     const supabase = createClient();
     const { data, error } = await supabase.auth.signInWithPassword({
       email: email.trim(),
@@ -212,7 +214,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsAdmin(true);
       setMember(loaded.member);
       router.refresh();
-      return { success: true, redirectTo: "/admin" };
+      return { success: true, redirectTo: safeInternalPath(nextPath ?? null, "/admin") };
     }
     if (!memberCanAccessMemberArea(loaded.member.status)) {
       await supabase.auth.signOut();
@@ -224,7 +226,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAdmin(false);
     setMember(loaded.member);
     router.refresh();
-    return { success: true, redirectTo: "/dashboard" };
+    return { success: true, redirectTo: safeInternalPath(nextPath ?? null, "/dashboard") };
   };
 
   const logout = async () => {

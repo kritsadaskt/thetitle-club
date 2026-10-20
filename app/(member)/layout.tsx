@@ -40,7 +40,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
         {/* Logo */}
         <div className="px-6 py-6 border-b border-white/8">
           <Link href="/">
-            <img src="/club/title-club-logo_mockup-white.webp" alt="The Title" className="w-24 h-auto object-contain mx-auto" />
+            <img src={process.env.NEXT_PUBLIC_LOGO_IMAGE_URL_WHITE} alt="The Title" className="w-24 h-auto object-contain mx-auto" />
           </Link>
         </div>
 

@@ -15,17 +15,20 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [resetStatus, setResetStatus] = useState<"success" | "invalid" | null>(null);
+  const [nextPath, setNextPath] = useState<string | null>(null);
 
   useEffect(() => {
-    const reset = new URLSearchParams(window.location.search).get("reset");
+    const params = new URLSearchParams(window.location.search);
+    const reset = params.get("reset");
     if (reset === "success" || reset === "invalid") setResetStatus(reset);
+    setNextPath(params.get("next"));
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const result = await login(email, password);
+    const result = await login(email, password, nextPath);
     setLoading(false);
     if (result.success) {
       router.push(result.redirectTo ?? "/dashboard");
@@ -41,7 +44,7 @@ export default function LoginPage() {
 
       <div className="flex flex-col justify-between gap-10">
         <div className="relative">
-          <img src="/club/title-club-logo_mockup-white.webp" alt="The Title" className="w-32 h-auto object-contain" />
+          <img src={process.env.NEXT_PUBLIC_LOGO_IMAGE_URL_WHITE} alt="The Title" className="w-32 h-auto object-contain" />
         </div>
 
         <div className="relative">

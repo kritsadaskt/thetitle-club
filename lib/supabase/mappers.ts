@@ -1,4 +1,4 @@
-import type { CommunityMoment, Member, MemberPromoCode, Privilege, PromoCode, PromoCodeStats, ShopPartner } from "@/lib/types";
+import type { ClubEvent, CommunityMoment, EventRegistrant, EventRegistration, EventRegistrationAction, EventRegistrationLog, Member, MemberPromoCode, Privilege, PromoCode, PromoCodeStats, ShopPartner } from "@/lib/types";
 import type { CodeMode, MemberStatus, PrivilegeCategory, PromoCodeStatus, ResidentStatus } from "@/lib/types";
 import { FALLBACK_PRIVILEGE_CATEGORY } from "./queries";
 
@@ -229,6 +229,97 @@ export function mapPromoCodeStats(row: {
     available: Number(row.available) || 0,
     claimed: Number(row.claimed) || 0,
     redeemed: Number(row.redeemed) || 0,
+  };
+}
+
+export type EventRow = {
+  id: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  location: string | null;
+  cover_image: string | null;
+  starts_at: string;
+  ends_at: string | null;
+  is_active: boolean;
+  created_at: string;
+};
+
+export type EventRegistrationRow = {
+  id: string;
+  event_id: string;
+  member_id: string;
+  registered_at: string;
+  cancelled_at: string | null;
+};
+
+export type EventRegistrantRow = EventRegistrationRow & {
+  profiles: {
+    member_id: string;
+    full_name: string;
+    email: string | null;
+    phone: string | null;
+  } | null;
+};
+
+export function mapEventRow(row: EventRow): ClubEvent {
+  return {
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    description: row.description ?? "",
+    location: row.location ?? "",
+    coverImage: row.cover_image ?? "",
+    startsAt: row.starts_at,
+    endsAt: row.ends_at ?? undefined,
+    isActive: row.is_active,
+    createdAt: row.created_at,
+  };
+}
+
+export function mapEventRegistrationRow(row: EventRegistrationRow): EventRegistration {
+  return {
+    id: row.id,
+    eventId: row.event_id,
+    memberId: row.member_id,
+    registeredAt: row.registered_at,
+    cancelledAt: row.cancelled_at ?? undefined,
+  };
+}
+
+export type EventRegistrationLogRow = {
+  id: string;
+  event_id: string;
+  member_id: string;
+  action: EventRegistrationAction;
+  occurred_at: string;
+  profiles: {
+    member_id: string;
+    full_name: string;
+  } | null;
+};
+
+export function mapEventRegistrationLogRow(row: EventRegistrationLogRow): EventRegistrationLog {
+  return {
+    id: row.id,
+    eventId: row.event_id,
+    memberId: row.member_id,
+    memberCode: row.profiles?.member_id ?? "",
+    fullName: row.profiles?.full_name ?? "",
+    action: row.action,
+    occurredAt: row.occurred_at,
+  };
+}
+
+export function mapEventRegistrantRow(row: EventRegistrantRow): EventRegistrant {
+  return {
+    id: row.id,
+    memberId: row.member_id,
+    memberCode: row.profiles?.member_id ?? "",
+    fullName: row.profiles?.full_name ?? "",
+    email: row.profiles?.email ?? "",
+    phone: row.profiles?.phone ?? "",
+    registeredAt: row.registered_at,
   };
 }
 
