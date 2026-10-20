@@ -68,10 +68,13 @@ create trigger event_registrations_protect_keys
 alter table public.events enable row level security;
 alter table public.event_registrations enable row level security;
 
+-- Anyone can read events by direct link / QR, including archived.
+-- Dashboard listing still filters is_active = true in the app.
 drop policy if exists "public: read active events" on public.events;
-create policy "public: read active events"
+drop policy if exists "public: read events" on public.events;
+create policy "public: read events"
   on public.events for select
-  using (is_active = true);
+  using (true);
 
 drop policy if exists "admins: all events" on public.events;
 create policy "admins: all events"
@@ -85,6 +88,8 @@ create policy "members: read own registrations"
   to authenticated
   using (member_id = auth.uid());
 
+-- Registration is allowed for archived events via direct link/QR,
+-- as long as the event has not started yet.
 drop policy if exists "members: register for open events" on public.event_registrations;
 create policy "members: register for open events"
   on public.event_registrations for insert
@@ -97,7 +102,6 @@ create policy "members: register for open events"
       select 1
       from public.events e
       where e.id = event_id
-        and e.is_active = true
         and e.starts_at > now()
     )
   );
@@ -117,7 +121,6 @@ create policy "members: update own registration before start"
       select 1
       from public.events e
       where e.id = event_id
-        and e.is_active = true
         and e.starts_at > now()
     )
   );

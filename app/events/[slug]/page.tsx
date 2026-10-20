@@ -47,7 +47,8 @@ export default function EventPage() {
 
   const registered = Boolean(registration && !registration.cancelledAt);
   const membershipActive = member?.status === "active";
-  const open = event ? isRegistrationOpen(event.startsAt) && event.isActive : false;
+  // Archived events stay off the dashboard but remain open via link/QR until start time.
+  const open = event ? isRegistrationOpen(event.startsAt) : false;
   const useTestWebhook = clientWantsTestWebhook();
   const eventPath = withDevWebhookQuery(`/events/${slug}`, useTestWebhook);
   const loginHref = `/login?next=${encodeURIComponent(eventPath)}`;
@@ -113,11 +114,11 @@ export default function EventPage() {
           <div className="flex justify-center py-24">
             <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
           </div>
-        ) : !event || !event.isActive ? (
+        ) : !event ? (
           <div className="bg-white border border-cream-300 rounded-2xl p-10 text-center shadow-card">
             <CalendarDays size={32} className="text-ink-muted mx-auto mb-3" strokeWidth={1} />
-            <h1 className="text-forest font-semibold text-xl">This event is no longer available</h1>
-            <p className="text-ink-muted text-sm mt-2">It may have been archived or the link is incorrect.</p>
+            <h1 className="text-forest font-semibold text-xl">Event not found</h1>
+            <p className="text-ink-muted text-sm mt-2">The link may be incorrect or the event was removed.</p>
             <Link href={member && !isAdmin ? "/dashboard" : "/"} className="inline-block mt-6 text-primary-dark text-sm font-medium">
               {member && !isAdmin ? "Back to dashboard" : "Back to club"}
             </Link>

@@ -61,7 +61,7 @@ export function EventsTab() {
         </button>
       </div>
       <p className="text-ink-muted text-xs mb-4 max-w-2xl">
-        Create an event, share its link or QR code, then archive it when it should disappear from member dashboards.
+        Create an event and share its link or QR. Archive hides it from the dashboard only — the link still works until you need to stop using it.
       </p>
 
       {loading ? (

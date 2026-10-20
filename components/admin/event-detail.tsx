@@ -181,7 +181,9 @@ export function EventDetail({ event, onBack, onEventUpdated }: Props) {
                 }}
               />
               {!event.isActive && (
-                <p className="text-ink-muted text-xs mt-2">Archived events stay hidden from members and the public link.</p>
+                <p className="text-ink-muted text-xs mt-2">
+                  Archived events are hidden from the member dashboard, but the link and QR still work for registration.
+                </p>
               )}
             </div>
           </div>
