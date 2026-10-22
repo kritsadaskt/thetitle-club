@@ -2,8 +2,13 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { CalendarDays, ChevronRight, Plus } from "lucide-react";
-import { formatEventSchedule } from "@/lib/events";
-import { createEventWithCover, fetchAllEvents } from "@/lib/supabase/data";
+import {
+  eventEarliestStartsAt,
+  eventLatestEndsAt,
+  eventPrimaryBanner,
+  formatEventSchedule,
+} from "@/lib/events";
+import { createEventWithVenues, fetchAllEvents, type VenueBannerFiles } from "@/lib/supabase/data";
 import type { ClubEvent, CreateEventInput } from "@/lib/types";
 import { cn, sortAdminByActiveThenCreated } from "@/lib/utils";
 import { EventDetail } from "./event-detail";
@@ -27,8 +32,8 @@ export function EventsTab() {
 
   const selected = events.find((event) => event.id === selectedId) ?? null;
 
-  const handleCreate = async (input: CreateEventInput, coverFile?: File | null) => {
-    const res = await createEventWithCover(input, coverFile);
+  const handleCreate = async (input: CreateEventInput, bannerFiles?: VenueBannerFiles) => {
+    const res = await createEventWithVenues(input, bannerFiles);
     if (!res.ok) return { ok: false, error: res.error };
     setEvents((prev) => sortAdminByActiveThenCreated([...prev, res.data]));
     return { ok: true };
@@ -61,7 +66,8 @@ export function EventsTab() {
         </button>
       </div>
       <p className="text-ink-muted text-xs mb-4 max-w-2xl">
-        Create an event and share its link or QR. Archive hides it from the dashboard only — the link still works until you need to stop using it.
+        Create an event with one or more locations. Each location has its own link and QR. Archive hides the
+        event from the dashboard only — location links still work.
       </p>
 
       {loading ? (
@@ -76,39 +82,51 @@ export function EventsTab() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {events.map((event) => (
-            <button
-              key={event.id}
-              type="button"
-              onClick={() => setSelectedId(event.id)}
-              className="text-left bg-white border border-cream-300 rounded-2xl p-4 shadow-card hover:border-primary/40 transition-colors flex gap-4 min-w-0"
-            >
-              {event.coverImage ? (
-                <img src={event.coverImage} alt="" className="w-20 h-16 object-cover rounded-xl shrink-0" />
-              ) : (
-                <div className="w-20 h-16 rounded-xl bg-cream-200 flex items-center justify-center shrink-0">
-                  <CalendarDays size={18} className="text-ink-muted" />
-                </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-forest font-medium text-sm truncate">{event.title}</p>
-                  <ChevronRight size={14} className="text-ink-muted shrink-0 mt-0.5" />
-                </div>
-                <p className="text-ink-muted text-xs mt-1">{formatEventSchedule(event.startsAt, event.endsAt)}</p>
-                <span
-                  className={cn(
-                    "mt-2 inline-block text-[10px] px-2 py-0.5 rounded-full border font-medium",
-                    event.isActive
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                      : "bg-gray-100 text-gray-500 border-gray-200"
+          {events.map((event) => {
+            const cover = eventPrimaryBanner(event);
+            const startsAt = eventEarliestStartsAt(event);
+            const endsAt = eventLatestEndsAt(event);
+            return (
+              <button
+                key={event.id}
+                type="button"
+                onClick={() => setSelectedId(event.id)}
+                className="text-left bg-white border border-cream-300 rounded-2xl p-4 shadow-card hover:border-primary/40 transition-colors flex gap-4 min-w-0"
+              >
+                {cover ? (
+                  <img src={cover} alt="" className="w-20 h-16 object-cover rounded-xl shrink-0" />
+                ) : (
+                  <div className="w-20 h-16 rounded-xl bg-cream-200 flex items-center justify-center shrink-0">
+                    <CalendarDays size={18} className="text-ink-muted" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-forest font-medium text-sm truncate">{event.title}</p>
+                    <ChevronRight size={14} className="text-ink-muted shrink-0 mt-0.5" />
+                  </div>
+                  {startsAt && (
+                    <p className="text-ink-muted text-xs mt-1">
+                      {formatEventSchedule(startsAt, endsAt)}
+                    </p>
                   )}
-                >
-                  {event.isActive ? "Active" : "Archived"}
-                </span>
-              </div>
-            </button>
-          ))}
+                  <p className="text-ink-muted text-[11px] mt-1">
+                    {event.venues.length} location{event.venues.length === 1 ? "" : "s"}
+                  </p>
+                  <span
+                    className={cn(
+                      "mt-2 inline-block text-[10px] px-2 py-0.5 rounded-full border font-medium",
+                      event.isActive
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : "bg-gray-100 text-gray-500 border-gray-200"
+                    )}
+                  >
+                    {event.isActive ? "Active" : "Archived"}
+                  </span>
+                </div>
+              </button>
+            );
+          })}
         </div>
       )}
 

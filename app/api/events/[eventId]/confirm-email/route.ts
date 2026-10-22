@@ -1,12 +1,19 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { absoluteAppUrlFromRequest } from "@/lib/app-url";
+import { venuePublicPath } from "@/lib/events";
 import { sendConfirmEmailForRegistrant } from "@/lib/event-confirm-email";
 import { requestWantsTestWebhook } from "@/lib/n8n";
 import { createClient } from "@/lib/supabase/server";
-import type { EventRow, ProfileRow } from "@/lib/supabase/mappers";
+import type { EventRow, EventVenueRow, ProfileRow } from "@/lib/supabase/mappers";
 
 type RouteContext = {
   params: Promise<{ eventId: string }>;
+};
+
+type RegistrationRow = {
+  registered_at: string;
+  cancelled_at: string | null;
+  venue_id: string;
 };
 
 /** Sends the event registration confirmation email for the signed-in member. */
@@ -29,7 +36,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
       supabase.from("events").select("*").eq("id", eventId).maybeSingle(),
       supabase
         .from("event_registrations")
-        .select("id, registered_at, cancelled_at")
+        .select("id, registered_at, cancelled_at, venue_id")
         .eq("event_id", eventId)
         .eq("member_id", user.id)
         .maybeSingle(),
@@ -54,8 +61,23 @@ export async function POST(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "You are not registered for this event" }, { status: 400 });
   }
 
+  const reg = registration as RegistrationRow;
+  const { data: venueRow, error: venueError } = await supabase
+    .from("event_venues")
+    .select("*")
+    .eq("id", reg.venue_id)
+    .maybeSingle();
+
+  if (venueError) {
+    return NextResponse.json({ error: venueError.message }, { status: 500 });
+  }
+  if (!venueRow) {
+    return NextResponse.json({ error: "Venue not found" }, { status: 404 });
+  }
+
   const member = profileRow as ProfileRow;
   const clubEvent = eventRow as EventRow;
+  const venue = venueRow as EventVenueRow;
   const email = member.email?.trim() || user.email?.trim();
   if (!email) {
     return NextResponse.json({ error: "Member has no email on profile" }, { status: 400 });
@@ -67,8 +89,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
       member,
       email,
       clubEvent,
-      registeredAt: registration.registered_at as string,
-      eventUrl: absoluteAppUrlFromRequest(request, `/events/${clubEvent.slug}`),
+      venue,
+      registeredAt: reg.registered_at,
+      eventUrl: absoluteAppUrlFromRequest(request, venuePublicPath(clubEvent.slug, venue.slug)),
     },
     { useTestWebhook }
   );

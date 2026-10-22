@@ -16,6 +16,8 @@ export type EventRegistrationConfirmedPayload = {
   event: "event_registration_confirmed";
   /** Club event display name — convenient top-level field for n8n templates */
   eventName: string;
+  /** Venue display name — convenient top-level field for n8n templates */
+  venueName: string;
   member: {
     id: string;
     email: string;
@@ -28,12 +30,19 @@ export type EventRegistrationConfirmedPayload = {
     slug: string;
     title: string;
     description: string;
+  };
+  venue: {
+    id: string;
+    slug: string;
+    name: string;
+    description: string;
     location: string;
-    coverImage: string;
+    bannerImage: string;
     startsAt: string;
     endsAt: string | null;
   };
   registeredAt: string;
+  /** Absolute URL of the venue registration page */
   eventUrl: string;
 };
 

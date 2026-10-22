@@ -1,8 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { absoluteAppUrlFromRequest } from "@/lib/app-url";
+import { venuePublicPath } from "@/lib/events";
 import { sendConfirmEmailForRegistrant } from "@/lib/event-confirm-email";
 import { createClient } from "@/lib/supabase/server";
-import type { EventRow, ProfileRow } from "@/lib/supabase/mappers";
+import type { EventRow, EventVenueRow, ProfileRow } from "@/lib/supabase/mappers";
 
 type RouteContext = {
   params: Promise<{ eventId: string }>;
@@ -10,6 +11,7 @@ type RouteContext = {
 
 type RegistrantJoin = {
   registered_at: string;
+  venue_id: string;
   profiles: ProfileRow | ProfileRow[] | null;
 };
 
@@ -70,11 +72,10 @@ export async function POST(request: NextRequest, context: RouteContext) {
   }
 
   const clubEvent = eventRow as EventRow;
-  const eventUrl = absoluteAppUrlFromRequest(request, `/events/${clubEvent.slug}`);
 
   const { data: row, error: listError } = await supabase
     .from("event_registrations")
-    .select("registered_at, profiles!event_registrations_member_id_fkey(*)")
+    .select("registered_at, venue_id, profiles!event_registrations_member_id_fkey(*)")
     .eq("event_id", eventId)
     .eq("member_id", memberId)
     .is("cancelled_at", null)
@@ -93,15 +94,32 @@ export async function POST(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "Member profile not found" }, { status: 404 });
   }
 
+  const { data: venueRow, error: venueError } = await supabase
+    .from("event_venues")
+    .select("*")
+    .eq("id", registrant.venue_id)
+    .maybeSingle();
+
+  if (venueError) {
+    return NextResponse.json({ error: venueError.message }, { status: 500 });
+  }
+  if (!venueRow) {
+    return NextResponse.json({ error: "Venue not found" }, { status: 404 });
+  }
+
+  const venue = venueRow as EventVenueRow;
   const email = profile.email?.trim();
   if (!email) {
     return NextResponse.json({ error: "Member has no email on profile" }, { status: 400 });
   }
 
+  const eventUrl = absoluteAppUrlFromRequest(request, venuePublicPath(clubEvent.slug, venue.slug));
+
   const result = await sendConfirmEmailForRegistrant({
     member: profile,
     email,
     clubEvent,
+    venue,
     registeredAt: registrant.registered_at,
     eventUrl,
   });

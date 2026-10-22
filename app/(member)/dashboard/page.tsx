@@ -4,8 +4,21 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import type { ClubEvent, CommunityMoment, Privilege } from "@/lib/types";
-import { formatEventSchedule } from "@/lib/events";
-import { fetchActivePrivileges, fetchMyRegisteredEventIds, fetchPublishedCommunity, fetchUpcomingEvents } from "@/lib/supabase/data";
+import {
+  eventEarliestStartsAt,
+  eventLatestEndsAt,
+  eventLocationSummary,
+  eventPrimaryBanner,
+  formatEventSchedule,
+  venuePublicPath,
+} from "@/lib/events";
+import {
+  fetchActivePrivileges,
+  fetchMyRegisteredEventIds,
+  fetchMyRegisteredVenueByEventId,
+  fetchPublishedCommunity,
+  fetchUpcomingEvents,
+} from "@/lib/supabase/data";
 import { CalendarDays, CreditCard, Gift, Image, ChevronRight, MapPin } from "lucide-react";
 import { categoryLabel, categoryColor } from "@/lib/utils";
 
@@ -15,22 +28,25 @@ export default function DashboardPage() {
   const [community, setCommunity] = useState<CommunityMoment[]>([]);
   const [events, setEvents] = useState<ClubEvent[]>([]);
   const [registeredEventIds, setRegisteredEventIds] = useState<Set<string>>(new Set());
+  const [registeredVenueByEvent, setRegisteredVenueByEvent] = useState<Map<string, string>>(new Map());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const [p, c, e, registered] = await Promise.all([
+      const [p, c, e, registered, venueMap] = await Promise.all([
         fetchActivePrivileges(),
         fetchPublishedCommunity(),
         fetchUpcomingEvents(),
         fetchMyRegisteredEventIds(),
+        fetchMyRegisteredVenueByEventId(),
       ]);
       if (!cancelled) {
         setPrivileges(p);
         setCommunity(c);
         setEvents(e);
         setRegisteredEventIds(registered);
+        setRegisteredVenueByEvent(venueMap);
         setLoading(false);
       }
     })();
@@ -117,14 +133,30 @@ export default function DashboardPage() {
           <p className="text-ink-muted text-sm">No upcoming events right now.</p>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-            {events.map((event) => (
+            {events.map((event) => {
+              const cover = eventPrimaryBanner(event);
+              const startsAt = eventEarliestStartsAt(event);
+              const endsAt = eventLatestEndsAt(event);
+              const location = eventLocationSummary(event);
+              const registeredVenueId = registeredVenueByEvent.get(event.id);
+              const registeredVenue = registeredVenueId
+                ? event.venues.find((v) => v.id === registeredVenueId)
+                : undefined;
+              const href =
+                registeredVenue
+                  ? venuePublicPath(event.slug, registeredVenue.slug)
+                  : event.venues.length === 1
+                    ? venuePublicPath(event.slug, event.venues[0].slug)
+                    : `/events/${event.slug}`;
+
+              return (
               <Link
                 key={event.id}
-                href={`/events/${event.slug}`}
+                href={href}
                 className="flex items-center gap-3 sm:gap-4 bg-white border border-cream-300 rounded-2xl p-3 sm:p-4 card-hover group shadow-card min-w-0"
               >
-                {event.coverImage ? (
-                  <img src={event.coverImage} alt="" className="w-16 h-12 sm:w-20 sm:h-14 object-cover rounded-lg shrink-0" />
+                {cover ? (
+                  <img src={cover} alt="" className="w-16 h-12 sm:w-20 sm:h-14 object-cover rounded-lg shrink-0" />
                 ) : (
                   <div className="w-16 h-12 sm:w-20 sm:h-14 rounded-lg bg-forest-50 text-forest-700 flex items-center justify-center shrink-0">
                     <CalendarDays size={18} strokeWidth={1.5} />
@@ -139,16 +171,19 @@ export default function DashboardPage() {
                       </span>
                     )}
                   </div>
-                  <p className="text-ink-muted text-xs mt-0.5">{formatEventSchedule(event.startsAt, event.endsAt)}</p>
-                  {event.location && (
+                  {startsAt && (
+                    <p className="text-ink-muted text-xs mt-0.5">{formatEventSchedule(startsAt, endsAt)}</p>
+                  )}
+                  {location && (
                     <p className="text-ink-muted text-xs mt-0.5 truncate flex items-center gap-1">
-                      <MapPin size={11} className="shrink-0" /> {event.location}
+                      <MapPin size={11} className="shrink-0" /> {location}
                     </p>
                   )}
                 </div>
                 <ChevronRight size={14} className="text-cream-400 group-hover:text-primary-dark transition-colors shrink-0" />
               </Link>
-            ))}
+            );
+            })}
           </div>
         )}
       </div>
