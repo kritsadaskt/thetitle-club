@@ -1,7 +1,8 @@
 -- ============================================================
---  THE TITLE CLUB — Events and member registration
+--  THE TITLE CLUB — Events and member registration (multi-venue)
 --  Run in: Supabase Dashboard > SQL Editor
 --  Prerequisite: schema.sql (is_profile_admin, profile_is_active_member, touch_updated_at)
+--  For existing DBs that already ran the single-venue schema, also run event_venues.sql
 -- ============================================================
 
 -- ── 1. events ───────────────────────────────────────────────
@@ -10,32 +11,52 @@ create table if not exists public.events (
   slug         text        not null,
   title        text        not null,
   description  text,
-  location     text,
-  cover_image  text,
-  starts_at    timestamptz not null,
-  ends_at      timestamptz,
   is_active    boolean     not null default true,
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now(),
   constraint events_slug_unique unique (slug),
-  constraint events_slug_format check (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'),
-  constraint events_ends_after_start check (ends_at is null or ends_at >= starts_at)
+  constraint events_slug_format check (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$')
 );
-
-create index if not exists idx_events_active_starts
-  on public.events (is_active, starts_at);
 
 drop trigger if exists events_updated_at on public.events;
 create trigger events_updated_at
   before update on public.events
   for each row execute function touch_updated_at();
 
--- ── 2. event_registrations ──────────────────────────────────
+-- ── 2. event_venues ─────────────────────────────────────────
+create table if not exists public.event_venues (
+  id            uuid        primary key default gen_random_uuid(),
+  event_id      uuid        not null references public.events(id) on delete cascade,
+  slug          text        not null,
+  name          text        not null,
+  description   text,
+  location      text,
+  banner_image  text,
+  starts_at     timestamptz not null,
+  ends_at       timestamptz,
+  sort_order    integer     not null default 0,
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now(),
+  constraint event_venues_event_slug_unique unique (event_id, slug),
+  constraint event_venues_slug_format check (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'),
+  constraint event_venues_ends_after_start check (ends_at is null or ends_at >= starts_at)
+);
+
+create index if not exists idx_event_venues_event_sort
+  on public.event_venues (event_id, sort_order, starts_at);
+
+drop trigger if exists event_venues_updated_at on public.event_venues;
+create trigger event_venues_updated_at
+  before update on public.event_venues
+  for each row execute function touch_updated_at();
+
+-- ── 3. event_registrations ──────────────────────────────────
 -- One row per member per event. cancelled_at null means still registered.
--- Cancelling then registering again updates the same row.
+-- venue_id is the location they registered for (one venue per event).
 create table if not exists public.event_registrations (
   id            uuid        primary key default gen_random_uuid(),
   event_id      uuid        not null references public.events(id) on delete cascade,
+  venue_id      uuid        not null references public.event_venues(id) on delete restrict,
   member_id     uuid        not null references public.profiles(id) on delete cascade,
   registered_at timestamptz not null default now(),
   cancelled_at  timestamptz,
@@ -44,6 +65,10 @@ create table if not exists public.event_registrations (
 
 create index if not exists idx_event_registrations_event_active
   on public.event_registrations (event_id)
+  where cancelled_at is null;
+
+create index if not exists idx_event_registrations_venue_active
+  on public.event_registrations (venue_id)
   where cancelled_at is null;
 
 create or replace function public.protect_event_registration_keys()
@@ -64,12 +89,33 @@ create trigger event_registrations_protect_keys
   before update on public.event_registrations
   for each row execute function protect_event_registration_keys();
 
--- ── 3. RLS ──────────────────────────────────────────────────
+create or replace function public.enforce_registration_venue_event()
+returns trigger
+language plpgsql
+as $$
+begin
+  if not exists (
+    select 1
+    from public.event_venues v
+    where v.id = new.venue_id
+      and v.event_id = new.event_id
+  ) then
+    raise exception 'venue does not belong to event';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists event_registrations_enforce_venue on public.event_registrations;
+create trigger event_registrations_enforce_venue
+  before insert or update of venue_id, event_id on public.event_registrations
+  for each row execute function public.enforce_registration_venue_event();
+
+-- ── 4. RLS ──────────────────────────────────────────────────
 alter table public.events enable row level security;
+alter table public.event_venues enable row level security;
 alter table public.event_registrations enable row level security;
 
--- Anyone can read events by direct link / QR, including archived.
--- Dashboard listing still filters is_active = true in the app.
 drop policy if exists "public: read active events" on public.events;
 drop policy if exists "public: read events" on public.events;
 create policy "public: read events"
@@ -82,14 +128,23 @@ create policy "admins: all events"
   using (public.is_profile_admin())
   with check (public.is_profile_admin());
 
+drop policy if exists "public: read event venues" on public.event_venues;
+create policy "public: read event venues"
+  on public.event_venues for select
+  using (true);
+
+drop policy if exists "admins: all event venues" on public.event_venues;
+create policy "admins: all event venues"
+  on public.event_venues for all
+  using (public.is_profile_admin())
+  with check (public.is_profile_admin());
+
 drop policy if exists "members: read own registrations" on public.event_registrations;
 create policy "members: read own registrations"
   on public.event_registrations for select
   to authenticated
   using (member_id = auth.uid());
 
--- Registration is allowed for archived events via direct link/QR,
--- as long as the event has not started yet.
 drop policy if exists "members: register for open events" on public.event_registrations;
 create policy "members: register for open events"
   on public.event_registrations for insert
@@ -100,9 +155,10 @@ create policy "members: register for open events"
     and public.profile_is_active_member()
     and exists (
       select 1
-      from public.events e
-      where e.id = event_id
-        and e.starts_at > now()
+      from public.event_venues v
+      where v.id = venue_id
+        and v.event_id = event_id
+        and v.starts_at > now()
     )
   );
 
@@ -119,9 +175,10 @@ create policy "members: update own registration before start"
     and public.profile_is_active_member()
     and exists (
       select 1
-      from public.events e
-      where e.id = event_id
-        and e.starts_at > now()
+      from public.event_venues v
+      where v.id = venue_id
+        and v.event_id = event_id
+        and v.starts_at > now()
     )
   );
 
@@ -133,13 +190,14 @@ create policy "admins: all event registrations"
 
 grant select on public.events to anon, authenticated;
 grant insert, update, delete on public.events to authenticated;
+grant select on public.event_venues to anon, authenticated;
+grant insert, update, delete on public.event_venues to authenticated;
 grant select, insert, update, delete on public.event_registrations to authenticated;
 grant all on public.events to service_role;
+grant all on public.event_venues to service_role;
 grant all on public.event_registrations to service_role;
 
--- ── 4. event_registration_logs ──────────────────────────────
--- Append-only history. event_registrations stays the current status.
--- A trigger writes one row per register or cancel, including re-registration.
+-- ── 5. event_registration_logs ──────────────────────────────
 do $$
 begin
   create type public.event_registration_action as enum ('registered', 'cancelled');
@@ -150,6 +208,7 @@ end $$;
 create table if not exists public.event_registration_logs (
   id              uuid        primary key default gen_random_uuid(),
   event_id        uuid        not null references public.events(id) on delete cascade,
+  venue_id        uuid        references public.event_venues(id) on delete set null,
   member_id       uuid        not null references public.profiles(id) on delete cascade,
   registration_id uuid        references public.event_registrations(id) on delete set null,
   action          public.event_registration_action not null,
@@ -168,9 +227,10 @@ as $$
 begin
   if tg_op = 'INSERT' then
     insert into public.event_registration_logs (
-      event_id, member_id, registration_id, action, occurred_at
+      event_id, venue_id, member_id, registration_id, action, occurred_at
     ) values (
       new.event_id,
+      new.venue_id,
       new.member_id,
       new.id,
       'registered',
@@ -181,9 +241,10 @@ begin
 
   if old.cancelled_at is null and new.cancelled_at is not null then
     insert into public.event_registration_logs (
-      event_id, member_id, registration_id, action, occurred_at
+      event_id, venue_id, member_id, registration_id, action, occurred_at
     ) values (
       new.event_id,
+      new.venue_id,
       new.member_id,
       new.id,
       'cancelled',
@@ -191,9 +252,22 @@ begin
     );
   elsif old.cancelled_at is not null and new.cancelled_at is null then
     insert into public.event_registration_logs (
-      event_id, member_id, registration_id, action, occurred_at
+      event_id, venue_id, member_id, registration_id, action, occurred_at
     ) values (
       new.event_id,
+      new.venue_id,
+      new.member_id,
+      new.id,
+      'registered',
+      coalesce(new.registered_at, now())
+    );
+  elsif old.venue_id is distinct from new.venue_id
+        and new.cancelled_at is null then
+    insert into public.event_registration_logs (
+      event_id, venue_id, member_id, registration_id, action, occurred_at
+    ) values (
+      new.event_id,
+      new.venue_id,
       new.member_id,
       new.id,
       'registered',
@@ -227,27 +301,3 @@ create policy "admins: read registration logs"
 revoke all on public.event_registration_logs from public, anon, authenticated;
 grant select on public.event_registration_logs to authenticated;
 grant all on public.event_registration_logs to service_role;
-
--- Existing rows only have the latest cycle. Record that cycle once.
-insert into public.event_registration_logs (event_id, member_id, registration_id, action, occurred_at)
-select r.event_id, r.member_id, r.id, 'registered', r.registered_at
-from public.event_registrations r
-where not exists (
-  select 1
-  from public.event_registration_logs l
-  where l.registration_id = r.id
-    and l.action = 'registered'
-    and l.occurred_at = r.registered_at
-);
-
-insert into public.event_registration_logs (event_id, member_id, registration_id, action, occurred_at)
-select r.event_id, r.member_id, r.id, 'cancelled', r.cancelled_at
-from public.event_registrations r
-where r.cancelled_at is not null
-  and not exists (
-    select 1
-    from public.event_registration_logs l
-    where l.registration_id = r.id
-      and l.action = 'cancelled'
-      and l.occurred_at = r.cancelled_at
-  );

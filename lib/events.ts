@@ -1,3 +1,5 @@
+import type { ClubEvent, EventVenue } from "@/lib/types";
+
 const BANGKOK = "Asia/Bangkok";
 
 /** URL slug from a title or a typed slug. Empty when the text has no latin characters. */
@@ -15,17 +17,61 @@ export function ensureEventSlug(title: string, slug: string): string {
   return slugifyEventTitle(slug) || slugifyEventTitle(title) || `event-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+export function ensureVenueSlug(name: string, slug: string): string {
+  return slugifyEventTitle(slug) || slugifyEventTitle(name) || `venue-${Math.random().toString(36).slice(2, 8)}`;
+}
+
 export function isRegistrationOpen(startsAt: string, now = Date.now()): boolean {
   return new Date(startsAt).getTime() > now;
 }
 
-/** Active events that have not ended. Without an end time, hide them once they start. */
+/** Venue (or schedule bounds) that have not ended. Without an end time, hide once they start. */
 export function isUpcomingOrOngoing(
-  event: { startsAt: string; endsAt?: string },
+  schedule: { startsAt: string; endsAt?: string },
   now = Date.now()
 ): boolean {
-  const end = event.endsAt ? new Date(event.endsAt).getTime() : new Date(event.startsAt).getTime();
+  const end = schedule.endsAt ? new Date(schedule.endsAt).getTime() : new Date(schedule.startsAt).getTime();
   return end >= now;
+}
+
+export function sortedEventVenues(venues: EventVenue[]): EventVenue[] {
+  return [...venues].sort((a, b) => a.sortOrder - b.sortOrder || a.startsAt.localeCompare(b.startsAt));
+}
+
+/** Earliest start among venues. */
+export function eventEarliestStartsAt(event: ClubEvent): string | undefined {
+  const venues = sortedEventVenues(event.venues);
+  if (venues.length === 0) return undefined;
+  return venues.reduce((min, v) => (v.startsAt < min ? v.startsAt : min), venues[0].startsAt);
+}
+
+/** Latest end among venues; falls back to that venue's start when endsAt is missing. */
+export function eventLatestEndsAt(event: ClubEvent): string | undefined {
+  const venues = sortedEventVenues(event.venues);
+  if (venues.length === 0) return undefined;
+  return venues.reduce((max, v) => {
+    const end = v.endsAt ?? v.startsAt;
+    return end > max ? end : max;
+  }, venues[0].endsAt ?? venues[0].startsAt);
+}
+
+export function eventPrimaryBanner(event: ClubEvent): string {
+  return sortedEventVenues(event.venues).find((v) => v.bannerImage)?.bannerImage ?? "";
+}
+
+export function eventLocationSummary(event: ClubEvent): string {
+  const venues = sortedEventVenues(event.venues);
+  if (venues.length === 0) return "";
+  if (venues.length === 1) return venues[0].location || venues[0].name;
+  return `${venues.length} locations`;
+}
+
+export function isEventUpcomingOrOngoing(event: ClubEvent, now = Date.now()): boolean {
+  return event.venues.some((venue) => isUpcomingOrOngoing(venue, now));
+}
+
+export function venuePublicPath(eventSlug: string, venueSlug: string): string {
+  return `/events/${eventSlug}/${venueSlug}`;
 }
 
 function bangkokParts(iso: string) {

@@ -160,33 +160,55 @@ export interface Partner {
   link: string;
 }
 
+export interface EventVenue {
+  id: string;
+  eventId: string;
+  slug: string;
+  name: string;
+  description: string;
+  location: string;
+  bannerImage: string;
+  startsAt: string;
+  endsAt?: string;
+  sortOrder: number;
+  createdAt: string;
+}
+
 export interface ClubEvent {
   id: string;
   slug: string;
   title: string;
   description: string;
-  location: string;
-  coverImage: string;
-  startsAt: string;
-  endsAt?: string;
   isActive: boolean;
   createdAt: string;
+  venues: EventVenue[];
+}
+
+export interface CreateEventVenueInput {
+  /** Present when updating an existing venue */
+  id?: string;
+  slug: string;
+  name: string;
+  description?: string;
+  location?: string;
+  bannerImage?: string;
+  startsAt: string;
+  endsAt?: string | null;
+  sortOrder?: number;
 }
 
 export interface CreateEventInput {
   title: string;
   slug: string;
   description?: string;
-  location?: string;
-  coverImage?: string;
-  startsAt: string;
-  endsAt?: string | null;
   isActive?: boolean;
+  venues: CreateEventVenueInput[];
 }
 
 export interface EventRegistration {
   id: string;
   eventId: string;
+  venueId: string;
   memberId: string;
   registeredAt: string;
   cancelledAt?: string;
@@ -201,6 +223,9 @@ export interface EventRegistrant {
   email: string;
   phone: string;
   registeredAt: string;
+  venueId: string;
+  venueName: string;
+  venueSlug: string;
 }
 
 export type EventRegistrationAction = "registered" | "cancelled";
@@ -208,6 +233,8 @@ export type EventRegistrationAction = "registered" | "cancelled";
 export interface EventRegistrationLog {
   id: string;
   eventId: string;
+  venueId?: string;
+  venueName: string;
   memberId: string;
   memberCode: string;
   fullName: string;

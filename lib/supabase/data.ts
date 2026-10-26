@@ -1,12 +1,14 @@
 import type {
   ClubEvent,
   CreateEventInput,
+  CreateEventVenueInput,
   CreatePartnerInput,
   CreatePrivilegeCategoryInput,
   CreatePrivilegeInput,
   EventRegistrant,
   EventRegistration,
   EventRegistrationLog,
+  EventVenue,
   MemberPromoCode,
   Privilege,
   PrivilegeCategory,
@@ -14,15 +16,21 @@ import type {
   PromoCodeStats,
   ShopPartner,
 } from "@/lib/types";
-import { ensureEventSlug, isUpcomingOrOngoing } from "@/lib/events";
+import {
+  ensureEventSlug,
+  ensureVenueSlug,
+  eventEarliestStartsAt,
+  isEventUpcomingOrOngoing,
+} from "@/lib/events";
 import { createClient } from "./client";
-import { uploadEventCover, uploadPartnerLogo, uploadPrivilegeCover } from "./storage";
+import { uploadPartnerLogo, uploadPrivilegeCover, uploadVenueBanner } from "./storage";
 import {
   mapCommunityRow,
   mapEventRegistrantRow,
   mapEventRegistrationLogRow,
   mapEventRegistrationRow,
   mapEventRow,
+  mapEventVenueRow,
   mapMemberPromoCodeRow,
   mapPartnerRow,
   mapPrivilegeCategoryRow,
@@ -34,6 +42,7 @@ import {
   type EventRegistrationLogRow,
   type EventRegistrationRow,
   type EventRow,
+  type EventVenueRow,
   type PartnerRow,
   type PrivilegeCategoryRow,
   type PrivilegeRow,
@@ -541,39 +550,131 @@ export async function deletePrivilegeCategory(id: number): Promise<{ ok: boolean
   return { ok: true };
 }
 
+const EVENT_WITH_VENUES_SELECT = "*, event_venues(*)";
+
 const EVENT_REGISTRANT_SELECT =
-  "id, event_id, member_id, registered_at, cancelled_at, profiles!event_registrations_member_id_fkey(member_id, full_name, email, phone)";
+  "id, event_id, venue_id, member_id, registered_at, cancelled_at, profiles!event_registrations_member_id_fkey(member_id, full_name, email, phone), event_venues!event_registrations_venue_id_fkey(id, name, slug)";
 
 const EVENT_LOG_SELECT =
-  "id, event_id, member_id, action, occurred_at, profiles!event_registration_logs_member_id_fkey(member_id, full_name)";
+  "id, event_id, venue_id, member_id, action, occurred_at, profiles!event_registration_logs_member_id_fkey(member_id, full_name), event_venues!event_registration_logs_venue_id_fkey(name)";
 
 function eventWriteError(message: string): string {
-  if (/events_slug_unique|duplicate key value/i.test(message)) {
+  if (/events_slug_unique|event_venues_event_slug_unique|duplicate key value/i.test(message)) {
     return "That link slug is already in use.";
   }
-  if (/events_ends_after_start/i.test(message)) {
+  if (/events_ends_after_start|event_venues_ends_after_start/i.test(message)) {
     return "End time must be after the start time.";
   }
-  if (/events_slug_format/i.test(message)) {
+  if (/events_slug_format|event_venues_slug_format/i.test(message)) {
     return "Slug can use lowercase letters, numbers, and hyphens only.";
   }
+  if (/venue does not belong to event/i.test(message)) {
+    return "That location does not belong to this event.";
+  }
   if (/row-level security/i.test(message)) {
-    return "Registration is closed for this event.";
+    return "Registration is closed for this location.";
   }
   return message;
 }
 
-function eventPatch(input: Partial<CreateEventInput>): Record<string, unknown> {
+function eventMetaPatch(input: Partial<CreateEventInput>): Record<string, unknown> {
   const patch: Record<string, unknown> = {};
   if (input.title !== undefined) patch.title = input.title.trim();
   if (input.slug !== undefined) patch.slug = ensureEventSlug(input.title ?? "", input.slug);
   if (input.description !== undefined) patch.description = input.description.trim() || null;
-  if (input.location !== undefined) patch.location = input.location.trim() || null;
-  if (input.coverImage !== undefined) patch.cover_image = input.coverImage.trim() || null;
-  if (input.startsAt !== undefined) patch.starts_at = input.startsAt;
-  if (input.endsAt !== undefined) patch.ends_at = input.endsAt || null;
   if (input.isActive !== undefined) patch.is_active = input.isActive;
   return patch;
+}
+
+function venueInsertPayload(eventId: string, venue: CreateEventVenueInput, index: number) {
+  return {
+    event_id: eventId,
+    slug: ensureVenueSlug(venue.name, venue.slug),
+    name: venue.name.trim(),
+    description: venue.description?.trim() || null,
+    location: venue.location?.trim() || null,
+    banner_image: venue.bannerImage?.trim() || null,
+    starts_at: venue.startsAt,
+    ends_at: venue.endsAt || null,
+    sort_order: venue.sortOrder ?? index,
+  };
+}
+
+type EventWithVenuesRow = EventRow & { event_venues: EventVenueRow[] | null };
+
+function mapEventWithVenues(row: EventWithVenuesRow): ClubEvent {
+  return mapEventRow(row, row.event_venues ?? []);
+}
+
+async function fetchEventById(id: string): Promise<ClubEvent | null> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("events")
+    .select(EVENT_WITH_VENUES_SELECT)
+    .eq("id", id)
+    .maybeSingle();
+  if (error || !data) return null;
+  return mapEventWithVenues(data as unknown as EventWithVenuesRow);
+}
+
+async function syncEventVenues(
+  eventId: string,
+  venues: CreateEventVenueInput[]
+): Promise<{ ok: true; venues: EventVenue[] } | { ok: false; error: string }> {
+  if (venues.length === 0) {
+    return { ok: false, error: "Add at least one location." };
+  }
+
+  const supabase = createClient();
+  const { data: existingRows, error: existingError } = await supabase
+    .from("event_venues")
+    .select("*")
+    .eq("event_id", eventId);
+  if (existingError) return { ok: false, error: eventWriteError(existingError.message) };
+
+  const existing = (existingRows ?? []) as EventVenueRow[];
+  const keepIds = new Set(venues.map((v) => v.id).filter(Boolean) as string[]);
+  const toDelete = existing.filter((row) => !keepIds.has(row.id));
+
+  for (const row of toDelete) {
+    const { count, error: countError } = await supabase
+      .from("event_registrations")
+      .select("id", { count: "exact", head: true })
+      .eq("venue_id", row.id)
+      .is("cancelled_at", null);
+    if (countError) return { ok: false, error: eventWriteError(countError.message) };
+    if ((count ?? 0) > 0) {
+      return {
+        ok: false,
+        error: `Cannot remove “${row.name}” while members are still registered there. Cancel those registrations first.`,
+      };
+    }
+    const { error: deleteError } = await supabase.from("event_venues").delete().eq("id", row.id);
+    if (deleteError) return { ok: false, error: eventWriteError(deleteError.message) };
+  }
+
+  const saved: EventVenue[] = [];
+  for (let index = 0; index < venues.length; index++) {
+    const venue = venues[index];
+    const payload = venueInsertPayload(eventId, venue, index);
+    if (venue.id) {
+      const { data, error } = await supabase
+        .from("event_venues")
+        .update(payload)
+        .eq("id", venue.id)
+        .eq("event_id", eventId)
+        .select("*")
+        .single();
+      if (error) return { ok: false, error: eventWriteError(error.message) };
+      saved.push(mapEventVenueRow(data as EventVenueRow));
+    } else {
+      const { data, error } = await supabase.from("event_venues").insert(payload).select("*").single();
+      if (error) return { ok: false, error: eventWriteError(error.message) };
+      saved.push(mapEventVenueRow(data as EventVenueRow));
+    }
+  }
+
+  return { ok: true, venues: saved };
 }
 
 /** Event ids the signed-in member is currently registered for. Cancelled rows are excluded. */
@@ -593,38 +694,78 @@ export async function fetchMyRegisteredEventIds(): Promise<Set<string>> {
   return new Set(data.map((row) => row.event_id as string));
 }
 
+/** Map of eventId → venueId for the member's active registrations. */
+export async function fetchMyRegisteredVenueByEventId(): Promise<Map<string, string>> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return new Map();
+
+  const { data, error } = await supabase
+    .from("event_registrations")
+    .select("event_id, venue_id")
+    .eq("member_id", user.id)
+    .is("cancelled_at", null);
+  if (error || !data) return new Map();
+  return new Map(data.map((row) => [row.event_id as string, row.venue_id as string]));
+}
+
 export async function fetchUpcomingEvents(): Promise<ClubEvent[]> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("events")
-    .select("*")
-    .eq("is_active", true)
-    .order("starts_at", { ascending: true });
+    .select(EVENT_WITH_VENUES_SELECT)
+    .eq("is_active", true);
   if (error) return [];
   return (data ?? [])
-    .map((row) => mapEventRow(row as EventRow))
-    .filter((event) => isUpcomingOrOngoing(event));
+    .map((row) => mapEventWithVenues(row as unknown as EventWithVenuesRow))
+    .filter((event) => isEventUpcomingOrOngoing(event))
+    .sort((a, b) => {
+      const aStart = eventEarliestStartsAt(a) ?? "";
+      const bStart = eventEarliestStartsAt(b) ?? "";
+      return aStart.localeCompare(bStart);
+    });
 }
 
 export async function fetchAllEvents(): Promise<ClubEvent[]> {
   const supabase = createClient();
-  let query = supabase.from("events").select("*");
+  let query = supabase.from("events").select(EVENT_WITH_VENUES_SELECT);
   for (const { column, ascending } of ADMIN_ACTIVE_CREATED_ORDER) {
     query = query.order(column, { ascending });
   }
   const { data, error } = await query;
   if (error) return [];
-  return (data ?? []).map((row) => mapEventRow(row as EventRow));
+  return (data ?? []).map((row) => mapEventWithVenues(row as unknown as EventWithVenuesRow));
 }
 
 export async function fetchEventBySlug(slug: string): Promise<ClubEvent | null> {
   const supabase = createClient();
-  const { data, error } = await supabase.from("events").select("*").eq("slug", slug).maybeSingle();
+  const { data, error } = await supabase
+    .from("events")
+    .select(EVENT_WITH_VENUES_SELECT)
+    .eq("slug", slug)
+    .maybeSingle();
   if (error || !data) return null;
-  return mapEventRow(data as EventRow);
+  return mapEventWithVenues(data as unknown as EventWithVenuesRow);
+}
+
+export async function fetchEventVenue(
+  eventSlug: string,
+  venueSlug: string
+): Promise<{ event: ClubEvent; venue: EventVenue } | null> {
+  const event = await fetchEventBySlug(eventSlug);
+  if (!event) return null;
+  const venue = event.venues.find((v) => v.slug === venueSlug);
+  if (!venue) return null;
+  return { event, venue };
 }
 
 export async function createEvent(input: CreateEventInput): Promise<MutateResult<ClubEvent>> {
+  if (!input.venues?.length) {
+    return { ok: false, error: "Add at least one location." };
+  }
+
   const supabase = createClient();
   const { data, error } = await supabase
     .from("events")
@@ -632,16 +773,22 @@ export async function createEvent(input: CreateEventInput): Promise<MutateResult
       title: input.title.trim(),
       slug: ensureEventSlug(input.title, input.slug),
       description: input.description?.trim() || null,
-      location: input.location?.trim() || null,
-      cover_image: input.coverImage?.trim() || null,
-      starts_at: input.startsAt,
-      ends_at: input.endsAt || null,
       is_active: input.isActive ?? true,
     })
     .select("*")
     .single();
   if (error) return { ok: false, error: eventWriteError(error.message) };
-  return { ok: true, data: mapEventRow(data as EventRow) };
+
+  const eventId = (data as EventRow).id;
+  const synced = await syncEventVenues(eventId, input.venues);
+  if (!synced.ok) {
+    await supabase.from("events").delete().eq("id", eventId);
+    return { ok: false, error: synced.error };
+  }
+
+  const full = await fetchEventById(eventId);
+  if (!full) return { ok: false, error: "Event created but could not be reloaded." };
+  return { ok: true, data: full };
 }
 
 export async function updateEvent(
@@ -649,41 +796,81 @@ export async function updateEvent(
   input: Partial<CreateEventInput>
 ): Promise<MutateResult<ClubEvent>> {
   const supabase = createClient();
-  const { data, error } = await supabase
-    .from("events")
-    .update(eventPatch(input))
-    .eq("id", id)
-    .select("*")
-    .single();
-  if (error) return { ok: false, error: eventWriteError(error.message) };
-  return { ok: true, data: mapEventRow(data as EventRow) };
+  const meta = eventMetaPatch(input);
+  if (Object.keys(meta).length > 0) {
+    const { error } = await supabase.from("events").update(meta).eq("id", id);
+    if (error) return { ok: false, error: eventWriteError(error.message) };
+  }
+
+  if (input.venues) {
+    const synced = await syncEventVenues(id, input.venues);
+    if (!synced.ok) return { ok: false, error: synced.error };
+  }
+
+  const full = await fetchEventById(id);
+  if (!full) return { ok: false, error: "Event not found after update." };
+  return { ok: true, data: full };
 }
 
-export async function createEventWithCover(
+export type VenueBannerFiles = Record<string, File | null | undefined>;
+
+/**
+ * Create event + venues, then upload banners.
+ * Keys in `bannerFiles` are venue slug (or temp key matching CreateEventVenueInput.slug).
+ */
+export async function createEventWithVenues(
   input: CreateEventInput,
-  coverFile?: File | null
+  bannerFiles?: VenueBannerFiles
 ): Promise<MutateResult<ClubEvent>> {
   const created = await createEvent(input);
-  if (!created.ok || !coverFile) return created;
+  if (!created.ok) return created;
+  if (!bannerFiles) return created;
 
-  const uploaded = await uploadEventCover(created.data.id, coverFile);
-  if (!uploaded.ok) {
-    return { ok: false, error: `Event created but cover upload failed: ${uploaded.error}` };
+  const venues = [...created.data.venues];
+  for (let i = 0; i < venues.length; i++) {
+    const venue = venues[i];
+    const file = bannerFiles[venue.slug] ?? bannerFiles[input.venues[i]?.slug ?? ""];
+    if (!file) continue;
+    const uploaded = await uploadVenueBanner(created.data.id, venue.id, file);
+    if (!uploaded.ok) {
+      return { ok: false, error: `Event created but banner upload failed: ${uploaded.error}` };
+    }
+    const { error } = await createClient()
+      .from("event_venues")
+      .update({ banner_image: uploaded.url })
+      .eq("id", venue.id);
+    if (error) return { ok: false, error: eventWriteError(error.message) };
   }
-  return updateEvent(created.data.id, { coverImage: uploaded.url });
+
+  const full = await fetchEventById(created.data.id);
+  if (!full) return created;
+  return { ok: true, data: full };
 }
 
-export async function updateEventWithCover(
+export async function updateEventWithVenues(
   id: string,
   input: Partial<CreateEventInput>,
-  coverFile?: File | null
+  bannerFiles?: VenueBannerFiles
 ): Promise<MutateResult<ClubEvent>> {
-  if (coverFile) {
-    const uploaded = await uploadEventCover(id, coverFile);
+  const updated = await updateEvent(id, input);
+  if (!updated.ok) return updated;
+  if (!bannerFiles || !input.venues) return updated;
+
+  for (const venue of updated.data.venues) {
+    const file = bannerFiles[venue.slug] ?? (venue.id ? bannerFiles[venue.id] : undefined);
+    if (!file) continue;
+    const uploaded = await uploadVenueBanner(id, venue.id, file);
     if (!uploaded.ok) return { ok: false, error: uploaded.error };
-    input = { ...input, coverImage: uploaded.url };
+    const { error } = await createClient()
+      .from("event_venues")
+      .update({ banner_image: uploaded.url })
+      .eq("id", venue.id);
+    if (error) return { ok: false, error: eventWriteError(error.message) };
   }
-  return updateEvent(id, input);
+
+  const full = await fetchEventById(id);
+  if (!full) return updated;
+  return { ok: true, data: full };
 }
 
 export async function fetchMyEventRegistration(eventId: string): Promise<EventRegistration | null> {
@@ -703,7 +890,10 @@ export async function fetchMyEventRegistration(eventId: string): Promise<EventRe
   return mapEventRegistrationRow(data as EventRegistrationRow);
 }
 
-export async function registerForEvent(eventId: string): Promise<MutateResult<EventRegistration>> {
+export async function registerForEvent(
+  eventId: string,
+  venueId: string
+): Promise<MutateResult<EventRegistration>> {
   const supabase = createClient();
   const {
     data: { user },
@@ -712,13 +902,23 @@ export async function registerForEvent(eventId: string): Promise<MutateResult<Ev
 
   const existing = await fetchMyEventRegistration(eventId);
   if (existing && !existing.cancelledAt) {
-    return { ok: true, data: existing };
+    if (existing.venueId === venueId) {
+      return { ok: true, data: existing };
+    }
+    return {
+      ok: false,
+      error: "You are already registered at another location for this event. Cancel that registration first.",
+    };
   }
 
   if (existing) {
     const { data, error } = await supabase
       .from("event_registrations")
-      .update({ cancelled_at: null, registered_at: new Date().toISOString() })
+      .update({
+        cancelled_at: null,
+        registered_at: new Date().toISOString(),
+        venue_id: venueId,
+      })
       .eq("id", existing.id)
       .select("*")
       .single();
@@ -728,7 +928,7 @@ export async function registerForEvent(eventId: string): Promise<MutateResult<Ev
 
   const { data, error } = await supabase
     .from("event_registrations")
-    .insert({ event_id: eventId, member_id: user.id })
+    .insert({ event_id: eventId, venue_id: venueId, member_id: user.id })
     .select("*")
     .single();
   if (error) return { ok: false, error: eventWriteError(error.message) };

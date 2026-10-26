@@ -1,18 +1,20 @@
 import type { EventRegistrationConfirmedPayload, WebhookSendOptions } from "@/lib/n8n";
 import { sendEventRegistrationConfirmWebhook } from "@/lib/n8n";
-import type { EventRow, ProfileRow } from "@/lib/supabase/mappers";
+import type { EventRow, EventVenueRow, ProfileRow } from "@/lib/supabase/mappers";
 
 export function buildEventRegistrationConfirmPayload(input: {
   member: ProfileRow;
   email: string;
   clubEvent: EventRow;
+  venue: EventVenueRow;
   registeredAt: string;
   eventUrl: string;
 }): EventRegistrationConfirmedPayload {
-  const { member, email, clubEvent, registeredAt, eventUrl } = input;
+  const { member, email, clubEvent, venue, registeredAt, eventUrl } = input;
   return {
     event: "event_registration_confirmed",
     eventName: clubEvent.title,
+    venueName: venue.name,
     member: {
       id: member.id,
       email,
@@ -25,10 +27,16 @@ export function buildEventRegistrationConfirmPayload(input: {
       slug: clubEvent.slug,
       title: clubEvent.title,
       description: clubEvent.description ?? "",
-      location: clubEvent.location ?? "",
-      coverImage: clubEvent.cover_image ?? "",
-      startsAt: clubEvent.starts_at,
-      endsAt: clubEvent.ends_at,
+    },
+    venue: {
+      id: venue.id,
+      slug: venue.slug,
+      name: venue.name,
+      description: venue.description ?? "",
+      location: venue.location ?? "",
+      bannerImage: venue.banner_image ?? "",
+      startsAt: venue.starts_at,
+      endsAt: venue.ends_at,
     },
     registeredAt,
     eventUrl,
@@ -40,6 +48,7 @@ export async function sendConfirmEmailForRegistrant(
     member: ProfileRow;
     email: string;
     clubEvent: EventRow;
+    venue: EventVenueRow;
     registeredAt: string;
     eventUrl: string;
   },
