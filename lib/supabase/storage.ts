@@ -73,6 +73,27 @@ export async function uploadPartnerLogo(partnerId: string, file: File): Promise<
   return uploadImage(path, file);
 }
 
+/** @deprecated Prefer uploadVenueBanner — kept for any leftover single-cover callers. */
+export async function uploadEventCover(eventId: string, file: File): Promise<UploadResult> {
+  const validationError = validateImage(file, MAX_COVER_BYTES, "Cover image");
+  if (validationError) return { ok: false, error: validationError };
+
+  const path = `events/${eventId}.${extensionFor(file)}`;
+  return uploadImage(path, file);
+}
+
+export async function uploadVenueBanner(
+  eventId: string,
+  venueId: string,
+  file: File
+): Promise<UploadResult> {
+  const validationError = validateImage(file, MAX_COVER_BYTES, "Banner image");
+  if (validationError) return { ok: false, error: validationError };
+
+  const path = `events/${eventId}/venues/${venueId}.${extensionFor(file)}`;
+  return uploadImage(path, file);
+}
+
 export async function uploadPrivilegeCover(privilegeId: string, file: File): Promise<UploadResult> {
   const validationError = validateImage(file, MAX_COVER_BYTES, "Cover image");
   if (validationError) return { ok: false, error: validationError };

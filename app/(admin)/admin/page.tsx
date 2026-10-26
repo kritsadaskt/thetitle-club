@@ -13,8 +13,9 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { PartnersTab } from "@/components/admin/partners-tab";
 import { CategoriesTab } from "@/components/admin/categories-tab";
+import { EventsTab } from "@/components/admin/events-tab";
 
-type Tab = "members" | "partners" | "categories";
+type Tab = "members" | "partners" | "categories" | "events";
 
 const MEMBER_PAGE_SIZE = 10;
 
@@ -283,8 +284,8 @@ export default function AdminPage() {
           ))}
         </div>
 
-        <div className="flex gap-1 mb-6 bg-white border border-cream-300 rounded-xl p-1 w-fit shadow-sm">
-          {(["members", "partners", "categories"] as Tab[]).map((t) => (
+        <div className="flex flex-wrap gap-1 mb-6 bg-white border border-cream-300 rounded-xl p-1 w-fit shadow-sm">
+          {(["members", "partners", "categories", "events"] as Tab[]).map((t) => (
             <button
               key={t}
               type="button"
@@ -420,6 +421,8 @@ export default function AdminPage() {
         {tab === "partners" && <PartnersTab />}
 
         {tab === "categories" && <CategoriesTab />}
+
+        {tab === "events" && <EventsTab />}
       </div>
     </div>
   );
