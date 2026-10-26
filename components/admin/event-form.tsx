@@ -26,6 +26,8 @@ type VenueFormState = {
   startsAt: string;
   endsAt: string;
   bannerImage: string;
+  sameNameAsEvent: boolean;
+  sameScheduleAsEvent: boolean;
 };
 
 type FormState = {
@@ -34,6 +36,9 @@ type FormState = {
   description: string;
   isActive: boolean;
   multiVenue: boolean;
+  /** Main event schedule — venues can inherit via “Same as main event”. */
+  mainStartsAt: string;
+  mainEndsAt: string;
   venues: VenueFormState[];
 };
 
@@ -64,6 +69,8 @@ function emptyVenue(overrides?: Partial<VenueFormState>): VenueFormState {
     startsAt: "",
     endsAt: "",
     bannerImage: "",
+    sameNameAsEvent: true,
+    sameScheduleAsEvent: true,
     ...overrides,
   };
 }
@@ -74,28 +81,42 @@ const EMPTY: FormState = {
   description: "",
   isActive: true,
   multiVenue: false,
-  venues: [emptyVenue({ name: "Main", slug: "main", slugTouched: true })],
+  mainStartsAt: "",
+  mainEndsAt: "",
+  venues: [emptyVenue({ name: "", slug: "main", slugTouched: true })],
 };
 
 function fromEvent(event?: ClubEvent): FormState {
   if (!event) return EMPTY;
+
+  const primary = event.venues[0];
+  const mainStartsAt = primary ? toDatetimeLocalValue(primary.startsAt) : "";
+  const mainEndsAt = primary?.endsAt ? toDatetimeLocalValue(primary.endsAt) : "";
+
   const venues =
     event.venues.length > 0
-      ? event.venues.map((venue) =>
-          emptyVenue({
+      ? event.venues.map((venue, index) => {
+          const startsAt = toDatetimeLocalValue(venue.startsAt);
+          const endsAt = venue.endsAt ? toDatetimeLocalValue(venue.endsAt) : "";
+          const sameNameAsEvent = venue.name.trim() === event.title.trim();
+          const sameScheduleAsEvent =
+            startsAt === mainStartsAt && endsAt === mainEndsAt;
+          return emptyVenue({
             key: venue.id,
             id: venue.id,
             name: venue.name,
-            slug: venue.slug,
+            slug: venue.slug || (index === 0 ? "main" : `location-${index + 1}`),
             slugTouched: true,
             description: venue.description,
             location: venue.location,
-            startsAt: toDatetimeLocalValue(venue.startsAt),
-            endsAt: venue.endsAt ? toDatetimeLocalValue(venue.endsAt) : "",
+            startsAt,
+            endsAt,
             bannerImage: venue.bannerImage,
-          })
-        )
-      : [emptyVenue({ name: "Main", slug: "main", slugTouched: true })];
+            sameNameAsEvent,
+            sameScheduleAsEvent,
+          });
+        })
+      : [emptyVenue({ slug: "main", slugTouched: true })];
 
   return {
     title: event.title,
@@ -103,8 +124,33 @@ function fromEvent(event?: ClubEvent): FormState {
     description: event.description,
     isActive: event.isActive,
     multiVenue: venues.length > 1,
+    mainStartsAt,
+    mainEndsAt,
     venues,
   };
+}
+
+function SameAsMainCheckbox({
+  checked,
+  onChange,
+  disabled,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+      <input
+        type="checkbox"
+        checked={checked}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.checked)}
+        className="h-3.5 w-3.5 rounded border-cream-400 text-primary focus:ring-primary/30"
+      />
+      <span className="text-[11px] text-ink-muted font-medium">Same as main event</span>
+    </label>
+  );
 }
 
 export function EventForm({ open, event, title, submitLabel, onClose, onSubmit }: Props) {
@@ -137,12 +183,99 @@ export function EventForm({ open, event, title, submitLabel, onClose, onSubmit }
     }));
   };
 
-  const addVenue = () => {
+  const setEventTitle = (nextTitle: string) => {
     setForm((prev) => ({
       ...prev,
-      multiVenue: true,
-      venues: [...prev.venues, emptyVenue()],
+      title: nextTitle,
+      slug: slugTouched ? prev.slug : slugifyEventTitle(nextTitle),
+      venues: prev.venues.map((venue) =>
+        venue.sameNameAsEvent
+          ? {
+              ...venue,
+              name: nextTitle,
+              slug: venue.slugTouched ? venue.slug : slugifyEventTitle(nextTitle) || venue.slug,
+            }
+          : venue
+      ),
     }));
+  };
+
+  const setMainSchedule = (patch: { mainStartsAt?: string; mainEndsAt?: string }) => {
+    setForm((prev) => {
+      const mainStartsAt = patch.mainStartsAt ?? prev.mainStartsAt;
+      const mainEndsAt = patch.mainEndsAt ?? prev.mainEndsAt;
+      return {
+        ...prev,
+        mainStartsAt,
+        mainEndsAt,
+        venues: prev.venues.map((venue) =>
+          venue.sameScheduleAsEvent
+            ? { ...venue, startsAt: mainStartsAt, endsAt: mainEndsAt }
+            : venue
+        ),
+      };
+    });
+  };
+
+  const setSameNameAsEvent = (key: string, checked: boolean) => {
+    setForm((prev) => ({
+      ...prev,
+      venues: prev.venues.map((venue, index) => {
+        if (venue.key !== key) return venue;
+        if (!checked) return { ...venue, sameNameAsEvent: false };
+        const nextSlug =
+          venue.slugTouched && venue.slug
+            ? venue.slug
+            : index === 0
+              ? "main"
+              : `location-${index + 1}`;
+        return {
+          ...venue,
+          sameNameAsEvent: true,
+          name: prev.title,
+          slug: nextSlug,
+          slugTouched: true,
+        };
+      }),
+    }));
+  };
+
+  const setSameScheduleAsEvent = (key: string, checked: boolean) => {
+    setForm((prev) => ({
+      ...prev,
+      venues: prev.venues.map((venue) => {
+        if (venue.key !== key) return venue;
+        if (!checked) return { ...venue, sameScheduleAsEvent: false };
+        return {
+          ...venue,
+          sameScheduleAsEvent: true,
+          startsAt: prev.mainStartsAt,
+          endsAt: prev.mainEndsAt,
+        };
+      }),
+    }));
+  };
+
+  const addVenue = () => {
+    setForm((prev) => {
+      const index = prev.venues.length;
+      return {
+        ...prev,
+        multiVenue: true,
+        venues: [
+          ...prev.venues,
+          emptyVenue({
+            name: prev.title,
+            slug: `location-${index + 1}`,
+            slugTouched: true,
+            startsAt: prev.mainStartsAt,
+            endsAt: prev.mainEndsAt,
+            sameNameAsEvent: true,
+            sameScheduleAsEvent: true,
+          }),
+        ],
+      };
+    });
   };
 
   const removeVenue = (key: string) => {
@@ -166,10 +299,27 @@ export function EventForm({ open, event, title, submitLabel, onClose, onSubmit }
     });
   };
 
+  const resolveVenueName = (venue: VenueFormState) =>
+    venue.sameNameAsEvent ? form.title.trim() : venue.name.trim();
+
+  const resolveVenueStartsAt = (venue: VenueFormState) =>
+    venue.sameScheduleAsEvent ? form.mainStartsAt : venue.startsAt;
+
+  const resolveVenueEndsAt = (venue: VenueFormState) =>
+    venue.sameScheduleAsEvent ? form.mainEndsAt : venue.endsAt;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title.trim()) {
       setError("Event title is required.");
+      return;
+    }
+    if (!form.mainStartsAt) {
+      setError("Main event start time is required.");
+      return;
+    }
+    if (form.mainEndsAt && form.mainEndsAt < form.mainStartsAt) {
+      setError("Main event end time must be after the start time.");
       return;
     }
 
@@ -180,31 +330,39 @@ export function EventForm({ open, event, title, submitLabel, onClose, onSubmit }
     }
 
     for (const venue of venuesToSave) {
-      if (!venue.name.trim()) {
-        setError("Each location needs a name.");
+      const name = resolveVenueName(venue);
+      const startsAt = resolveVenueStartsAt(venue);
+      const endsAt = resolveVenueEndsAt(venue);
+      if (!name) {
+        setError("Each location needs a name (or tick Same as main event).");
         return;
       }
-      if (!venue.startsAt) {
-        setError(`Start time is required for “${venue.name.trim() || "location"}”.`);
+      if (!startsAt) {
+        setError(`Start time is required for “${name || "location"}”.`);
         return;
       }
-      if (venue.endsAt && venue.endsAt < venue.startsAt) {
-        setError(`End time must be after the start time for “${venue.name.trim()}”.`);
+      if (endsAt && endsAt < startsAt) {
+        setError(`End time must be after the start time for “${name}”.`);
         return;
       }
     }
 
-    const venues: CreateEventVenueInput[] = venuesToSave.map((venue, index) => ({
-      id: venue.id,
-      name: venue.name.trim(),
-      slug: ensureVenueSlug(venue.name, venue.slug),
-      description: venue.description,
-      location: venue.location,
-      bannerImage: venue.bannerImage || undefined,
-      startsAt: fromDatetimeLocalValue(venue.startsAt),
-      endsAt: venue.endsAt ? fromDatetimeLocalValue(venue.endsAt) : null,
-      sortOrder: index,
-    }));
+    const venues: CreateEventVenueInput[] = venuesToSave.map((venue, index) => {
+      const name = resolveVenueName(venue);
+      const startsAt = resolveVenueStartsAt(venue);
+      const endsAt = resolveVenueEndsAt(venue);
+      return {
+        id: venue.id,
+        name,
+        slug: ensureVenueSlug(name, venue.slug || (index === 0 ? "main" : `location-${index + 1}`)),
+        description: venue.description,
+        location: venue.location,
+        bannerImage: venue.bannerImage || undefined,
+        startsAt: fromDatetimeLocalValue(startsAt),
+        endsAt: endsAt ? fromDatetimeLocalValue(endsAt) : null,
+        sortOrder: index,
+      };
+    });
 
     const input: CreateEventInput = {
       title: form.title.trim(),
@@ -215,9 +373,12 @@ export function EventForm({ open, event, title, submitLabel, onClose, onSubmit }
     };
 
     const files: VenueBannerFiles = { ...bannerFilesRef.current, ...bannerFiles };
-    // Also index by final slug so uploads match after slugify
     for (const venue of venuesToSave) {
-      const finalSlug = ensureVenueSlug(venue.name, venue.slug);
+      const name = resolveVenueName(venue);
+      const finalSlug = ensureVenueSlug(
+        name,
+        venue.slug || "venue"
+      );
       const file = files[venue.key] ?? files[venue.id ?? ""] ?? files[venue.slug];
       if (file) files[finalSlug] = file;
     }
@@ -232,6 +393,9 @@ export function EventForm({ open, event, title, submitLabel, onClose, onSubmit }
     }
     onClose();
   };
+
+  const inputClass =
+    "mt-1.5 w-full rounded-lg border border-cream-300 bg-cream-50 px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-60";
 
   return (
     <div
@@ -256,23 +420,20 @@ export function EventForm({ open, event, title, submitLabel, onClose, onSubmit }
             </div>
           )}
           <label className="block">
-            <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">Title *</span>
+            <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">
+              Title *
+            </span>
             <input
               required
               value={form.title}
-              onChange={(e) => {
-                const nextTitle = e.target.value;
-                setForm((prev) => ({
-                  ...prev,
-                  title: nextTitle,
-                  slug: slugTouched ? prev.slug : slugifyEventTitle(nextTitle),
-                }));
-              }}
-              className="mt-1.5 w-full rounded-lg border border-cream-300 bg-cream-50 px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+              onChange={(e) => setEventTitle(e.target.value)}
+              className={inputClass}
             />
           </label>
           <label className="block">
-            <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">Event link slug</span>
+            <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">
+              Event link slug
+            </span>
             <input
               value={form.slug}
               onChange={(e) => {
@@ -280,12 +441,42 @@ export function EventForm({ open, event, title, submitLabel, onClose, onSubmit }
                 set("slug", slugifyEventTitle(e.target.value));
               }}
               placeholder="weekend-brunch"
-              className="mt-1.5 w-full rounded-lg border border-cream-300 bg-cream-50 px-3 py-2 text-sm text-forest font-mono focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+              className={cn(inputClass, "font-mono")}
             />
             <p className="text-ink-muted text-[11px] mt-1">
               Used in the public hub link. Lowercase letters, numbers, and hyphens.
             </p>
           </label>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <label className="block">
+              <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">
+                Main starts *
+              </span>
+              <input
+                required
+                type="datetime-local"
+                value={form.mainStartsAt}
+                onChange={(e) => setMainSchedule({ mainStartsAt: e.target.value })}
+                className={inputClass}
+              />
+            </label>
+            <label className="block">
+              <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">
+                Main ends
+              </span>
+              <input
+                type="datetime-local"
+                value={form.mainEndsAt}
+                onChange={(e) => setMainSchedule({ mainEndsAt: e.target.value })}
+                className={inputClass}
+              />
+            </label>
+          </div>
+          <p className="text-ink-muted text-[11px] -mt-2">
+            Main event schedule (Thailand / ICT). Locations can reuse this with “Same as main event”.
+          </p>
+
           <label className="block">
             <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">
               Event overview
@@ -294,7 +485,7 @@ export function EventForm({ open, event, title, submitLabel, onClose, onSubmit }
               rows={3}
               value={form.description}
               onChange={(e) => set("description", e.target.value)}
-              className="mt-1.5 w-full rounded-lg border border-cream-300 bg-cream-50 px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+              className={inputClass}
             />
           </label>
 
@@ -313,122 +504,156 @@ export function EventForm({ open, event, title, submitLabel, onClose, onSubmit }
               />
             </div>
 
-            {(form.multiVenue ? form.venues : form.venues.slice(0, 1)).map((venue, index) => (
-              <div
-                key={venue.key}
-                className="rounded-xl border border-cream-300 bg-white p-4 space-y-3"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-ink-muted text-xs font-semibold uppercase tracking-wide">
-                    {form.multiVenue ? `Location ${index + 1}` : "Location"}
-                  </p>
-                  {form.multiVenue && form.venues.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeVenue(venue.key)}
-                      className="inline-flex items-center gap-1 text-xs text-red-700 hover:text-red-800"
-                    >
-                      <Trash2 size={12} /> Remove
-                    </button>
-                  )}
-                </div>
-                <label className="block">
-                  <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">
-                    Name *
-                  </span>
-                  <input
-                    required
-                    value={venue.name}
-                    onChange={(e) => {
-                      const nextName = e.target.value;
-                      updateVenue(venue.key, {
-                        name: nextName,
-                        slug: venue.slugTouched ? venue.slug : slugifyEventTitle(nextName),
-                      });
+            {(form.multiVenue ? form.venues : form.venues.slice(0, 1)).map((venue, index) => {
+              const displayName = venue.sameNameAsEvent ? form.title : venue.name;
+              const displayStarts = venue.sameScheduleAsEvent ? form.mainStartsAt : venue.startsAt;
+              const displayEnds = venue.sameScheduleAsEvent ? form.mainEndsAt : venue.endsAt;
+
+              return (
+                <div
+                  key={venue.key}
+                  className="rounded-xl border border-cream-300 bg-white p-4 space-y-3"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-ink-muted text-xs font-semibold uppercase tracking-wide">
+                      {form.multiVenue ? `Location ${index + 1}` : "Location"}
+                    </p>
+                    {form.multiVenue && form.venues.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeVenue(venue.key)}
+                        className="inline-flex items-center gap-1 text-xs text-red-700 hover:text-red-800"
+                      >
+                        <Trash2 size={12} /> Remove
+                      </button>
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">
+                        Name *
+                      </span>
+                      <SameAsMainCheckbox
+                        checked={venue.sameNameAsEvent}
+                        onChange={(checked) => setSameNameAsEvent(venue.key, checked)}
+                        disabled={saving}
+                      />
+                    </div>
+                    <input
+                      required={!venue.sameNameAsEvent}
+                      value={displayName}
+                      disabled={venue.sameNameAsEvent || saving}
+                      onChange={(e) => {
+                        const nextName = e.target.value;
+                        updateVenue(venue.key, {
+                          name: nextName,
+                          slug: venue.slugTouched ? venue.slug : slugifyEventTitle(nextName),
+                        });
+                      }}
+                      className={inputClass}
+                    />
+                  </div>
+
+                  <label className="block">
+                    <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">
+                      Location slug
+                    </span>
+                    <input
+                      value={venue.slug}
+                      onChange={(e) =>
+                        updateVenue(venue.key, {
+                          slug: slugifyEventTitle(e.target.value),
+                          slugTouched: true,
+                        })
+                      }
+                      className={cn(inputClass, "font-mono")}
+                    />
+                    {venue.sameNameAsEvent && (
+                      <p className="text-ink-muted text-[11px] mt-1">
+                        Keep a unique slug when several locations share the event name.
+                      </p>
+                    )}
+                  </label>
+
+                  <label className="block">
+                    <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">
+                      Address / place
+                    </span>
+                    <input
+                      value={venue.location}
+                      onChange={(e) => updateVenue(venue.key, { location: e.target.value })}
+                      className={inputClass}
+                    />
+                  </label>
+
+                  <div>
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+                      <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">
+                        Schedule *
+                      </span>
+                      <SameAsMainCheckbox
+                        checked={venue.sameScheduleAsEvent}
+                        onChange={(checked) => setSameScheduleAsEvent(venue.key, checked)}
+                        disabled={saving}
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <label className="block">
+                        <span className="text-ink-muted text-[11px]">Starts</span>
+                        <input
+                          required={!venue.sameScheduleAsEvent}
+                          type="datetime-local"
+                          value={displayStarts}
+                          disabled={venue.sameScheduleAsEvent || saving}
+                          onChange={(e) => updateVenue(venue.key, { startsAt: e.target.value })}
+                          className={inputClass}
+                        />
+                      </label>
+                      <label className="block">
+                        <span className="text-ink-muted text-[11px]">Ends</span>
+                        <input
+                          type="datetime-local"
+                          value={displayEnds}
+                          disabled={venue.sameScheduleAsEvent || saving}
+                          onChange={(e) => updateVenue(venue.key, { endsAt: e.target.value })}
+                          className={inputClass}
+                        />
+                      </label>
+                    </div>
+                    <p className="text-ink-muted text-[11px] mt-1">Times are in Thailand (ICT).</p>
+                  </div>
+
+                  <label className="block">
+                    <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">
+                      Location details
+                    </span>
+                    <textarea
+                      rows={3}
+                      value={venue.description}
+                      onChange={(e) => updateVenue(venue.key, { description: e.target.value })}
+                      className={inputClass}
+                    />
+                  </label>
+                  <ImageUploadField
+                    label="Banner (AW)"
+                    hint="JPEG, PNG, WebP, or GIF — max 1 MB"
+                    currentUrl={venue.bannerImage || undefined}
+                    disabled={saving}
+                    onFileChange={(file) => {
+                      const next = {
+                        ...bannerFilesRef.current,
+                        [venue.key]: file,
+                        ...(venue.id ? { [venue.id]: file } : {}),
+                        [venue.slug || venue.key]: file,
+                      };
+                      bannerFilesRef.current = next;
+                      setBannerFiles(next);
                     }}
-                    className="mt-1.5 w-full rounded-lg border border-cream-300 bg-cream-50 px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
                   />
-                </label>
-                <label className="block">
-                  <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">
-                    Location slug
-                  </span>
-                  <input
-                    value={venue.slug}
-                    onChange={(e) =>
-                      updateVenue(venue.key, {
-                        slug: slugifyEventTitle(e.target.value),
-                        slugTouched: true,
-                      })
-                    }
-                    className="mt-1.5 w-full rounded-lg border border-cream-300 bg-cream-50 px-3 py-2 text-sm text-forest font-mono focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-                  />
-                </label>
-                <label className="block">
-                  <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">
-                    Address / place
-                  </span>
-                  <input
-                    value={venue.location}
-                    onChange={(e) => updateVenue(venue.key, { location: e.target.value })}
-                    className="mt-1.5 w-full rounded-lg border border-cream-300 bg-cream-50 px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-                  />
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <label className="block">
-                    <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">
-                      Starts *
-                    </span>
-                    <input
-                      required
-                      type="datetime-local"
-                      value={venue.startsAt}
-                      onChange={(e) => updateVenue(venue.key, { startsAt: e.target.value })}
-                      className="mt-1.5 w-full rounded-lg border border-cream-300 bg-cream-50 px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">
-                      Ends
-                    </span>
-                    <input
-                      type="datetime-local"
-                      value={venue.endsAt}
-                      onChange={(e) => updateVenue(venue.key, { endsAt: e.target.value })}
-                      className="mt-1.5 w-full rounded-lg border border-cream-300 bg-cream-50 px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-                    />
-                  </label>
                 </div>
-                <p className="text-ink-muted text-[11px] -mt-2">Times are in Thailand (ICT).</p>
-                <label className="block">
-                  <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">
-                    Location details
-                  </span>
-                  <textarea
-                    rows={3}
-                    value={venue.description}
-                    onChange={(e) => updateVenue(venue.key, { description: e.target.value })}
-                    className="mt-1.5 w-full rounded-lg border border-cream-300 bg-cream-50 px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
-                  />
-                </label>
-                <ImageUploadField
-                  label="Banner (AW)"
-                  hint="JPEG, PNG, WebP, or GIF — max 1 MB"
-                  currentUrl={venue.bannerImage || undefined}
-                  disabled={saving}
-                  onFileChange={(file) => {
-                    const next = {
-                      ...bannerFilesRef.current,
-                      [venue.key]: file,
-                      ...(venue.id ? { [venue.id]: file } : {}),
-                      [venue.slug || venue.key]: file,
-                    };
-                    bannerFilesRef.current = next;
-                    setBannerFiles(next);
-                  }}
-                />
-              </div>
-            ))}
+              );
+            })}
 
             {form.multiVenue && (
               <button
