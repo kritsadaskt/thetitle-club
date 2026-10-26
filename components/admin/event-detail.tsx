@@ -1,8 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { QRCodeCanvas } from "qrcode.react";
-import { ArrowLeft, Copy, Download, Mail, Pencil } from "lucide-react";
+import { ArrowLeft, Download, Mail, Pencil } from "lucide-react";
 import { absoluteAppUrl } from "@/lib/app-url";
 import {
   eventEarliestStartsAt,
@@ -22,6 +21,7 @@ import type { ClubEvent, CreateEventInput, EventRegistrant, EventRegistrationLog
 import { cn } from "@/lib/utils";
 import { ActiveToggle } from "./active-toggle";
 import { EventForm } from "./event-form";
+import { VenueQrCard } from "./venue-qr-card";
 
 type Props = {
   event: ClubEvent;
@@ -34,7 +34,6 @@ export function EventDetail({ event, onBack, onEventUpdated }: Props) {
   const [logs, setLogs] = useState<EventRegistrationLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [showEdit, setShowEdit] = useState(false);
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [archiving, setArchiving] = useState(false);
   const [venueFilter, setVenueFilter] = useState<string>("all");
   const [resendTarget, setResendTarget] = useState<EventRegistrant | null>(null);
@@ -94,12 +93,6 @@ export function EventDetail({ event, onBack, onEventUpdated }: Props) {
     if (!res.ok) return { ok: false, error: res.error };
     onEventUpdated(res.data);
     return { ok: true };
-  };
-
-  const copyLink = async (key: string, url: string) => {
-    await navigator.clipboard.writeText(url);
-    setCopiedKey(key);
-    window.setTimeout(() => setCopiedKey(null), 2000);
   };
 
   const resendConfirmEmail = async () => {
@@ -259,11 +252,11 @@ export function EventDetail({ event, onBack, onEventUpdated }: Props) {
               key={venue.id}
               className="bg-white border border-cream-300 rounded-2xl p-4 shadow-card flex flex-col sm:flex-row gap-4"
             >
-              <div className="shrink-0 rounded-2xl border border-cream-300 bg-cream-50 p-3 w-fit mx-auto sm:mx-0">
-                <div className="bg-white rounded-xl p-2">
-                  <QRCodeCanvas value={shareUrl} size={120} includeMargin />
-                </div>
-              </div>
+              <VenueQrCard
+                value={shareUrl}
+                title={venue.name}
+                fileBaseName={`${event.slug}__${venue.slug}`}
+              />
               <div className="flex-1 min-w-0">
                 <p className="text-forest font-medium text-sm">{venue.name}</p>
                 <p className="text-ink-muted text-xs mt-1">
@@ -276,13 +269,9 @@ export function EventDetail({ event, onBack, onEventUpdated }: Props) {
                   {count} registration{count === 1 ? "" : "s"}
                 </p>
                 <p className="text-[11px] text-ink-muted mt-2 break-all">{shareUrl}</p>
-                <button
-                  type="button"
-                  onClick={() => void copyLink(venue.id, shareUrl)}
-                  className="mt-2 inline-flex items-center justify-center gap-1.5 rounded-xl border border-cream-300 bg-cream-50 px-3 py-1.5 text-xs text-forest hover:bg-cream-100"
-                >
-                  <Copy size={12} /> {copiedKey === venue.id ? "Copied" : "Copy link"}
-                </button>
+                <p className="text-[10px] text-ink-muted mt-2">
+                  Click the QR to open 1000×1000 in a new tab. Save PNG or copy image for print.
+                </p>
               </div>
             </div>
           );
