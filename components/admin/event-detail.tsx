@@ -1,8 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { QRCodeCanvas } from "qrcode.react";
-import { ArrowLeft, Copy, Download, Mail, Pencil } from "lucide-react";
+import { ArrowLeft, Download, Mail, Pencil } from "lucide-react";
 import { absoluteAppUrl } from "@/lib/app-url";
 import {
   eventEarliestStartsAt,
@@ -18,10 +17,17 @@ import {
   updateEventWithVenues,
   type VenueBannerFiles,
 } from "@/lib/supabase/data";
-import type { ClubEvent, CreateEventInput, EventRegistrant, EventRegistrationLog } from "@/lib/types";
+import type {
+  ClubEvent,
+  CreateEventInput,
+  EventRegistrant,
+  EventRegistrationLog,
+  EventVenue,
+} from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ActiveToggle } from "./active-toggle";
 import { EventForm } from "./event-form";
+import { VenueQrCard } from "./venue-qr-card";
 
 type Props = {
   event: ClubEvent;
@@ -29,12 +35,16 @@ type Props = {
   onEventUpdated: (event: ClubEvent) => void;
 };
 
+/** Prefer address/place so chips stay distinct when venue name matches the event title. */
+function venueLocationLabel(venue: EventVenue): string {
+  return venue.location.trim() || venue.slug || venue.name;
+}
+
 export function EventDetail({ event, onBack, onEventUpdated }: Props) {
   const [registrants, setRegistrants] = useState<EventRegistrant[]>([]);
   const [logs, setLogs] = useState<EventRegistrationLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [showEdit, setShowEdit] = useState(false);
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [archiving, setArchiving] = useState(false);
   const [venueFilter, setVenueFilter] = useState<string>("all");
   const [resendTarget, setResendTarget] = useState<EventRegistrant | null>(null);
@@ -73,6 +83,12 @@ export function EventDetail({ event, onBack, onEventUpdated }: Props) {
   const filteredLogs =
     venueFilter === "all" ? logs : logs.filter((row) => row.venueId === venueFilter);
 
+  const venueLabelById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const venue of event.venues) map.set(venue.id, venueLocationLabel(venue));
+    return map;
+  }, [event.venues]);
+
   const startsAt = eventEarliestStartsAt(event);
   const endsAt = eventLatestEndsAt(event);
   const locationSummary = eventLocationSummary(event);
@@ -94,12 +110,6 @@ export function EventDetail({ event, onBack, onEventUpdated }: Props) {
     if (!res.ok) return { ok: false, error: res.error };
     onEventUpdated(res.data);
     return { ok: true };
-  };
-
-  const copyLink = async (key: string, url: string) => {
-    await navigator.clipboard.writeText(url);
-    setCopiedKey(key);
-    window.setTimeout(() => setCopiedKey(null), 2000);
   };
 
   const resendConfirmEmail = async () => {
@@ -138,11 +148,33 @@ export function EventDetail({ event, onBack, onEventUpdated }: Props) {
   const exportRegistrants = async () => {
     const XLSX = await import("xlsx");
     const book = XLSX.utils.book_new();
+    const usedSheetNames = new Set<string>(["All", "Summary", "History"]);
+
+    /** Excel sheet names: max 31 chars, unique, no \ / ? * [ ] */
+    const uniqueSheetName = (raw: string) => {
+      const cleaned = raw.replace(/[\\/?*[\]:]/g, " ").replace(/\s+/g, " ").trim() || "Venue";
+      let base = cleaned.slice(0, 31);
+      if (!usedSheetNames.has(base)) {
+        usedSheetNames.add(base);
+        return base;
+      }
+      for (let n = 2; n < 1000; n++) {
+        const suffix = ` (${n})`;
+        const candidate = `${cleaned.slice(0, Math.max(1, 31 - suffix.length))}${suffix}`;
+        if (!usedSheetNames.has(candidate)) {
+          usedSheetNames.add(candidate);
+          return candidate;
+        }
+      }
+      const fallback = `Venue-${usedSheetNames.size}`.slice(0, 31);
+      usedSheetNames.add(fallback);
+      return fallback;
+    };
 
     const allRows = [
-      ["Venue", "Member ID", "Name", "Email", "Phone", "Registered at"],
+      ["Location", "Member ID", "Name", "Email", "Phone", "Registered at"],
       ...registrants.map((row) => [
-        row.venueName,
+        venueLabelById.get(row.venueId) || row.venueName,
         row.memberCode,
         row.fullName,
         row.email,
@@ -153,8 +185,11 @@ export function EventDetail({ event, onBack, onEventUpdated }: Props) {
     XLSX.utils.book_append_sheet(book, XLSX.utils.aoa_to_sheet(allRows), "All");
 
     const summaryRows = [
-      ["Venue", "Registrations"],
-      ...event.venues.map((venue) => [venue.name, countsByVenue.get(venue.id) ?? 0]),
+      ["Location", "Registrations"],
+      ...event.venues.map((venue) => [
+        venueLocationLabel(venue),
+        countsByVenue.get(venue.id) ?? 0,
+      ]),
       ["Total", registrants.length],
     ];
     XLSX.utils.book_append_sheet(book, XLSX.utils.aoa_to_sheet(summaryRows), "Summary");
@@ -171,15 +206,16 @@ export function EventDetail({ event, onBack, onEventUpdated }: Props) {
           formatEventDateTime(row.registeredAt),
         ]),
       ];
-      const sheetName = venue.name.slice(0, 28) || venue.slug.slice(0, 28) || "Venue";
+      const preferred = venueLocationLabel(venue);
+      const sheetName = uniqueSheetName(preferred);
       XLSX.utils.book_append_sheet(book, XLSX.utils.aoa_to_sheet(sheet), sheetName);
     }
 
     const historyRows = [
-      ["Time", "Venue", "Member ID", "Name", "Action"],
+      ["Time", "Location", "Member ID", "Name", "Action"],
       ...logs.map((row) => [
         formatEventDateTime(row.occurredAt),
-        row.venueName,
+        (row.venueId && venueLabelById.get(row.venueId)) || row.venueName,
         row.memberCode,
         row.fullName,
         row.action === "registered" ? "Registered" : "Cancelled",
@@ -259,11 +295,11 @@ export function EventDetail({ event, onBack, onEventUpdated }: Props) {
               key={venue.id}
               className="bg-white border border-cream-300 rounded-2xl p-4 shadow-card flex flex-col sm:flex-row gap-4"
             >
-              <div className="shrink-0 rounded-2xl border border-cream-300 bg-cream-50 p-3 w-fit mx-auto sm:mx-0">
-                <div className="bg-white rounded-xl p-2">
-                  <QRCodeCanvas value={shareUrl} size={120} includeMargin />
-                </div>
-              </div>
+              <VenueQrCard
+                value={shareUrl}
+                title={venue.name}
+                fileBaseName={`${event.slug}__${venue.slug}`}
+              />
               <div className="flex-1 min-w-0">
                 <p className="text-forest font-medium text-sm">{venue.name}</p>
                 <p className="text-ink-muted text-xs mt-1">
@@ -276,13 +312,9 @@ export function EventDetail({ event, onBack, onEventUpdated }: Props) {
                   {count} registration{count === 1 ? "" : "s"}
                 </p>
                 <p className="text-[11px] text-ink-muted mt-2 break-all">{shareUrl}</p>
-                <button
-                  type="button"
-                  onClick={() => void copyLink(venue.id, shareUrl)}
-                  className="mt-2 inline-flex items-center justify-center gap-1.5 rounded-xl border border-cream-300 bg-cream-50 px-3 py-1.5 text-xs text-forest hover:bg-cream-100"
-                >
-                  <Copy size={12} /> {copiedKey === venue.id ? "Copied" : "Copy link"}
-                </button>
+                <p className="text-[10px] text-ink-muted mt-2">
+                  Click the QR to open 1000×1000 in a new tab. Save PNG or copy image for print.
+                </p>
               </div>
             </div>
           );
@@ -291,41 +323,59 @@ export function EventDetail({ event, onBack, onEventUpdated }: Props) {
 
       <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
         <h3 className="text-ink-muted text-xs tracking-[2px] uppercase font-semibold">
-          Registrations ({registrants.length})
+          Registrations (
+          {venueFilter === "all"
+            ? registrants.length
+            : (countsByVenue.get(venueFilter) ?? 0)}
+          {venueFilter !== "all" ? ` / ${registrants.length}` : ""})
         </h3>
-        <div className="flex flex-wrap items-center gap-2">
-          <select
-            value={venueFilter}
-            onChange={(e) => setVenueFilter(e.target.value)}
-            className="rounded-xl border border-cream-300 bg-white px-3 py-2 text-xs text-forest"
-          >
-            <option value="all">All locations</option>
-            {event.venues.map((venue) => (
-              <option key={venue.id} value={venue.id}>
-                {venue.name} ({countsByVenue.get(venue.id) ?? 0})
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            onClick={() => void exportRegistrants()}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-cream-300 bg-white px-3 py-2 text-xs text-forest hover:bg-cream-100"
-          >
-            <Download size={12} /> Export Excel
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => void exportRegistrants()}
+          className="inline-flex items-center gap-1.5 rounded-xl border border-cream-300 bg-white px-3 py-2 text-xs text-forest hover:bg-cream-100"
+        >
+          <Download size={12} /> Export Excel
+        </button>
       </div>
 
       {event.venues.length > 1 && (
-        <div className="mb-4 flex flex-wrap gap-2">
-          {event.venues.map((venue) => (
-            <span
-              key={venue.id}
-              className="rounded-full border border-cream-300 bg-cream-50 px-3 py-1 text-[11px] text-forest"
-            >
-              {venue.name}: {countsByVenue.get(venue.id) ?? 0}
-            </span>
-          ))}
+        <div className="mb-4 flex flex-wrap gap-2" role="tablist" aria-label="Filter by location">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={venueFilter === "all"}
+            onClick={() => setVenueFilter("all")}
+            className={cn(
+              "rounded-full border px-3 py-1.5 text-[11px] font-medium transition-colors",
+              venueFilter === "all"
+                ? "border-primary bg-primary/15 text-primary-dark"
+                : "border-cream-300 bg-cream-50 text-forest hover:bg-cream-100"
+            )}
+          >
+            All ({registrants.length})
+          </button>
+          {event.venues.map((venue) => {
+            const selected = venueFilter === venue.id;
+            const count = countsByVenue.get(venue.id) ?? 0;
+            return (
+              <button
+                key={venue.id}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                onClick={() => setVenueFilter(venue.id)}
+                className={cn(
+                  "rounded-full border px-3 py-1.5 text-[11px] font-medium transition-colors max-w-full",
+                  selected
+                    ? "border-primary bg-primary/15 text-primary-dark"
+                    : "border-cream-300 bg-cream-50 text-forest hover:bg-cream-100"
+                )}
+              >
+                <span className="truncate">{venueLocationLabel(venue)}</span>
+                <span className="opacity-70"> ({count})</span>
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -341,7 +391,7 @@ export function EventDetail({ event, onBack, onEventUpdated }: Props) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-cream-300 bg-cream-100">
-                  {["Venue", "Member ID", "Name", "Email", "Phone", "Registered", ""].map(
+                  {["Location", "Member ID", "Name", "Email", "Phone", "Registered", ""].map(
                     (heading) => (
                       <th
                         key={heading || "actions"}
@@ -356,7 +406,9 @@ export function EventDetail({ event, onBack, onEventUpdated }: Props) {
               <tbody className="divide-y divide-cream-200">
                 {filteredRegistrants.map((row) => (
                   <tr key={row.id} className="hover:bg-cream-100/60">
-                    <td className="px-5 py-3.5 text-ink-light text-xs">{row.venueName || "—"}</td>
+                    <td className="px-5 py-3.5 text-ink-light text-xs">
+                      {venueLabelById.get(row.venueId) || row.venueName || "—"}
+                    </td>
                     <td className="px-5 py-3.5 font-mono text-xs text-ink-light">
                       {row.memberCode || "—"}
                     </td>
@@ -404,7 +456,7 @@ export function EventDetail({ event, onBack, onEventUpdated }: Props) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-cream-300 bg-cream-100">
-                  {["Time", "Venue", "Member ID", "Name", "Action"].map((heading) => (
+                  {["Time", "Location", "Member ID", "Name", "Action"].map((heading) => (
                     <th
                       key={heading}
                       className="px-5 py-3.5 text-left text-ink-muted text-xs font-semibold tracking-wide"
@@ -420,7 +472,9 @@ export function EventDetail({ event, onBack, onEventUpdated }: Props) {
                     <td className="px-5 py-3.5 text-ink-muted text-xs whitespace-nowrap">
                       {formatEventDateTime(row.occurredAt)}
                     </td>
-                    <td className="px-5 py-3.5 text-ink-light text-xs">{row.venueName || "—"}</td>
+                    <td className="px-5 py-3.5 text-ink-light text-xs">
+                      {(row.venueId && venueLabelById.get(row.venueId)) || row.venueName || "—"}
+                    </td>
                     <td className="px-5 py-3.5 font-mono text-xs text-ink-light">
                       {row.memberCode || "—"}
                     </td>
