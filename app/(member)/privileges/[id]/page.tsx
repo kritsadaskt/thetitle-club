@@ -11,7 +11,7 @@ import {
   fetchPromoCodeStats,
 } from "@/lib/supabase/data";
 import { categoryLabel, categoryColor } from "@/lib/utils";
-import { ArrowLeft, CheckCircle, Ticket, Tag, Loader2 } from "lucide-react";
+import { ArrowLeft, CheckCircle, Ticket, Tag, Loader2, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type ClaimState = "none" | "claimed" | "redeemed" | "sold_out" | "loading";
@@ -176,7 +176,33 @@ export default function PrivilegeDetailPage() {
         </section>
       )}
 
-      <div className="sticky bottom-6">
+      {priv.mapLocations.length > 0 && (
+        <section className="mb-8">
+          <h2 className="text-forest font-semibold mb-3 flex items-center gap-2">
+            <MapPin size={15} className="text-primary-dark" />
+            Store Locations
+          </h2>
+          <div className="space-y-2">
+            {priv.mapLocations.map((loc, i) => (
+              <a
+                key={`${loc.name}-${i}`}
+                href={loc.mapUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full flex items-center justify-between gap-3 rounded-xl border border-forest/15 bg-white px-4 py-3 text-forest shadow-card hover:bg-forest-50 transition-colors"
+              >
+                <span className="font-medium text-sm min-w-0 truncate">{loc.name}</span>
+                <span className="shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold text-primary-dark">
+                  <MapPin size={14} />
+                  Directions
+                </span>
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <div className="sticky bottom-6 space-y-3">
         {!isUniquePool ? (
           <Link
             href={`/privileges/${priv.id}/redeem`}

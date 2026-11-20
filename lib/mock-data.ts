@@ -105,6 +105,7 @@ export const MOCK_PRIVILEGES: Privilege[] = [
     discountLabel: "15% OFF",
     privilegeCode: "TTC-BDMS-15",
     codeMode: "shared",
+    mapLocations: [],
   },
   {
     id: "priv-002",
@@ -130,6 +131,7 @@ export const MOCK_PRIVILEGES: Privilege[] = [
     discountLabel: "Special Rate",
     privilegeCode: "TTC-SAWANU",
     codeMode: "shared",
+    mapLocations: [],
   },
   {
     id: "priv-003",
@@ -155,6 +157,7 @@ export const MOCK_PRIVILEGES: Privilege[] = [
     discountLabel: "10–15% OFF",
     privilegeCode: "TTC-SPLASH-10",
     codeMode: "shared",
+    mapLocations: [],
   },
   {
     id: "priv-004",
@@ -179,6 +182,7 @@ export const MOCK_PRIVILEGES: Privilege[] = [
     discountLabel: "10% OFF",
     privilegeCode: "TTC-CLEAN-10",
     codeMode: "shared",
+    mapLocations: [],
   },
 ];
 

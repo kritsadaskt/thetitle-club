@@ -136,45 +136,48 @@ export function PrivilegePromoPanel({
             key={p.id}
             className="bg-white border border-cream-300 rounded-2xl shadow-card overflow-hidden"
           >
-            <button
-              type="button"
-              onClick={() => setExpandedId(isOpen ? null : p.id)}
-              className="w-full flex items-center gap-4 px-5 py-4 text-left hover:bg-cream-50 transition-colors"
-            >
-              <div className="flex-1 min-w-0">
-                <p className="text-forest font-medium text-sm">{p.title}</p>
-                <p className="text-ink-muted text-xs mt-0.5">{p.partnerName}</p>
-              </div>
-              <span className="bg-primary/15 text-primary-dark text-xs font-bold px-2.5 py-1 rounded-lg border border-primary/20 shrink-0">
-                {p.discountLabel}
-              </span>
-              <span
-                className={cn(
-                  "text-xs px-2.5 py-0.5 rounded-full border font-medium shrink-0",
-                  p.isActive
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                    : "bg-gray-100 text-gray-500 border-gray-200"
-                )}
-              >
-                {p.isActive ? "Active" : "Inactive"}
-              </span>
-              <span className="text-ink-muted text-xs shrink-0 hidden sm:inline">
-                {p.codeMode === "unique_pool" ? "Unique pool" : "Shared"}
-              </span>
+            <div className="w-full flex items-center gap-4 px-5 py-4 hover:bg-cream-50 transition-colors">
               <button
                 type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setEditingPrivilege(p);
-                }}
+                onClick={() => setExpandedId(isOpen ? null : p.id)}
+                className="flex-1 min-w-0 flex items-center gap-4 text-left"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-forest font-medium text-sm">{p.title}</p>
+                  <p className="text-ink-muted text-xs mt-0.5">{p.partnerName}</p>
+                </div>
+                <span className="bg-primary/15 text-primary-dark text-xs font-bold px-2.5 py-1 rounded-lg border border-primary/20 shrink-0">
+                  {p.discountLabel}
+                </span>
+                <span
+                  className={cn(
+                    "text-xs px-2.5 py-0.5 rounded-full border font-medium shrink-0",
+                    p.isActive
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : "bg-gray-100 text-gray-500 border-gray-200"
+                  )}
+                >
+                  {p.isActive ? "Active" : "Inactive"}
+                </span>
+                <span className="text-ink-muted text-xs shrink-0 hidden sm:inline">
+                  {p.codeMode === "unique_pool" ? "Unique pool" : "Shared"}
+                </span>
+                {isOpen ? (
+                  <ChevronUp size={16} className="text-ink-muted shrink-0" />
+                ) : (
+                  <ChevronDown size={16} className="text-ink-muted shrink-0" />
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditingPrivilege(p)}
                 className="shrink-0 rounded-lg border border-cream-300 px-2 py-1 text-ink-muted hover:text-forest hover:bg-cream-50 transition-colors flex items-center gap-1.5"
                 title="Edit privilege details"
               >
                 <Pencil size={14} />
                 <span className="text-sm font-medium">Edit</span>
               </button>
-              {isOpen ? <ChevronUp size={16} className="text-ink-muted" /> : <ChevronDown size={16} className="text-ink-muted" />}
-            </button>
+            </div>
 
             {isOpen && (
               <div className="px-5 pb-5 border-t border-cream-200 pt-4 space-y-4">
