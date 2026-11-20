@@ -10,6 +10,8 @@ import {
   fetchMemberPromoCodeForPrivilege,
   fetchPrivilegeById,
   fetchPromoCodeStats,
+  getSharedRedeemQuota,
+  type SharedRedeemQuota,
 } from "@/lib/supabase/data";
 import { categoryLabel, categoryColor } from "@/lib/utils";
 import { ArrowLeft, CheckCircle, Ticket, Tag, Loader2, MapPin } from "lucide-react";
@@ -19,6 +21,7 @@ type ClaimState = "none" | "claimed" | "redeemed" | "sold_out" | "loading";
 
 export default function PrivilegeDetailPage() {
   const t = useTranslations("member.privilegeDetail");
+  const tRedeem = useTranslations("member.redeem");
   const locale = useLocale();
   const params = useParams();
   const router = useRouter();
@@ -27,6 +30,7 @@ export default function PrivilegeDetailPage() {
   const [claimState, setClaimState] = useState<ClaimState>("loading");
   const [claiming, setClaiming] = useState(false);
   const [claimError, setClaimError] = useState<string | null>(null);
+  const [sharedQuota, setSharedQuota] = useState<SharedRedeemQuota | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -39,9 +43,17 @@ export default function PrivilegeDetailPage() {
 
       if (row.codeMode === "shared") {
         setClaimState("none");
+        if (row.sharedRedeemLimit != null) {
+          const quotaRes = await getSharedRedeemQuota(id);
+          if (cancelled) return;
+          if (quotaRes.ok) setSharedQuota(quotaRes.quota);
+        } else {
+          setSharedQuota(null);
+        }
         return;
       }
 
+      setSharedQuota(null);
       const [memberCode, stats] = await Promise.all([
         fetchMemberPromoCodeForPrivilege(id, locale),
         fetchPromoCodeStats(id),
@@ -210,13 +222,49 @@ export default function PrivilegeDetailPage() {
 
       <div className="sticky bottom-6 space-y-3">
         {!isUniquePool ? (
-          <Link
-            href={`/privileges/${priv.id}/redeem`}
-            className="btn-primary w-full text-center text-base flex items-center justify-center gap-2 py-4 shadow-primary-md"
-          >
-            <Ticket size={18} />
-            {t("usePrivilege")}
-          </Link>
+          <>
+            {priv.sharedRedeemLimit != null && priv.sharedRedeemPeriod && (
+              <p className="text-center text-xs text-ink-muted">
+                {sharedQuota
+                  ? sharedQuota.allowed
+                    ? t("sharedQuotaStatus", {
+                        used: sharedQuota.used,
+                        limit: sharedQuota.limit ?? priv.sharedRedeemLimit,
+                        period: tRedeem(`period.${priv.sharedRedeemPeriod}`),
+                      })
+                    : t("sharedQuotaExhausted", {
+                        period: tRedeem(`period.${priv.sharedRedeemPeriod}`),
+                      })
+                  : t("sharedLimitHint", {
+                      limit: priv.sharedRedeemLimit,
+                      period: tRedeem(`period.${priv.sharedRedeemPeriod}`),
+                    })}
+              </p>
+            )}
+            {sharedQuota && !sharedQuota.allowed ? (
+              <button
+                type="button"
+                disabled
+                className={cn(
+                  "w-full text-center text-base flex items-center justify-center gap-2 py-4 rounded-xl",
+                  "bg-cream-200 text-ink-muted border border-cream-300 cursor-not-allowed"
+                )}
+              >
+                <CheckCircle size={18} />
+                {t("sharedQuotaExhausted", {
+                  period: tRedeem(`period.${priv.sharedRedeemPeriod ?? "month"}`),
+                })}
+              </button>
+            ) : (
+              <Link
+                href={`/privileges/${priv.id}/redeem`}
+                className="btn-primary w-full text-center text-base flex items-center justify-center gap-2 py-4 shadow-primary-md"
+              >
+                <Ticket size={18} />
+                {t("usePrivilege")}
+              </Link>
+            )}
+          </>
         ) : claimState === "loading" ? (
           <div className="btn-primary w-full text-center text-base flex items-center justify-center gap-2 py-4 opacity-70">
             <Loader2 size={18} className="animate-spin" />

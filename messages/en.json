@@ -339,7 +339,10 @@
       "privilegeUsed": "Privilege used",
       "noCodesAvailable": "No codes available",
       "claiming": "Claiming…",
-      "claimPrivilege": "Claim This Privilege"
+      "claimPrivilege": "Claim This Privilege",
+      "sharedLimitHint": "Limited to {limit} use(s) per {period}",
+      "sharedQuotaStatus": "Used {used} of {limit} this {period}",
+      "sharedQuotaExhausted": "You have used all redemptions for this {period}"
     },
     "redeem": {
       "back": "Back",
@@ -356,6 +359,38 @@
       "forStaff": "(For staff)",
       "markAsUsed": "Mark as Used",
       "backToMyCodes": "Back to My Codes",
+      "codeHidden": "Code is hidden until you confirm.",
+      "quotaUsed": "Used {used} of {limit} this {period}",
+      "period": {
+        "day": "day",
+        "week": "week",
+        "month": "month",
+        "year": "year"
+      },
+      "showConfirm": {
+        "title": "Show privilege code?",
+        "message": "Once you continue, the code will appear immediately and this use will be counted.",
+        "quotaHint": "You have used {used} of {limit} this {period}.",
+        "auditHint": "Please show the code only when you are ready at the partner.",
+        "cancel": "Not now",
+        "confirm": "Show code",
+        "confirming": "Showing…"
+      },
+      "leaveConfirm": {
+        "title": "Leave this screen?",
+        "message": "This use has already been counted. Leaving will hide the code — it will not restore your quota.",
+        "stay": "Stay",
+        "leave": "Leave"
+      },
+      "limitReached": {
+        "title": "Limit reached",
+        "message": "You have used all {limit} redemption(s) for this {period}. Please try again later.",
+        "messageGeneric": "You cannot redeem this privilege right now.",
+        "back": "Back to privilege"
+      },
+      "sharedError": {
+        "title": "Unable to redeem"
+      },
       "confirm": {
         "title": "Confirm Use",
         "messageBefore": "Have you used this privilege at the partner? The code",

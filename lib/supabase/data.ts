@@ -21,6 +21,7 @@ import type {
   PrivilegeCategory,
   PromoCode,
   PromoCodeStats,
+  SharedRedeemPeriod,
   ShopPartner,
   UpdateEventSurveyQuestionInput,
 } from "@/lib/types";
@@ -323,6 +324,12 @@ export async function createPrivilege(
       is_active: input.isActive ?? true,
       sort_order: input.sortOrder ?? 0,
       code_mode: input.codeMode ?? "shared",
+      shared_redeem_limit:
+        input.codeMode === "unique_pool" ? null : normalizeSharedRedeemLimit(input.sharedRedeemLimit),
+      shared_redeem_period:
+        input.codeMode === "unique_pool"
+          ? null
+          : normalizeSharedRedeemPeriod(input.sharedRedeemLimit, input.sharedRedeemPeriod),
       map_locations: sanitizeMapLocations(input.mapLocations),
       i18n: input.i18n ?? {},
     })
@@ -330,6 +337,23 @@ export async function createPrivilege(
     .single();
   if (error) return { ok: false, error: error.message };
   return { ok: true, data: mapPrivilegeRow(data as PrivilegeRow) };
+}
+
+function normalizeSharedRedeemLimit(limit?: number | null): number | null {
+  if (limit == null || !Number.isFinite(limit) || limit <= 0) return null;
+  return Math.floor(limit);
+}
+
+function normalizeSharedRedeemPeriod(
+  limit?: number | null,
+  period?: SharedRedeemPeriod | null
+): SharedRedeemPeriod | null {
+  const normalizedLimit = normalizeSharedRedeemLimit(limit);
+  if (normalizedLimit == null) return null;
+  if (period === "day" || period === "week" || period === "month" || period === "year") {
+    return period;
+  }
+  return "month";
 }
 
 export async function updatePrivilege(
@@ -351,6 +375,18 @@ export async function updatePrivilege(
   if (input.isActive !== undefined) patch.is_active = input.isActive;
   if (input.sortOrder !== undefined) patch.sort_order = input.sortOrder;
   if (input.codeMode !== undefined) patch.code_mode = input.codeMode;
+  if (input.codeMode === "unique_pool") {
+    patch.shared_redeem_limit = null;
+    patch.shared_redeem_period = null;
+  } else if (
+    input.sharedRedeemLimit !== undefined ||
+    input.sharedRedeemPeriod !== undefined ||
+    input.codeMode === "shared"
+  ) {
+    const limit = normalizeSharedRedeemLimit(input.sharedRedeemLimit);
+    patch.shared_redeem_limit = limit;
+    patch.shared_redeem_period = normalizeSharedRedeemPeriod(limit, input.sharedRedeemPeriod);
+  }
   if (input.mapLocations !== undefined) {
     patch.map_locations = sanitizeMapLocations(input.mapLocations);
   }
@@ -469,6 +505,65 @@ export async function redeemPromoCode(
   }
 
   return { ok: true, code };
+}
+
+export type SharedRedeemQuota = {
+  allowed: boolean;
+  used: number;
+  limit: number | null;
+  period: SharedRedeemPeriod | null;
+  redemptionId?: string | null;
+};
+
+function mapSharedRedeemQuota(raw: unknown): SharedRedeemQuota {
+  const row = (raw ?? {}) as Record<string, unknown>;
+  const period = row.period;
+  return {
+    allowed: Boolean(row.allowed),
+    used: typeof row.used === "number" ? row.used : Number(row.used) || 0,
+    limit:
+      row.limit == null
+        ? null
+        : typeof row.limit === "number"
+          ? row.limit
+          : Number(row.limit) || null,
+    period:
+      period === "day" || period === "week" || period === "month" || period === "year"
+        ? period
+        : null,
+    redemptionId:
+      typeof row.redemption_id === "string" ? row.redemption_id : null,
+  };
+}
+
+export type SharedRedeemResult =
+  | { ok: true; quota: SharedRedeemQuota }
+  | { ok: false; error: string; quota?: SharedRedeemQuota };
+
+export async function getSharedRedeemQuota(
+  privilegeId: string
+): Promise<SharedRedeemResult> {
+  const supabase = createClient();
+  const { data, error } = await supabase.rpc("get_shared_redeem_quota", {
+    p_privilege_id: privilegeId,
+  });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, quota: mapSharedRedeemQuota(data) };
+}
+
+export async function beginSharedRedeem(
+  privilegeId: string
+): Promise<SharedRedeemResult> {
+  const supabase = createClient();
+  const { data, error } = await supabase.rpc("begin_shared_redeem", {
+    p_privilege_id: privilegeId,
+  });
+  if (error) return { ok: false, error: error.message };
+  const quota = mapSharedRedeemQuota(data);
+  if (!quota.allowed) {
+    return { ok: false, error: "Shared redeem limit reached", quota };
+  }
+  return { ok: true, quota };
 }
 
 export async function fetchPromoCodeStats(privilegeId: string): Promise<PromoCodeStats> {

@@ -23,6 +23,8 @@ export interface PrivilegeCategory {
 
 export type CodeMode = "shared" | "unique_pool";
 
+export type SharedRedeemPeriod = "day" | "week" | "month" | "year";
+
 export type PromoCodeStatus = "available" | "claimed" | "redeemed";
 
 export interface Member {
@@ -69,6 +71,10 @@ export interface Privilege {
   privilegeCode: string;
   /** shared = same code for all; unique_pool = codes from promo_codes table */
   codeMode: CodeMode;
+  /** Max shared redeems per member per period; null/undefined = unlimited */
+  sharedRedeemLimit?: number | null;
+  /** Calendar period for sharedRedeemLimit (Asia/Bangkok) */
+  sharedRedeemPeriod?: SharedRedeemPeriod | null;
   /** Store branches with Google Maps links (maps to privileges.map_locations) */
   mapLocations: PrivilegeMapLocation[];
   i18n?: I18nLocaleMap;
@@ -170,6 +176,8 @@ export interface CreatePrivilegeInput {
   isActive?: boolean;
   sortOrder?: number;
   codeMode?: CodeMode;
+  sharedRedeemLimit?: number | null;
+  sharedRedeemPeriod?: SharedRedeemPeriod | null;
   mapLocations?: PrivilegeMapLocation[];
   i18n?: I18nLocaleMap;
 }

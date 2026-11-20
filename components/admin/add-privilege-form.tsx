@@ -8,6 +8,7 @@ import type {
   Privilege,
   PrivilegeCategory,
   PrivilegeMapLocation,
+  SharedRedeemPeriod,
 } from "@/lib/types";
 import { buildI18nPayload } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -31,6 +32,8 @@ const EMPTY: CreatePrivilegeInput = {
   isActive: true,
   sortOrder: 0,
   codeMode: "shared",
+  sharedRedeemLimit: null,
+  sharedRedeemPeriod: null,
   mapLocations: [],
   i18n: {},
 };
@@ -50,6 +53,8 @@ export function privilegeToFormInput(p: Privilege): CreatePrivilegeInput {
     isActive: p.isActive,
     sortOrder: p.sortOrder,
     codeMode: p.codeMode,
+    sharedRedeemLimit: p.sharedRedeemLimit ?? null,
+    sharedRedeemPeriod: p.sharedRedeemPeriod ?? null,
     mapLocations: p.mapLocations?.length
       ? p.mapLocations.map((loc) => ({ ...loc }))
       : [],
@@ -419,13 +424,82 @@ export function AddPrivilegeForm({
               <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">Code mode</span>
               <select
                 value={form.codeMode ?? "shared"}
-                onChange={(e) => set("codeMode", e.target.value as CreatePrivilegeInput["codeMode"])}
+                onChange={(e) => {
+                  const next = e.target.value as CreatePrivilegeInput["codeMode"];
+                  setForm((prev) => ({
+                    ...prev,
+                    codeMode: next,
+                    ...(next === "unique_pool"
+                      ? { sharedRedeemLimit: null, sharedRedeemPeriod: null }
+                      : {}),
+                  }));
+                }}
                 className="mt-1.5 w-full rounded-lg border border-cream-300 bg-cream-50 px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
               >
                 <option value="shared">Shared code</option>
                 <option value="unique_pool">Unique pool</option>
               </select>
             </label>
+          )}
+          {(form.codeMode ?? "shared") === "shared" && (
+            <>
+              <label className="block">
+                <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">
+                  Shared redeem limit
+                </span>
+                <input
+                  type="number"
+                  min={1}
+                  step={1}
+                  placeholder="Unlimited"
+                  value={form.sharedRedeemLimit ?? ""}
+                  onChange={(e) => {
+                    const raw = e.target.value.trim();
+                    const nextLimit = raw === "" ? null : Number(raw);
+                    setForm((prev) => ({
+                      ...prev,
+                      sharedRedeemLimit:
+                        nextLimit != null && Number.isFinite(nextLimit) && nextLimit > 0
+                          ? Math.floor(nextLimit)
+                          : null,
+                      sharedRedeemPeriod:
+                        nextLimit != null && Number.isFinite(nextLimit) && nextLimit > 0
+                          ? (prev.sharedRedeemPeriod ?? "month")
+                          : null,
+                    }));
+                  }}
+                  className="mt-1.5 w-full rounded-lg border border-cream-300 bg-cream-50 px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                />
+                <span className="mt-1 block text-[11px] text-ink-muted">
+                  Max uses per member. Leave empty for unlimited.
+                </span>
+              </label>
+              <label className="block">
+                <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">
+                  Limit period
+                </span>
+                <select
+                  value={form.sharedRedeemPeriod ?? ""}
+                  disabled={form.sharedRedeemLimit == null}
+                  onChange={(e) =>
+                    set(
+                      "sharedRedeemPeriod",
+                      (e.target.value || null) as SharedRedeemPeriod | null
+                    )
+                  }
+                  className="mt-1.5 w-full rounded-lg border border-cream-300 bg-cream-50 px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:opacity-50"
+                >
+                  <option value="">—</option>
+                  <option value="day">Per day</option>
+                  <option value="week">Per week</option>
+                  <option value="month">Per month</option>
+                  <option value="year">Per year</option>
+                </select>
+                <span className="mt-1 block text-[11px] text-ink-muted">
+                  Calendar period in Asia/Bangkok time.
+                </span>
+              </label>
+            </>
           )}
           <ActiveToggle
             className={cn("self-end pb-2", hideCodeMode && "sm:col-span-2")}

@@ -137,6 +137,8 @@ export type PrivilegeRow = {
   discount_label: string | null;
   privilege_code: string | null;
   code_mode?: CodeMode;
+  shared_redeem_limit?: number | null;
+  shared_redeem_period?: string | null;
   map_locations?: unknown;
   is_active: boolean;
   valid_from: string;
@@ -268,6 +270,14 @@ export function mapPrivilegeRow(row: PrivilegeRow, locale = "en"): Privilege {
     discountLabel: pickLocalized(locale, row.discount_label ?? "", i18n, "discount_label"),
     privilegeCode: row.privilege_code?.trim() ?? "",
     codeMode: row.code_mode ?? "shared",
+    sharedRedeemLimit: row.shared_redeem_limit ?? null,
+    sharedRedeemPeriod:
+      row.shared_redeem_period === "day" ||
+      row.shared_redeem_period === "week" ||
+      row.shared_redeem_period === "month" ||
+      row.shared_redeem_period === "year"
+        ? row.shared_redeem_period
+        : null,
     mapLocations: parseMapLocations(row.map_locations),
     i18n,
   };
