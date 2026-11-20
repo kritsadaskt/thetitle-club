@@ -22,10 +22,13 @@ export default async function LocaleLayout({ children, params }: Props) {
   setRequestLocale(locale);
   const messages = await getMessages();
 
+  const localeFont =
+    locale === "th" ? "font-locale-th" : locale === "ru" ? "font-locale-ru" : undefined;
+
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
       <HtmlLang locale={locale} />
-      {children}
+      <div className={localeFont}>{children}</div>
     </NextIntlClientProvider>
   );
 }
