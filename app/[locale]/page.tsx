@@ -12,7 +12,7 @@ import {
   type PartnerRow,
 } from "@/lib/supabase/mappers";
 import { PUBLIC_PRIVILEGE_SELECT } from "@/lib/supabase/queries";
-import { categoryLabel, categoryColor } from "@/lib/utils";
+import { bangkokTodayIsoDate, categoryLabel, categoryColor, isPrivilegeInValidityWindow } from "@/lib/utils";
 import { LandingNav } from "@/components/landing-nav";
 import HowToJoinSection from "@/components/ui/howtojoinsection";
 
@@ -70,11 +70,14 @@ export default async function LandingPage() {
     ? t("cta.continueAdminBody")
     : t("cta.continueMemberBody");
 
+  const today = bangkokTodayIsoDate();
   const { data: privRows } = await supabase
     .from("privileges")
     .select(PUBLIC_PRIVILEGE_SELECT)
     .eq("is_active", true)
     .eq("partners.is_active", true)
+    .lte("valid_from", today)
+    .or(`valid_until.is.null,valid_until.gte.${today}`)
     .order("sort_order");
   const { data: commRows } = await supabase
     .from("community_moments")
@@ -88,7 +91,9 @@ export default async function LandingPage() {
     .order("sort_order")
     .order("name");
 
-  const privileges = (privRows ?? []).map((r) => mapPrivilegeRow(r as PrivilegeRow, locale));
+  const privileges = (privRows ?? [])
+    .map((r) => mapPrivilegeRow(r as PrivilegeRow, locale))
+    .filter((p) => isPrivilegeInValidityWindow(p.validFrom, p.validUntil, today));
   const community = (commRows ?? []).map((r) => mapCommunityRow(r as CommunityMomentRow, locale));
   const partners = (partnerRows ?? []).map((r) => mapPartnerRow(r as PartnerRow, locale));
 

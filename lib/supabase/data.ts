@@ -30,6 +30,7 @@ import {
   eventEarliestStartsAt,
   isEventUpcomingOrOngoing,
 } from "@/lib/events";
+import { bangkokTodayIsoDate, isPrivilegeInValidityWindow } from "@/lib/utils";
 import { createClient } from "./client";
 import { uploadPartnerLogo, uploadPrivilegeCover, uploadVenueBanner } from "./storage";
 import {
@@ -84,14 +85,19 @@ const PROMO_PRIVILEGE_SELECT =
 
 export async function fetchActivePrivileges(locale = "en"): Promise<Privilege[]> {
   const supabase = createClient();
+  const today = bangkokTodayIsoDate();
   const { data, error } = await supabase
     .from("privileges")
     .select(PUBLIC_PRIVILEGE_SELECT)
     .eq("is_active", true)
     .eq("partners.is_active", true)
+    .lte("valid_from", today)
+    .or(`valid_until.is.null,valid_until.gte.${today}`)
     .order("sort_order");
   if (error) return [];
-  return (data ?? []).map((r) => mapPrivilegeRow(r as PrivilegeRow, locale));
+  return (data ?? [])
+    .map((r) => mapPrivilegeRow(r as PrivilegeRow, locale))
+    .filter((p) => isPrivilegeInValidityWindow(p.validFrom, p.validUntil, today));
 }
 
 export async function fetchAllPrivileges(): Promise<Privilege[]> {
@@ -121,15 +127,22 @@ export async function fetchPrivilegeById(
   locale = "en"
 ): Promise<Privilege | null> {
   const supabase = createClient();
+  const today = bangkokTodayIsoDate();
   const { data, error } = await supabase
     .from("privileges")
     .select(PUBLIC_PRIVILEGE_SELECT)
     .eq("id", id)
     .eq("is_active", true)
     .eq("partners.is_active", true)
+    .lte("valid_from", today)
+    .or(`valid_until.is.null,valid_until.gte.${today}`)
     .maybeSingle();
   if (error || !data) return null;
-  return mapPrivilegeRow(data as PrivilegeRow, locale);
+  const privilege = mapPrivilegeRow(data as PrivilegeRow, locale);
+  if (!isPrivilegeInValidityWindow(privilege.validFrom, privilege.validUntil, today)) {
+    return null;
+  }
+  return privilege;
 }
 
 export async function fetchAllPartners(): Promise<ShopPartner[]> {

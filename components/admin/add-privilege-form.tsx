@@ -258,22 +258,31 @@ export function AddPrivilegeForm({
             {...translationProps("discount_label")}
           />
           <label className="block">
-            <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">Valid from</span>
+            <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">
+              Start date *
+            </span>
             <input
               type="date"
+              required
               value={form.validFrom ?? ""}
               onChange={(e) => set("validFrom", e.target.value)}
               className="mt-1.5 w-full rounded-lg border border-cream-300 bg-cream-50 px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
             />
+            <p className="text-[11px] text-ink-muted mt-1">Hidden from members until this date (Thailand).</p>
           </label>
           <label className="block">
-            <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">Valid until</span>
+            <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">
+              Expiry date
+            </span>
             <input
               type="date"
               value={form.validUntil ?? ""}
               onChange={(e) => set("validUntil", e.target.value)}
               className="mt-1.5 w-full rounded-lg border border-cream-300 bg-cream-50 px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
             />
+            <p className="text-[11px] text-ink-muted mt-1">
+              Optional. After this date the privilege is hidden from members. Leave blank for no end.
+            </p>
           </label>
           {!hideCover && (
             <div className="sm:col-span-2">
