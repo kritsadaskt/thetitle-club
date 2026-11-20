@@ -122,6 +122,11 @@
 /* ── Base ────────────────────────────────────── */
 * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 
+/* Scale rem-based type (Tailwind text-*) site-wide */
+html {
+  font-size: 110%;
+}
+
 body {
   background-color: var(--cream);
   color: var(--ink);

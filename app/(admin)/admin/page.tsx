@@ -270,7 +270,6 @@ export default function AdminPage() {
           {[
             { label: "Total Members", value: members.length, icon: Users, color: "bg-forest-50 text-forest-700" },
             { label: "Active", value: active.length, icon: CheckCircle, color: "bg-emerald-50 text-emerald-700" },
-            { label: "Pending review", value: pending.length, icon: Clock, color: "bg-amber-50 text-amber-700" },
             { label: "Partners", value: partnerCount, icon: Building2, color: "bg-sky-50 text-sky-700" },
             { label: "Privileges Active", value: activePrivilegeCount, icon: Gift, color: "bg-primary/10 text-primary-dark" },
           ].map(({ label, value, icon: Icon, color }) => (

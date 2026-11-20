@@ -81,7 +81,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
               <p className="text-white text-sm font-mono truncate">{member.memberId}</p>
             </div>
           </div>
-          <LanguageSwitcher className="mb-4" />
+          <LanguageSwitcher className="mb-4" mode="pills" />
           <button onClick={logout}
             className="flex items-center gap-2 text-white/60 hover:text-red-400 text-sm transition-colors">
             <LogOut size={13} /> {t("signOut")}
@@ -96,7 +96,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
           <p className="text-white font-semibold tracking-[3px] text-xs">{t("brandName")}</p>
         </div>
         <div className="flex items-center gap-3">
-          <LanguageSwitcher />
+          <LanguageSwitcher mode="pills" />
           <button onClick={() => setMobileOpen((v) => !v)} className="text-white/50 hover:text-white">
             {mobileOpen ? <X size={20} /> : <Menu size={20} />}
           </button>

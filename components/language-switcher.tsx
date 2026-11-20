@@ -20,11 +20,86 @@ type Props = {
   className?: string;
   /** Dark nav (landing / member sidebar) vs light */
   variant?: "dark" | "light";
+  /** Inline EN/TH/RU pills (dashboard) vs flag dropdown (landing / auth) */
+  mode?: "dropdown" | "pills";
+  /** Where the dropdown list opens relative to the trigger */
+  menuPlacement?: "below" | "above";
 };
 
-export function LanguageSwitcher({ className, variant = "dark" }: Props) {
+export function LanguageSwitcher({
+  className,
+  variant = "dark",
+  mode = "dropdown",
+  menuPlacement = "below",
+}: Props) {
   const locale = useLocale() as AppLocale;
   const pathname = usePathname();
+
+  if (mode === "pills") {
+    return (
+      <div
+        className={cn(
+          "inline-flex items-center rounded-full border p-0.5 text-[11px] font-semibold tracking-wide",
+          variant === "dark"
+            ? "border-white/20 bg-white/5 text-white/50"
+            : "border-cream-300 bg-cream-50 text-ink-muted",
+          className
+        )}
+        role="group"
+        aria-label="Language"
+      >
+        {routing.locales.map((loc) => {
+          const active = loc === locale;
+          return (
+            <Link
+              key={loc}
+              href={pathname}
+              locale={loc}
+              replace
+              className={cn(
+                "min-w-[28px] rounded-full px-2 py-1 text-center transition-colors",
+                active
+                  ? variant === "dark"
+                    ? "bg-primary text-forest-900"
+                    : "bg-forest-900 text-cream-100"
+                  : variant === "dark"
+                    ? "hover:text-white"
+                    : "hover:text-forest"
+              )}
+              aria-current={active ? "page" : undefined}
+            >
+              {LOCALES[loc].short}
+            </Link>
+          );
+        })}
+      </div>
+    );
+  }
+
+  return (
+    <LanguageDropdown
+      className={className}
+      variant={variant}
+      menuPlacement={menuPlacement}
+      locale={locale}
+      pathname={pathname}
+    />
+  );
+}
+
+function LanguageDropdown({
+  className,
+  variant,
+  menuPlacement,
+  locale,
+  pathname,
+}: {
+  className?: string;
+  variant: "dark" | "light";
+  menuPlacement: "below" | "above";
+  locale: AppLocale;
+  pathname: string;
+}) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
@@ -71,7 +146,8 @@ export function LanguageSwitcher({ className, variant = "dark" }: Props) {
           strokeWidth={2}
           className={cn(
             "opacity-70 transition-transform",
-            open && "rotate-180",
+            open && (menuPlacement === "above" ? "rotate-0" : "rotate-180"),
+            !open && menuPlacement === "above" && "rotate-180",
             variant === "dark" ? "text-white/70" : "text-ink-muted"
           )}
           aria-hidden
@@ -84,7 +160,8 @@ export function LanguageSwitcher({ className, variant = "dark" }: Props) {
           role="listbox"
           aria-label="Language"
           className={cn(
-            "absolute right-0 z-50 mt-1.5 min-w-[10.5rem] overflow-hidden rounded-xl border py-1 shadow-card",
+            "absolute right-0 z-50 min-w-[10.5rem] overflow-hidden rounded-xl border py-1 shadow-card",
+            menuPlacement === "above" ? "bottom-full mb-1.5" : "top-full mt-1.5",
             variant === "dark"
               ? "border-white/15 bg-forest-900 text-white"
               : "border-cream-300 bg-white text-forest"
