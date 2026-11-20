@@ -14,7 +14,10 @@
       "viewProfile": "View Profile",
       "signIn": "Sign In",
       "becomeMember": "Become a Member",
-      "logOut": "Log out"
+      "logOut": "Log out",
+      "menu": "Menu",
+      "openMenu": "Open menu",
+      "closeMenu": "Close menu"
     },
     "hero": {
       "eyebrow": "Exclusive Membership",

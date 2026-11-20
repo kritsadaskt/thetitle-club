@@ -14,7 +14,10 @@
       "viewProfile": "ดูโปรไฟล์",
       "signIn": "เข้าสู่ระบบ",
       "becomeMember": "สมัครสมาชิก",
-      "logOut": "ออกจากระบบ"
+      "logOut": "ออกจากระบบ",
+      "menu": "เมนู",
+      "openMenu": "เปิดเมนู",
+      "closeMenu": "ปิดเมนู"
     },
     "hero": {
       "eyebrow": "สมาชิกสุดพิเศษ",

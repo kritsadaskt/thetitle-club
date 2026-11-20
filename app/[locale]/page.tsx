@@ -13,9 +13,8 @@ import {
 } from "@/lib/supabase/mappers";
 import { PUBLIC_PRIVILEGE_SELECT } from "@/lib/supabase/queries";
 import { categoryLabel, categoryColor } from "@/lib/utils";
-import { LandingNavAuth } from "@/components/landing-nav-auth";
+import { LandingNav } from "@/components/landing-nav";
 import HowToJoinSection from "@/components/ui/howtojoinsection";
-import { LanguageSwitcher } from "@/components/language-switcher";
 
 /** Member entry link: /admin lives outside [locale], so it uses plain next/link. */
 function MemberEntryLink({
@@ -99,22 +98,11 @@ export default async function LandingPage() {
   return (
     <main className="min-h-screen">
 
-      {/* ─── NAV ─────────────────────────────────── */}
-      <nav className="fixed top-0 inset-x-0 z-50 bg-white backdrop-blur-md border-b border-cream-300">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div>
-            <img src="/club/the-title-club_logo-400p.webp" alt={tNav("logoAlt")} className="w-20 h-auto object-contain" />
-          </div>
-          <div className="flex items-center gap-4">
-            <LanguageSwitcher variant="light" />
-            <LandingNavAuth
-              isSignedIn={isSignedIn}
-              memberEntryHref={memberEntryHref}
-              memberEntryLabel={memberEntryLabel}
-            />
-          </div>
-        </div>
-      </nav>
+      <LandingNav
+        isSignedIn={isSignedIn}
+        memberEntryHref={memberEntryHref}
+        memberEntryLabel={memberEntryLabel}
+      />
 
       {/* ─── HERO (Midnight Green) ────────────────── */}
       <section className="pt-16 min-h-screen flex items-center relative overflow-hidden bg-cover bg-center bg-linear-to-b from-middle-blue to-deep-blue">
