@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { useRouter as useNextRouter } from "next/navigation";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { isLocaleAgnosticPath } from "@/lib/i18n";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { Eye, EyeOff, ArrowRight } from "lucide-react";
 
@@ -12,6 +14,7 @@ export default function LoginPage() {
   const tNav = useTranslations("nav");
   const { login } = useAuth();
   const router = useRouter();
+  const nextRouter = useNextRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
@@ -34,7 +37,10 @@ export default function LoginPage() {
     const result = await login(email, password, nextPath);
     setLoading(false);
     if (result.success) {
-      router.push(result.redirectTo ?? "/dashboard");
+      const to = result.redirectTo ?? "/dashboard";
+      // /admin lives outside [locale] — next-intl router would send /ru/admin (404)
+      if (isLocaleAgnosticPath(to)) nextRouter.push(to);
+      else router.push(to);
     } else {
       setError(result.error ?? t("login.loginFailed"));
     }

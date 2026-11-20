@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { localizedLoginPath } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
 import { fetchAllPartners, fetchAllPrivileges } from "@/lib/supabase/data";
 import { mapProfileToMember, type ProfileRow } from "@/lib/supabase/mappers";
@@ -159,7 +160,8 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
-    if (!isLoading && !isAdmin) router.replace("/login");
+    // Login lives under /[locale]/login — bare /login 404s after i18n routing
+    if (!isLoading && !isAdmin) router.replace(localizedLoginPath());
   }, [isAdmin, isLoading, router]);
 
   useEffect(() => {

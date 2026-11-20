@@ -12,6 +12,7 @@ import type { User } from "@supabase/supabase-js";
 import type { MemberStatus } from "./types";
 import { Member } from "./types";
 import { safeInternalPath } from "./app-url";
+import { localizedLoginPath } from "./i18n";
 import { createClient } from "./supabase/client";
 import { mapProfileToMember, type ProfileRow } from "./supabase/mappers";
 
@@ -234,7 +235,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
     setMember(null);
     setIsAdmin(false);
-    router.push("/login");
+    // Login is under /[locale]/login — bare /login 404s with localePrefix: "always"
+    router.push(localizedLoginPath());
     router.refresh();
   };
 
