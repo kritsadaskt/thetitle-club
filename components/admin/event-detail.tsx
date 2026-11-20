@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Download, Mail, Pencil } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Download, Mail, Pencil } from "lucide-react";
 import { absoluteAppUrl } from "@/lib/app-url";
 import {
   eventEarliestStartsAt,
@@ -35,9 +35,27 @@ type Props = {
   onEventUpdated: (event: ClubEvent) => void;
 };
 
+const REGISTRANT_PAGE_SIZE = 15;
+const HISTORY_PAGE_SIZE = 10;
+
 /** Prefer address/place so chips stay distinct when venue name matches the event title. */
 function venueLocationLabel(venue: EventVenue): string {
   return venue.location.trim() || venue.slug || venue.name;
+}
+
+/** Page numbers with ellipsis gaps for compact controls, e.g. [1, 2, 3, "…", 10]. */
+function pageNumberItems(current: number, total: number): Array<number | "…"> {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+  const items: Array<number | "…"> = [1];
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
+  if (start > 2) items.push("…");
+  for (let page = start; page <= end; page++) items.push(page);
+  if (end < total - 1) items.push("…");
+  items.push(total);
+  return items;
 }
 
 export function EventDetail({ event, onBack, onEventUpdated }: Props) {
@@ -47,6 +65,9 @@ export function EventDetail({ event, onBack, onEventUpdated }: Props) {
   const [showEdit, setShowEdit] = useState(false);
   const [archiving, setArchiving] = useState(false);
   const [venueFilter, setVenueFilter] = useState<string>("all");
+  const [registrantPage, setRegistrantPage] = useState(1);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [showAllLocations, setShowAllLocations] = useState(false);
   const [resendTarget, setResendTarget] = useState<EventRegistrant | null>(null);
   const [resending, setResending] = useState(false);
   const [resendNotice, setResendNotice] = useState<string | null>(null);
@@ -83,11 +104,46 @@ export function EventDetail({ event, onBack, onEventUpdated }: Props) {
   const filteredLogs =
     venueFilter === "all" ? logs : logs.filter((row) => row.venueId === venueFilter);
 
+  const registrantPageCount = Math.max(1, Math.ceil(filteredRegistrants.length / REGISTRANT_PAGE_SIZE));
+  const safeRegistrantPage = Math.min(registrantPage, registrantPageCount);
+  const pagedRegistrants = filteredRegistrants.slice(
+    (safeRegistrantPage - 1) * REGISTRANT_PAGE_SIZE,
+    safeRegistrantPage * REGISTRANT_PAGE_SIZE
+  );
+  const registrantRangeStart =
+    filteredRegistrants.length === 0 ? 0 : (safeRegistrantPage - 1) * REGISTRANT_PAGE_SIZE + 1;
+  const registrantRangeEnd = Math.min(
+    safeRegistrantPage * REGISTRANT_PAGE_SIZE,
+    filteredRegistrants.length
+  );
+
+  const historyPageCount = Math.max(1, Math.ceil(filteredLogs.length / HISTORY_PAGE_SIZE));
+  const safeHistoryPage = Math.min(historyPage, historyPageCount);
+  const pagedLogs = filteredLogs.slice(
+    (safeHistoryPage - 1) * HISTORY_PAGE_SIZE,
+    safeHistoryPage * HISTORY_PAGE_SIZE
+  );
+  const historyRangeStart =
+    filteredLogs.length === 0 ? 0 : (safeHistoryPage - 1) * HISTORY_PAGE_SIZE + 1;
+  const historyRangeEnd = Math.min(safeHistoryPage * HISTORY_PAGE_SIZE, filteredLogs.length);
+
+  useEffect(() => {
+    setRegistrantPage(1);
+    setHistoryPage(1);
+  }, [venueFilter, event.id]);
+
   const venueLabelById = useMemo(() => {
     const map = new Map<string, string>();
     for (const venue of event.venues) map.set(venue.id, venueLocationLabel(venue));
     return map;
   }, [event.venues]);
+
+  const registrantsScopeLabel =
+    venueFilter === "all"
+      ? event.venues.length === 1
+        ? venueLocationLabel(event.venues[0])
+        : "All locations"
+      : venueLabelById.get(venueFilter) || "Selected location";
 
   const startsAt = eventEarliestStartsAt(event);
   const endsAt = eventLatestEndsAt(event);
@@ -286,39 +342,55 @@ export function EventDetail({ event, onBack, onEventUpdated }: Props) {
       <h3 className="text-ink-muted text-xs tracking-[2px] uppercase font-semibold mb-3">
         Locations &amp; QR ({event.venues.length})
       </h3>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
-        {event.venues.map((venue) => {
-          const shareUrl = absoluteAppUrl(venuePublicPath(event.slug, venue.slug));
-          const count = countsByVenue.get(venue.id) ?? 0;
-          return (
-            <div
-              key={venue.id}
-              className="bg-white border border-cream-300 rounded-2xl p-4 shadow-card flex flex-col sm:flex-row gap-4"
-            >
-              <VenueQrCard
-                value={shareUrl}
-                title={venue.name}
-                fileBaseName={`${event.slug}__${venue.slug}`}
-              />
-              <div className="flex-1 min-w-0">
-                <p className="text-forest font-medium text-sm">{venue.name}</p>
-                <p className="text-ink-muted text-xs mt-1">
-                  {formatEventSchedule(venue.startsAt, venue.endsAt)}
-                </p>
-                {venue.location && (
-                  <p className="text-ink-light text-xs mt-1 truncate">{venue.location}</p>
-                )}
-                <p className="text-ink-muted text-xs mt-2">
-                  {count} registration{count === 1 ? "" : "s"}
-                </p>
-                <p className="text-[11px] text-ink-muted mt-2 break-all">{shareUrl}</p>
-                <p className="text-[10px] text-ink-muted mt-2">
-                  Click the QR to open 1000×1000 in a new tab. Save PNG or copy image for print.
-                </p>
+      <div className="mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {(event.venues.length > 2 && !showAllLocations
+            ? event.venues.slice(0, 2)
+            : event.venues
+          ).map((venue) => {
+            const shareUrl = absoluteAppUrl(venuePublicPath(event.slug, venue.slug));
+            const count = countsByVenue.get(venue.id) ?? 0;
+            return (
+              <div
+                key={venue.id}
+                className="bg-white border border-cream-300 rounded-2xl p-4 shadow-card flex flex-col sm:flex-row gap-4"
+              >
+                <VenueQrCard
+                  value={shareUrl}
+                  title={venue.name}
+                  fileBaseName={`${event.slug}__${venue.slug}`}
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-forest font-medium text-sm">{venue.name}</p>
+                  <p className="text-ink-muted text-xs mt-1">
+                    {formatEventSchedule(venue.startsAt, venue.endsAt)}
+                  </p>
+                  {venue.location && (
+                    <p className="text-ink-light text-xs mt-1 truncate">{venue.location}</p>
+                  )}
+                  <p className="text-ink-muted text-xs mt-2">
+                    {count} registration{count === 1 ? "" : "s"}
+                  </p>
+                  <p className="text-[11px] text-ink-muted mt-2 break-all">{shareUrl}</p>
+                  <p className="text-[10px] text-ink-muted mt-2">
+                    Click the QR to open 1000×1000 in a new tab. Save PNG or copy image for print.
+                  </p>
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
+        {event.venues.length > 2 && (
+          <button
+            type="button"
+            onClick={() => setShowAllLocations((open) => !open)}
+            className="mt-3 inline-flex items-center gap-1.5 rounded-xl border border-cream-300 bg-white px-4 py-2 text-xs font-medium text-forest hover:bg-cream-100"
+          >
+            {showAllLocations
+              ? "Show less"
+              : `Show All Locations (${event.venues.length - 2} more)`}
+          </button>
+        )}
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
@@ -380,6 +452,14 @@ export function EventDetail({ event, onBack, onEventUpdated }: Props) {
       )}
 
       <div className="bg-white border border-cream-300 rounded-2xl overflow-hidden shadow-card">
+        <div className="border-b border-cream-200 bg-cream-50 px-5 py-3">
+          <p className="text-[11px] text-ink-muted uppercase tracking-wide font-semibold">
+            Showing registrations for
+          </p>
+          <p className="text-forest text-sm font-medium mt-0.5 break-words">
+            {registrantsScopeLabel}
+          </p>
+        </div>
         {loading ? (
           <div className="flex justify-center py-16">
             <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
@@ -387,57 +467,108 @@ export function EventDetail({ event, onBack, onEventUpdated }: Props) {
         ) : filteredRegistrants.length === 0 ? (
           <p className="text-ink-muted text-sm text-center py-12">No one has registered yet.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-cream-300 bg-cream-100">
-                  {["Location", "Member ID", "Name", "Email", "Phone", "Registered", ""].map(
-                    (heading) => (
-                      <th
-                        key={heading || "actions"}
-                        className="px-5 py-3.5 text-left text-ink-muted text-xs font-semibold tracking-wide"
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-cream-300 bg-cream-100">
+                    {["Member ID", "Name", "Email", "Phone", "Registered", ""].map(
+                      (heading) => (
+                        <th
+                          key={heading || "actions"}
+                          className="px-5 py-3.5 text-left text-ink-muted text-xs font-semibold tracking-wide"
+                        >
+                          {heading}
+                        </th>
+                      )
+                    )}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-cream-200">
+                  {pagedRegistrants.map((row) => (
+                    <tr key={row.id} className="hover:bg-cream-100/60">
+                      <td className="px-5 py-3.5 font-mono text-xs text-ink-light">
+                        {row.memberCode || "—"}
+                      </td>
+                      <td className="px-5 py-3.5 text-forest font-medium">{row.fullName || "—"}</td>
+                      <td className="px-5 py-3.5 text-ink-muted text-xs">{row.email || "—"}</td>
+                      <td className="px-5 py-3.5 text-ink-muted text-xs">{row.phone || "—"}</td>
+                      <td className="px-5 py-3.5 text-ink-muted text-xs whitespace-nowrap">
+                        {formatEventDateTime(row.registeredAt)}
+                      </td>
+                      <td className="px-5 py-3.5 text-right">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setError(null);
+                            setResendNotice(null);
+                            setResendTarget(row);
+                          }}
+                          disabled={!row.email || !row.memberId}
+                          title={!row.email ? "No email on profile" : "Resend confirmation email"}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-cream-300 bg-white px-2.5 py-1.5 text-xs text-forest hover:bg-cream-100 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <Mail size={12} /> Resend
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {filteredRegistrants.length > REGISTRANT_PAGE_SIZE && (
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-cream-200 px-4 py-3">
+                <p className="text-ink-muted text-xs">
+                  Showing {registrantRangeStart}–{registrantRangeEnd} of {filteredRegistrants.length}
+                </p>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setRegistrantPage((page) => Math.max(1, page - 1))}
+                    disabled={safeRegistrantPage <= 1}
+                    className="inline-flex items-center gap-1 rounded-lg border border-cream-300 bg-white px-2.5 py-1.5 text-xs text-forest hover:bg-cream-100 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <ChevronLeft size={12} /> Prev
+                  </button>
+                  {pageNumberItems(safeRegistrantPage, registrantPageCount).map((item, index) =>
+                    item === "…" ? (
+                      <span
+                        key={`registrant-ellipsis-${index}`}
+                        className="px-1 text-ink-muted text-xs select-none"
                       >
-                        {heading}
-                      </th>
+                        …
+                      </span>
+                    ) : (
+                      <button
+                        key={item}
+                        type="button"
+                        onClick={() => setRegistrantPage(item)}
+                        aria-current={item === safeRegistrantPage ? "page" : undefined}
+                        className={cn(
+                          "min-w-8 rounded-lg border px-2.5 py-1.5 text-xs tabular-nums",
+                          item === safeRegistrantPage
+                            ? "border-primary bg-primary/15 font-semibold text-primary-dark"
+                            : "border-cream-300 bg-white text-forest hover:bg-cream-100"
+                        )}
+                      >
+                        {item}
+                      </button>
                     )
                   )}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-cream-200">
-                {filteredRegistrants.map((row) => (
-                  <tr key={row.id} className="hover:bg-cream-100/60">
-                    <td className="px-5 py-3.5 text-ink-light text-xs">
-                      {venueLabelById.get(row.venueId) || row.venueName || "—"}
-                    </td>
-                    <td className="px-5 py-3.5 font-mono text-xs text-ink-light">
-                      {row.memberCode || "—"}
-                    </td>
-                    <td className="px-5 py-3.5 text-forest font-medium">{row.fullName || "—"}</td>
-                    <td className="px-5 py-3.5 text-ink-muted text-xs">{row.email || "—"}</td>
-                    <td className="px-5 py-3.5 text-ink-muted text-xs">{row.phone || "—"}</td>
-                    <td className="px-5 py-3.5 text-ink-muted text-xs whitespace-nowrap">
-                      {formatEventDateTime(row.registeredAt)}
-                    </td>
-                    <td className="px-5 py-3.5 text-right">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setError(null);
-                          setResendNotice(null);
-                          setResendTarget(row);
-                        }}
-                        disabled={!row.email || !row.memberId}
-                        title={!row.email ? "No email on profile" : "Resend confirmation email"}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-cream-300 bg-white px-2.5 py-1.5 text-xs text-forest hover:bg-cream-100 disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        <Mail size={12} /> Resend
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setRegistrantPage((page) => Math.min(registrantPageCount, page + 1))
+                    }
+                    disabled={safeRegistrantPage >= registrantPageCount}
+                    className="inline-flex items-center gap-1 rounded-lg border border-cream-300 bg-white px-2.5 py-1.5 text-xs text-forest hover:bg-cream-100 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Next <ChevronRight size={12} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -452,47 +583,101 @@ export function EventDetail({ event, onBack, onEventUpdated }: Props) {
         ) : filteredLogs.length === 0 ? (
           <p className="text-ink-muted text-sm text-center py-12">No registration activity yet.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-cream-300 bg-cream-100">
-                  {["Time", "Location", "Member ID", "Name", "Action"].map((heading) => (
-                    <th
-                      key={heading}
-                      className="px-5 py-3.5 text-left text-ink-muted text-xs font-semibold tracking-wide"
-                    >
-                      {heading}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-cream-200">
-                {filteredLogs.map((row) => (
-                  <tr key={row.id}>
-                    <td className="px-5 py-3.5 text-ink-muted text-xs whitespace-nowrap">
-                      {formatEventDateTime(row.occurredAt)}
-                    </td>
-                    <td className="px-5 py-3.5 text-ink-light text-xs">
-                      {(row.venueId && venueLabelById.get(row.venueId)) || row.venueName || "—"}
-                    </td>
-                    <td className="px-5 py-3.5 font-mono text-xs text-ink-light">
-                      {row.memberCode || "—"}
-                    </td>
-                    <td className="px-5 py-3.5 text-forest font-medium">{row.fullName || "—"}</td>
-                    <td className="px-5 py-3.5 text-xs">
-                      <span
-                        className={
-                          row.action === "registered" ? "text-emerald-700" : "text-ink-muted"
-                        }
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-cream-300 bg-cream-100">
+                    {["Time", "Location", "Member ID", "Name", "Action"].map((heading) => (
+                      <th
+                        key={heading}
+                        className="px-5 py-3.5 text-left text-ink-muted text-xs font-semibold tracking-wide"
                       >
-                        {row.action === "registered" ? "Registered" : "Cancelled"}
-                      </span>
-                    </td>
+                        {heading}
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-cream-200">
+                  {pagedLogs.map((row) => (
+                    <tr key={row.id}>
+                      <td className="px-5 py-3.5 text-ink-muted text-xs whitespace-nowrap">
+                        {formatEventDateTime(row.occurredAt)}
+                      </td>
+                      <td className="px-5 py-3.5 text-ink-light text-xs">
+                        {(row.venueId && venueLabelById.get(row.venueId)) || row.venueName || "—"}
+                      </td>
+                      <td className="px-5 py-3.5 font-mono text-xs text-ink-light">
+                        {row.memberCode || "—"}
+                      </td>
+                      <td className="px-5 py-3.5 text-forest font-medium">{row.fullName || "—"}</td>
+                      <td className="px-5 py-3.5 text-xs">
+                        <span
+                          className={
+                            row.action === "registered" ? "text-emerald-700" : "text-ink-muted"
+                          }
+                        >
+                          {row.action === "registered" ? "Registered" : "Cancelled"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {filteredLogs.length > HISTORY_PAGE_SIZE && (
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-cream-200 px-4 py-3">
+                <p className="text-ink-muted text-xs">
+                  Showing {historyRangeStart}–{historyRangeEnd} of {filteredLogs.length}
+                </p>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setHistoryPage((page) => Math.max(1, page - 1))}
+                    disabled={safeHistoryPage <= 1}
+                    className="inline-flex items-center gap-1 rounded-lg border border-cream-300 bg-white px-2.5 py-1.5 text-xs text-forest hover:bg-cream-100 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <ChevronLeft size={12} /> Prev
+                  </button>
+                  {pageNumberItems(safeHistoryPage, historyPageCount).map((item, index) =>
+                    item === "…" ? (
+                      <span
+                        key={`ellipsis-${index}`}
+                        className="px-1 text-ink-muted text-xs select-none"
+                      >
+                        …
+                      </span>
+                    ) : (
+                      <button
+                        key={item}
+                        type="button"
+                        onClick={() => setHistoryPage(item)}
+                        aria-current={item === safeHistoryPage ? "page" : undefined}
+                        className={cn(
+                          "min-w-8 rounded-lg border px-2.5 py-1.5 text-xs tabular-nums",
+                          item === safeHistoryPage
+                            ? "border-primary bg-primary/15 font-semibold text-primary-dark"
+                            : "border-cream-300 bg-white text-forest hover:bg-cream-100"
+                        )}
+                      >
+                        {item}
+                      </button>
+                    )
+                  )}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setHistoryPage((page) => Math.min(historyPageCount, page + 1))
+                    }
+                    disabled={safeHistoryPage >= historyPageCount}
+                    className="inline-flex items-center gap-1 rounded-lg border border-cream-300 bg-white px-2.5 py-1.5 text-xs text-forest hover:bg-cream-100 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Next <ChevronRight size={12} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 
