@@ -78,6 +78,10 @@ export function venuePublicPath(eventSlug: string, venueSlug: string): string {
   return `/events/${eventSlug}/${venueSlug}`;
 }
 
+export function surveyPublicPath(eventSlug: string, venueSlug: string): string {
+  return `/events/${eventSlug}/${venueSlug}/survey`;
+}
+
 function bangkokParts(iso: string, bcp47 = "en-GB") {
   const parts = new Intl.DateTimeFormat(bcp47, {
     timeZone: BANGKOK,

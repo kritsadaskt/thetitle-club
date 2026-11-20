@@ -266,3 +266,120 @@ export interface EventRegistrationLog {
   action: EventRegistrationAction;
   occurredAt: string;
 }
+
+export type EventSurveyQuestionType = "rating" | "single" | "text" | "yesno";
+
+export interface EventSurveyOption {
+  id: string;
+  /** Localized label for the current viewer locale */
+  label: string;
+  /** Raw th/ru map for admin editing */
+  i18n?: I18nLocaleMap;
+}
+
+export interface EventVenueSurvey {
+  venueId: string;
+  eventId: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EventSurveyQuestion {
+  id: string;
+  venueId: string;
+  /** Localized prompt for the current viewer locale */
+  prompt: string;
+  questionType: EventSurveyQuestionType;
+  options: EventSurveyOption[];
+  required: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+  /** Raw th/ru map for admin editing */
+  i18n?: I18nLocaleMap;
+  /** True when at least one answer exists (admin UI locks type/delete) */
+  hasAnswers?: boolean;
+}
+
+export interface CreateEventSurveyQuestionInput {
+  prompt: string;
+  questionType: EventSurveyQuestionType;
+  options?: EventSurveyOptionInput[];
+  required?: boolean;
+  sortOrder?: number;
+  i18n?: I18nLocaleMap;
+}
+
+export interface EventSurveyOptionInput {
+  /** Preserve existing option id when editing */
+  id?: string;
+  label: string;
+  i18n?: I18nLocaleMap;
+}
+
+export interface UpdateEventSurveyQuestionInput {
+  prompt?: string;
+  questionType?: EventSurveyQuestionType;
+  options?: EventSurveyOptionInput[];
+  required?: boolean;
+  sortOrder?: number;
+  i18n?: I18nLocaleMap;
+}
+
+export interface EventSurveyAnswerInput {
+  questionId: string;
+  rating?: number;
+  optionId?: string;
+  yesno?: boolean;
+  text?: string;
+}
+
+export interface EventSurveyAnswer {
+  id: string;
+  responseId: string;
+  questionId: string;
+  questionType: EventSurveyQuestionType;
+  promptSnapshot: string;
+  ratingValue?: number;
+  optionId?: string;
+  optionLabelSnapshot?: string;
+  yesnoValue?: boolean;
+  textValue?: string;
+}
+
+export interface EventSurveyResponse {
+  id: string;
+  venueId: string;
+  eventId: string;
+  memberId: string;
+  registrationId: string;
+  submittedAt: string;
+  memberCode?: string;
+  fullName?: string;
+  email?: string;
+  answers: EventSurveyAnswer[];
+}
+
+export interface EventSurveyQuestionSummary {
+  questionId: string;
+  prompt: string;
+  questionType: EventSurveyQuestionType;
+  responseCount: number;
+  /** rating */
+  averageRating?: number;
+  ratingDistribution?: Record<1 | 2 | 3 | 4 | 5, number>;
+  /** single */
+  optionCounts?: { optionId: string; label: string; count: number }[];
+  /** yesno */
+  yesCount?: number;
+  noCount?: number;
+  /** text */
+  textAnswers?: { memberName: string; text: string; submittedAt: string }[];
+}
+
+export interface EventVenueSurveySummary {
+  venueId: string;
+  responseCount: number;
+  questions: EventSurveyQuestionSummary[];
+}

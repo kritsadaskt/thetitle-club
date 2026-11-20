@@ -1,4 +1,25 @@
-import type { ClubEvent, CommunityMoment, EventRegistrant, EventRegistration, EventRegistrationAction, EventRegistrationLog, EventVenue, Member, MemberPromoCode, Privilege, PrivilegeMapLocation, PromoCode, PromoCodeStats, ShopPartner } from "@/lib/types";
+import type {
+  ClubEvent,
+  CommunityMoment,
+  EventRegistrant,
+  EventRegistration,
+  EventRegistrationAction,
+  EventRegistrationLog,
+  EventSurveyAnswer,
+  EventSurveyOption,
+  EventSurveyQuestion,
+  EventSurveyQuestionType,
+  EventSurveyResponse,
+  EventVenue,
+  EventVenueSurvey,
+  Member,
+  MemberPromoCode,
+  Privilege,
+  PrivilegeMapLocation,
+  PromoCode,
+  PromoCodeStats,
+  ShopPartner,
+} from "@/lib/types";
 import { sortedEventVenues } from "@/lib/events";
 import type { CodeMode, I18nLocaleMap, MemberStatus, PrivilegeCategory, PromoCodeStatus, ResidentStatus } from "@/lib/types";
 import { pickLocalized } from "@/lib/i18n";
@@ -448,5 +469,156 @@ export function mapCommunityRow(row: CommunityMomentRow, locale = "en"): Communi
     isPublished: row.is_published,
     sortOrder: row.sort_order,
     i18n,
+  };
+}
+
+export type EventVenueSurveyRow = {
+  venue_id: string;
+  event_id: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type EventSurveyQuestionRow = {
+  id: string;
+  venue_id: string;
+  prompt: string;
+  i18n?: unknown;
+  question_type: EventSurveyQuestionType;
+  options: unknown;
+  required: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+  has_answers?: boolean | null;
+};
+
+export type EventSurveyAnswerRow = {
+  id: string;
+  response_id: string;
+  question_id: string;
+  question_type: EventSurveyQuestionType;
+  prompt_snapshot: string;
+  rating_value: number | null;
+  option_id: string | null;
+  option_label_snapshot: string | null;
+  yesno_value: boolean | null;
+  text_value: string | null;
+};
+
+export type EventSurveyResponseRow = {
+  id: string;
+  venue_id: string;
+  event_id: string;
+  member_id: string;
+  registration_id: string;
+  submitted_at: string;
+  profiles?: {
+    member_id: string | null;
+    full_name: string | null;
+    email: string | null;
+  } | null;
+  event_survey_answers?: EventSurveyAnswerRow[] | null;
+};
+
+function parseSurveyOptionI18n(raw: unknown): I18nLocaleMap {
+  return parseI18n(raw);
+}
+
+export function parseSurveyOptions(raw: unknown, locale = "en"): EventSurveyOption[] {
+  if (!Array.isArray(raw)) return [];
+  const out: EventSurveyOption[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const row = item as Record<string, unknown>;
+    const id = typeof row.id === "string" ? row.id.trim() : "";
+    const label = typeof row.label === "string" ? row.label.trim() : "";
+    if (!id || !label) continue;
+    const i18n = parseSurveyOptionI18n(row.i18n);
+    out.push({
+      id,
+      label: pickLocalized(locale, label, i18n, "label"),
+      i18n,
+    });
+  }
+  return out;
+}
+
+/** Serialize options for insert/update — keep English label + raw i18n. */
+export function serializeSurveyOptions(
+  options: { id?: string; label: string; i18n?: I18nLocaleMap }[] | undefined
+): { id: string; label: string; i18n: I18nLocaleMap }[] {
+  if (!options?.length) return [];
+  const out: { id: string; label: string; i18n: I18nLocaleMap }[] = [];
+  for (const opt of options) {
+    const label = opt.label.trim();
+    if (!label) continue;
+    out.push({
+      id: opt.id?.trim() || crypto.randomUUID(),
+      label,
+      i18n: opt.i18n ?? {},
+    });
+  }
+  return out;
+}
+
+export function mapEventVenueSurveyRow(row: EventVenueSurveyRow): EventVenueSurvey {
+  return {
+    venueId: row.venue_id,
+    eventId: row.event_id,
+    isActive: row.is_active,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function mapEventSurveyQuestionRow(
+  row: EventSurveyQuestionRow,
+  locale = "en"
+): EventSurveyQuestion {
+  const i18n = parseI18n(row.i18n);
+  return {
+    id: row.id,
+    venueId: row.venue_id,
+    prompt: pickLocalized(locale, row.prompt, i18n, "prompt"),
+    questionType: row.question_type,
+    options: parseSurveyOptions(row.options, locale),
+    required: row.required,
+    sortOrder: row.sort_order,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    i18n,
+    hasAnswers: Boolean(row.has_answers),
+  };
+}
+
+export function mapEventSurveyAnswerRow(row: EventSurveyAnswerRow): EventSurveyAnswer {
+  return {
+    id: row.id,
+    responseId: row.response_id,
+    questionId: row.question_id,
+    questionType: row.question_type,
+    promptSnapshot: row.prompt_snapshot,
+    ratingValue: row.rating_value ?? undefined,
+    optionId: row.option_id ?? undefined,
+    optionLabelSnapshot: row.option_label_snapshot ?? undefined,
+    yesnoValue: row.yesno_value ?? undefined,
+    textValue: row.text_value ?? undefined,
+  };
+}
+
+export function mapEventSurveyResponseRow(row: EventSurveyResponseRow): EventSurveyResponse {
+  return {
+    id: row.id,
+    venueId: row.venue_id,
+    eventId: row.event_id,
+    memberId: row.member_id,
+    registrationId: row.registration_id,
+    submittedAt: row.submitted_at,
+    memberCode: row.profiles?.member_id ?? undefined,
+    fullName: row.profiles?.full_name ?? undefined,
+    email: row.profiles?.email ?? undefined,
+    answers: (row.event_survey_answers ?? []).map(mapEventSurveyAnswerRow),
   };
 }

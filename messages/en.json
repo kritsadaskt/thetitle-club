@@ -438,6 +438,30 @@
       "register": "Register",
       "registering": "Registering…",
       "closedNotRegistered": "Registration is closed. You are not registered for this location."
+    },
+    "survey": {
+      "eyebrow": "Exit survey",
+      "title": "How was the event?",
+      "notFoundTitle": "Survey not found",
+      "notFoundMessage": "The link may be incorrect or the location was removed.",
+      "signInPrompt": "Sign in to answer the survey",
+      "notRegistered": "Only members registered at this location can answer this survey.",
+      "membershipMustBeActive": "Your membership must be active before you can answer.",
+      "notOpenYet": "The survey opens when the event starts.",
+      "closed": "This survey is not open right now.",
+      "noQuestions": "This survey has no questions yet.",
+      "alreadySubmitted": "Thank you — you have already submitted this survey.",
+      "thanksTitle": "Thank you",
+      "thanksMessage": "Your feedback helps us improve future events.",
+      "submit": "Submit",
+      "submitting": "Submitting…",
+      "required": "Required",
+      "yes": "Yes",
+      "no": "No",
+      "ratingLabel": "Rate 1 to 5",
+      "textPlaceholder": "Your answer",
+      "missingRequired": "Please answer all required questions.",
+      "backToLocation": "Back to location"
     }
   }
 }

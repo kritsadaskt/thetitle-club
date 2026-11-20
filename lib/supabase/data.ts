@@ -1,6 +1,7 @@
 import type {
   ClubEvent,
   CreateEventInput,
+  CreateEventSurveyQuestionInput,
   CreateEventVenueInput,
   CreatePartnerInput,
   CreatePrivilegeCategoryInput,
@@ -8,13 +9,20 @@ import type {
   EventRegistrant,
   EventRegistration,
   EventRegistrationLog,
+  EventSurveyAnswerInput,
+  EventSurveyQuestion,
+  EventSurveyQuestionSummary,
+  EventSurveyResponse,
   EventVenue,
+  EventVenueSurvey,
+  EventVenueSurveySummary,
   MemberPromoCode,
   Privilege,
   PrivilegeCategory,
   PromoCode,
   PromoCodeStats,
   ShopPartner,
+  UpdateEventSurveyQuestionInput,
 } from "@/lib/types";
 import {
   ensureEventSlug,
@@ -30,7 +38,10 @@ import {
   mapEventRegistrationLogRow,
   mapEventRegistrationRow,
   mapEventRow,
+  mapEventSurveyQuestionRow,
+  mapEventSurveyResponseRow,
   mapEventVenueRow,
+  mapEventVenueSurveyRow,
   mapMemberPromoCodeRow,
   mapPartnerRow,
   mapPrivilegeCategoryRow,
@@ -38,12 +49,16 @@ import {
   mapPromoCodeRow,
   mapPromoCodeStats,
   sanitizeMapLocations,
+  serializeSurveyOptions,
   type CommunityMomentRow,
   type EventRegistrantRow,
   type EventRegistrationLogRow,
   type EventRegistrationRow,
   type EventRow,
+  type EventSurveyQuestionRow,
+  type EventSurveyResponseRow,
   type EventVenueRow,
+  type EventVenueSurveyRow,
   type PartnerRow,
   type PrivilegeCategoryRow,
   type PrivilegeRow,
@@ -1001,4 +1016,304 @@ export async function fetchEventRegistrationLogs(
     .order("occurred_at", { ascending: true });
   if (error) return { rows: [], error: error.message };
   return { rows: (data ?? []).map((row) => mapEventRegistrationLogRow(row as unknown as EventRegistrationLogRow)) };
+}
+
+function surveyWriteError(message: string): string {
+  if (/already submitted/i.test(message)) return "You have already submitted this survey.";
+  if (/only registered/i.test(message)) return "Only members registered at this location can submit.";
+  if (/not open yet/i.test(message)) return "The survey is not open yet.";
+  if (/not active/i.test(message)) return "The survey is not open.";
+  if (/membership must be active/i.test(message)) return "Your membership must be active.";
+  if (/cannot delete a question/i.test(message)) return "Cannot delete a question that already has answers.";
+  if (/cannot change type/i.test(message)) return "Cannot change the type of a question that already has answers.";
+  if (/cannot remove an option/i.test(message)) return "Cannot remove an option that already has answers.";
+  if (/at least 2 options/i.test(message)) return "Single-choice questions need at least 2 options.";
+  if (/prompt is required/i.test(message)) return "Question text is required.";
+  return message;
+}
+
+export async function fetchVenueSurvey(venueId: string): Promise<EventVenueSurvey | null> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("event_venue_surveys")
+    .select("*")
+    .eq("venue_id", venueId)
+    .maybeSingle();
+  if (error || !data) return null;
+  return mapEventVenueSurveyRow(data as EventVenueSurveyRow);
+}
+
+export async function upsertVenueSurveyActive(
+  venueId: string,
+  eventId: string,
+  isActive: boolean
+): Promise<MutateResult<EventVenueSurvey>> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("event_venue_surveys")
+    .upsert(
+      { venue_id: venueId, event_id: eventId, is_active: isActive },
+      { onConflict: "venue_id" }
+    )
+    .select("*")
+    .single();
+  if (error) return { ok: false, error: surveyWriteError(error.message) };
+  return { ok: true, data: mapEventVenueSurveyRow(data as EventVenueSurveyRow) };
+}
+
+export async function fetchVenueSurveyQuestions(
+  venueId: string,
+  locale = "en"
+): Promise<EventSurveyQuestion[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("event_survey_questions")
+    .select("*")
+    .eq("venue_id", venueId)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+  if (error || !data) return [];
+
+  const questionIds = data.map((row) => (row as EventSurveyQuestionRow).id);
+  const answered = new Set<string>();
+  if (questionIds.length > 0) {
+    const { data: answerRows } = await supabase
+      .from("event_survey_answers")
+      .select("question_id")
+      .in("question_id", questionIds);
+    for (const row of answerRows ?? []) {
+      const qid = (row as { question_id: string }).question_id;
+      if (qid) answered.add(qid);
+    }
+  }
+
+  return data.map((row) => {
+    const mapped = mapEventSurveyQuestionRow(row as EventSurveyQuestionRow, locale);
+    return { ...mapped, hasAnswers: answered.has(mapped.id) };
+  });
+}
+
+export async function createSurveyQuestion(
+  venueId: string,
+  input: CreateEventSurveyQuestionInput
+): Promise<MutateResult<EventSurveyQuestion>> {
+  const supabase = createClient();
+  const options =
+    input.questionType === "single" ? serializeSurveyOptions(input.options) : [];
+  const { data, error } = await supabase
+    .from("event_survey_questions")
+    .insert({
+      venue_id: venueId,
+      prompt: input.prompt.trim(),
+      question_type: input.questionType,
+      options,
+      required: input.required ?? true,
+      sort_order: input.sortOrder ?? 0,
+      i18n: input.i18n ?? {},
+    })
+    .select("*")
+    .single();
+  if (error) return { ok: false, error: surveyWriteError(error.message) };
+  return { ok: true, data: mapEventSurveyQuestionRow(data as EventSurveyQuestionRow) };
+}
+
+export async function updateSurveyQuestion(
+  questionId: string,
+  input: UpdateEventSurveyQuestionInput
+): Promise<MutateResult<EventSurveyQuestion>> {
+  const supabase = createClient();
+  const patch: Record<string, unknown> = {};
+  if (input.prompt !== undefined) patch.prompt = input.prompt.trim();
+  if (input.questionType !== undefined) patch.question_type = input.questionType;
+  if (input.required !== undefined) patch.required = input.required;
+  if (input.sortOrder !== undefined) patch.sort_order = input.sortOrder;
+  if (input.i18n !== undefined) patch.i18n = input.i18n;
+  if (input.questionType === "single") {
+    patch.options = serializeSurveyOptions(input.options);
+  } else if (input.questionType !== undefined) {
+    patch.options = [];
+  } else if (input.options !== undefined) {
+    patch.options = serializeSurveyOptions(input.options);
+  }
+
+  const { data, error } = await supabase
+    .from("event_survey_questions")
+    .update(patch)
+    .eq("id", questionId)
+    .select("*")
+    .single();
+  if (error) return { ok: false, error: surveyWriteError(error.message) };
+  return { ok: true, data: mapEventSurveyQuestionRow(data as EventSurveyQuestionRow) };
+}
+
+export async function deleteSurveyQuestion(questionId: string): Promise<MutateResult<true>> {
+  const supabase = createClient();
+  const { error } = await supabase.from("event_survey_questions").delete().eq("id", questionId);
+  if (error) return { ok: false, error: surveyWriteError(error.message) };
+  return { ok: true, data: true };
+}
+
+export async function reorderSurveyQuestions(
+  venueId: string,
+  orderedIds: string[]
+): Promise<MutateResult<true>> {
+  const supabase = createClient();
+  for (let i = 0; i < orderedIds.length; i++) {
+    const { error } = await supabase
+      .from("event_survey_questions")
+      .update({ sort_order: i })
+      .eq("id", orderedIds[i])
+      .eq("venue_id", venueId);
+    if (error) return { ok: false, error: surveyWriteError(error.message) };
+  }
+  return { ok: true, data: true };
+}
+
+export async function fetchMyVenueSurveyResponse(
+  venueId: string
+): Promise<EventSurveyResponse | null> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data, error } = await supabase
+    .from("event_survey_responses")
+    .select("*, event_survey_answers(*)")
+    .eq("venue_id", venueId)
+    .eq("member_id", user.id)
+    .maybeSingle();
+  if (error || !data) return null;
+  return mapEventSurveyResponseRow(data as unknown as EventSurveyResponseRow);
+}
+
+export async function submitVenueSurvey(
+  venueId: string,
+  answers: EventSurveyAnswerInput[]
+): Promise<MutateResult<{ responseId: string }>> {
+  const supabase = createClient();
+  const payload = answers.map((a) => ({
+    questionId: a.questionId,
+    ...(a.rating !== undefined ? { rating: a.rating } : {}),
+    ...(a.optionId !== undefined ? { optionId: a.optionId } : {}),
+    ...(a.yesno !== undefined ? { yesno: a.yesno } : {}),
+    ...(a.text !== undefined ? { text: a.text } : {}),
+  }));
+  const { data, error } = await supabase.rpc("submit_venue_survey", {
+    p_venue_id: venueId,
+    p_answers: payload,
+  });
+  if (error) return { ok: false, error: surveyWriteError(error.message) };
+  return { ok: true, data: { responseId: data as string } };
+}
+
+export async function fetchVenueSurveyResponses(
+  venueId: string
+): Promise<{ rows: EventSurveyResponse[]; error?: string }> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("event_survey_responses")
+    .select(
+      "*, profiles!event_survey_responses_member_id_fkey(member_id, full_name, email), event_survey_answers(*)"
+    )
+    .eq("venue_id", venueId)
+    .order("submitted_at", { ascending: true });
+  if (error) return { rows: [], error: error.message };
+  return {
+    rows: (data ?? []).map((row) =>
+      mapEventSurveyResponseRow(row as unknown as EventSurveyResponseRow)
+    ),
+  };
+}
+
+export async function fetchVenueSurveySummary(
+  venueId: string
+): Promise<EventVenueSurveySummary> {
+  const questions = await fetchVenueSurveyQuestions(venueId, "en");
+  const { rows } = await fetchVenueSurveyResponses(venueId);
+
+  const questionSummaries: EventSurveyQuestionSummary[] = questions.map((q) => {
+    const answers = rows.flatMap((r) =>
+      r.answers
+        .filter((a) => a.questionId === q.id)
+        .map((a) => ({ answer: a, response: r }))
+    );
+    const base: EventSurveyQuestionSummary = {
+      questionId: q.id,
+      prompt: q.prompt,
+      questionType: q.questionType,
+      responseCount: answers.length,
+    };
+
+    if (q.questionType === "rating") {
+      const dist: Record<1 | 2 | 3 | 4 | 5, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+      let sum = 0;
+      for (const { answer } of answers) {
+        const v = answer.ratingValue;
+        if (v && v >= 1 && v <= 5) {
+          dist[v as 1 | 2 | 3 | 4 | 5] += 1;
+          sum += v;
+        }
+      }
+      return {
+        ...base,
+        averageRating: answers.length ? sum / answers.length : undefined,
+        ratingDistribution: dist,
+      };
+    }
+
+    if (q.questionType === "single") {
+      const counts = new Map<string, { label: string; count: number }>();
+      for (const opt of q.options) {
+        counts.set(opt.id, { label: opt.label, count: 0 });
+      }
+      for (const { answer } of answers) {
+        if (!answer.optionId) continue;
+        const existing = counts.get(answer.optionId);
+        if (existing) existing.count += 1;
+        else {
+          counts.set(answer.optionId, {
+            label: answer.optionLabelSnapshot ?? answer.optionId,
+            count: 1,
+          });
+        }
+      }
+      return {
+        ...base,
+        optionCounts: [...counts.entries()].map(([optionId, v]) => ({
+          optionId,
+          label: v.label,
+          count: v.count,
+        })),
+      };
+    }
+
+    if (q.questionType === "yesno") {
+      let yesCount = 0;
+      let noCount = 0;
+      for (const { answer } of answers) {
+        if (answer.yesnoValue === true) yesCount += 1;
+        else if (answer.yesnoValue === false) noCount += 1;
+      }
+      return { ...base, yesCount, noCount };
+    }
+
+    return {
+      ...base,
+      textAnswers: answers
+        .filter(({ answer }) => Boolean(answer.textValue))
+        .map(({ answer, response }) => ({
+          memberName: response.fullName ?? response.memberCode ?? "Member",
+          text: answer.textValue ?? "",
+          submittedAt: response.submittedAt,
+        })),
+    };
+  });
+
+  return {
+    venueId,
+    responseCount: rows.length,
+    questions: questionSummaries,
+  };
 }

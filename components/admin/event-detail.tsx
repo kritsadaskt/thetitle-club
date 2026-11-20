@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 import { ActiveToggle } from "./active-toggle";
 import { EventForm } from "./event-form";
 import { VenueQrCard } from "./venue-qr-card";
+import { VenueSurveyPanel } from "./venue-survey-panel";
 
 type Props = {
   event: ClubEvent;
@@ -353,29 +354,32 @@ export function EventDetail({ event, onBack, onEventUpdated }: Props) {
             return (
               <div
                 key={venue.id}
-                className="bg-white border border-cream-300 rounded-2xl p-4 shadow-card flex flex-col sm:flex-row gap-4"
+                className="bg-white border border-cream-300 rounded-2xl p-4 shadow-card flex flex-col gap-4"
               >
-                <VenueQrCard
-                  value={shareUrl}
-                  title={venue.name}
-                  fileBaseName={`${event.slug}__${venue.slug}`}
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-forest font-medium text-sm">{venue.name}</p>
-                  <p className="text-ink-muted text-xs mt-1">
-                    {formatEventSchedule(venue.startsAt, venue.endsAt)}
-                  </p>
-                  {venue.location && (
-                    <p className="text-ink-light text-xs mt-1 truncate">{venue.location}</p>
-                  )}
-                  <p className="text-ink-muted text-xs mt-2">
-                    {count} registration{count === 1 ? "" : "s"}
-                  </p>
-                  <p className="text-[11px] text-ink-muted mt-2 break-all">{shareUrl}</p>
-                  <p className="text-[10px] text-ink-muted mt-2">
-                    Click the QR to open 1000×1000 in a new tab. Save PNG or copy image for print.
-                  </p>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <VenueQrCard
+                    value={shareUrl}
+                    title={venue.name}
+                    fileBaseName={`${event.slug}__${venue.slug}`}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-forest font-medium text-sm">{venue.name}</p>
+                    <p className="text-ink-muted text-xs mt-1">
+                      {formatEventSchedule(venue.startsAt, venue.endsAt)}
+                    </p>
+                    {venue.location && (
+                      <p className="text-ink-light text-xs mt-1 truncate">{venue.location}</p>
+                    )}
+                    <p className="text-ink-muted text-xs mt-2">
+                      {count} registration{count === 1 ? "" : "s"}
+                    </p>
+                    <p className="text-[11px] text-ink-muted mt-2 break-all">{shareUrl}</p>
+                    <p className="text-[10px] text-ink-muted mt-2">
+                      Click the QR to open 1000×1000 in a new tab. Save PNG or copy image for print.
+                    </p>
+                  </div>
                 </div>
+                <VenueSurveyPanel event={event} venue={venue} />
               </div>
             );
           })}
