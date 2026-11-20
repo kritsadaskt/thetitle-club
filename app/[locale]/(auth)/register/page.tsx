@@ -291,10 +291,10 @@ export default function RegisterPage() {
       setLoading(false);
       return;
     }
-    const approvedAt = new Date().toISOString();
+    // status / approved_at / email are set by the DB signup trigger (auto-approve) and are
+    // locked for members by `profiles_protect_privileged` — only personal fields are sent here.
     const { error: upErr } = await supabase.from("profiles").update({
       full_name: meta.full_name,
-      email: form.email.trim(),
       gender: meta.gender as "male" | "female" | "other",
       nationality: meta.nationality,
       phone: meta.phone || null,
@@ -302,8 +302,6 @@ export default function RegisterPage() {
       resident_status: meta.resident_status as "owner" | "tenant" | null,
       project_name: meta.project_name,
       house_number: meta.house_number,
-      status: autoApprove ? "active" : "pending_approval",
-      ...(autoApprove ? { approved_at: approvedAt } : {}),
     }).eq("id", data.user.id);
     if (upErr) {
       setSubmitError(upErr.message);
