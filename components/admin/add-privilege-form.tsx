@@ -1,11 +1,19 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Plus, Trash2 } from "lucide-react";
 import { fetchAllPrivilegeCategories } from "@/lib/supabase/data";
-import type { CreatePrivilegeInput, Privilege, PrivilegeCategory } from "@/lib/types";
+import type {
+  CreatePrivilegeInput,
+  Privilege,
+  PrivilegeCategory,
+  PrivilegeMapLocation,
+} from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ActiveToggle } from "./active-toggle";
 import { ImageUploadField } from "./image-upload-field";
+
+const EMPTY_LOCATION: PrivilegeMapLocation = { name: "", mapUrl: "" };
 
 const EMPTY: CreatePrivilegeInput = {
   title: "",
@@ -21,6 +29,7 @@ const EMPTY: CreatePrivilegeInput = {
   isActive: true,
   sortOrder: 0,
   codeMode: "shared",
+  mapLocations: [],
 };
 
 export function privilegeToFormInput(p: Privilege): CreatePrivilegeInput {
@@ -38,6 +47,9 @@ export function privilegeToFormInput(p: Privilege): CreatePrivilegeInput {
     isActive: p.isActive,
     sortOrder: p.sortOrder,
     codeMode: p.codeMode,
+    mapLocations: p.mapLocations?.length
+      ? p.mapLocations.map((loc) => ({ ...loc }))
+      : [],
   };
 }
 
@@ -100,6 +112,26 @@ export function AddPrivilegeForm({
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
+  const locations = form.mapLocations ?? [];
+
+  const updateLocation = (index: number, key: keyof PrivilegeMapLocation, value: string) => {
+    set(
+      "mapLocations",
+      locations.map((loc, i) => (i === index ? { ...loc, [key]: value } : loc))
+    );
+  };
+
+  const addLocation = () => {
+    set("mapLocations", [...locations, { ...EMPTY_LOCATION }]);
+  };
+
+  const removeLocation = (index: number) => {
+    set(
+      "mapLocations",
+      locations.filter((_, i) => i !== index)
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title.trim()) {
@@ -108,6 +140,13 @@ export function AddPrivilegeForm({
     }
     if (!form.categoryId) {
       setError("Please select a category.");
+      return;
+    }
+    const incomplete = (form.mapLocations ?? []).some(
+      (loc) => Boolean(loc.name.trim()) !== Boolean(loc.mapUrl.trim())
+    );
+    if (incomplete) {
+      setError("Each store location needs both a branch name and a Google Maps link.");
       return;
     }
     setSaving(true);
@@ -239,6 +278,62 @@ export function AddPrivilegeForm({
               className="mt-1.5 w-full rounded-lg border border-cream-300 bg-cream-50 px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
             />
           </label>
+          <div className="sm:col-span-2 space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-ink-muted text-xs font-semibold uppercase tracking-wide">
+                  Store locations
+                </p>
+                <p className="text-[11px] text-ink-muted mt-0.5">
+                  Branch name + Google Maps link — shown as directions on the detail page
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={addLocation}
+                className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-cream-300 px-2.5 py-1.5 text-xs font-medium text-forest hover:bg-cream-50"
+              >
+                <Plus size={14} />
+                Add branch
+              </button>
+            </div>
+            {locations.length === 0 ? (
+              <p className="text-ink-muted text-xs rounded-xl border border-dashed border-cream-300 bg-cream-50 px-3 py-3">
+                No branches yet. Add one if members should see directions.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {locations.map((loc, index) => (
+                  <div
+                    key={index}
+                    className="grid grid-cols-1 sm:grid-cols-[1fr_1.4fr_auto] gap-2 rounded-xl border border-cream-300 bg-cream-50 p-3"
+                  >
+                    <input
+                      value={loc.name}
+                      onChange={(e) => updateLocation(index, "name", e.target.value)}
+                      placeholder="Branch name"
+                      className="w-full rounded-lg border border-cream-300 bg-white px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    />
+                    <input
+                      type="url"
+                      value={loc.mapUrl}
+                      onChange={(e) => updateLocation(index, "mapUrl", e.target.value)}
+                      placeholder="https://maps.google.com/..."
+                      className="w-full rounded-lg border border-cream-300 bg-white px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeLocation(index)}
+                      className="self-stretch sm:self-auto inline-flex items-center justify-center rounded-lg border border-cream-300 px-2.5 py-2 text-ink-muted hover:text-red-600 hover:border-red-200 hover:bg-red-50"
+                      title="Remove branch"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           <label className="sm:col-span-2 block">
             <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">Terms</span>
             <textarea

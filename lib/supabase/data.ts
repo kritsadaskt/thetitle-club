@@ -37,6 +37,7 @@ import {
   mapPrivilegeRow,
   mapPromoCodeRow,
   mapPromoCodeStats,
+  sanitizeMapLocations,
   type CommunityMomentRow,
   type EventRegistrantRow,
   type EventRegistrationLogRow,
@@ -289,6 +290,7 @@ export async function createPrivilege(
       is_active: input.isActive ?? true,
       sort_order: input.sortOrder ?? 0,
       code_mode: input.codeMode ?? "shared",
+      map_locations: sanitizeMapLocations(input.mapLocations),
     })
     .select(PRIVILEGE_SELECT)
     .single();
@@ -315,6 +317,9 @@ export async function updatePrivilege(
   if (input.isActive !== undefined) patch.is_active = input.isActive;
   if (input.sortOrder !== undefined) patch.sort_order = input.sortOrder;
   if (input.codeMode !== undefined) patch.code_mode = input.codeMode;
+  if (input.mapLocations !== undefined) {
+    patch.map_locations = sanitizeMapLocations(input.mapLocations);
+  }
 
   const { data, error } = await supabase
     .from("privileges")

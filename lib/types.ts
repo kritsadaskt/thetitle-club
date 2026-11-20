@@ -63,6 +63,14 @@ export interface Privilege {
   privilegeCode: string;
   /** shared = same code for all; unique_pool = codes from promo_codes table */
   codeMode: CodeMode;
+  /** Store branches with Google Maps links (maps to privileges.map_locations) */
+  mapLocations: PrivilegeMapLocation[];
+}
+
+/** One store branch for privilege directions */
+export interface PrivilegeMapLocation {
+  name: string;
+  mapUrl: string;
 }
 
 export interface PromoCode {
@@ -151,6 +159,7 @@ export interface CreatePrivilegeInput {
   isActive?: boolean;
   sortOrder?: number;
   codeMode?: CodeMode;
+  mapLocations?: PrivilegeMapLocation[];
 }
 
 export interface Partner {

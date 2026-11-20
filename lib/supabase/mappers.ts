@@ -1,7 +1,36 @@
-import type { ClubEvent, CommunityMoment, EventRegistrant, EventRegistration, EventRegistrationAction, EventRegistrationLog, EventVenue, Member, MemberPromoCode, Privilege, PromoCode, PromoCodeStats, ShopPartner } from "@/lib/types";
+import type { ClubEvent, CommunityMoment, EventRegistrant, EventRegistration, EventRegistrationAction, EventRegistrationLog, EventVenue, Member, MemberPromoCode, Privilege, PrivilegeMapLocation, PromoCode, PromoCodeStats, ShopPartner } from "@/lib/types";
 import { sortedEventVenues } from "@/lib/events";
 import type { CodeMode, MemberStatus, PrivilegeCategory, PromoCodeStatus, ResidentStatus } from "@/lib/types";
 import { FALLBACK_PRIVILEGE_CATEGORY } from "./queries";
+
+export function parseMapLocations(raw: unknown): PrivilegeMapLocation[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const row = item as Record<string, unknown>;
+      const name = typeof row.name === "string" ? row.name.trim() : "";
+      const mapUrl =
+        typeof row.mapUrl === "string"
+          ? row.mapUrl.trim()
+          : typeof row.map_url === "string"
+            ? row.map_url.trim()
+            : "";
+      if (!name && !mapUrl) return null;
+      return { name, mapUrl };
+    })
+    .filter((item): item is PrivilegeMapLocation => item !== null);
+}
+
+export function sanitizeMapLocations(locations: PrivilegeMapLocation[] | undefined): PrivilegeMapLocation[] {
+  if (!locations?.length) return [];
+  return locations
+    .map((loc) => ({
+      name: loc.name.trim(),
+      mapUrl: loc.mapUrl.trim(),
+    }))
+    .filter((loc) => loc.name && loc.mapUrl);
+}
 
 export type ProfileRow = {
   id: string;
@@ -69,6 +98,7 @@ export type PrivilegeRow = {
   discount_label: string | null;
   privilege_code: string | null;
   code_mode?: CodeMode;
+  map_locations?: unknown;
   is_active: boolean;
   valid_from: string;
   valid_until: string | null;
@@ -188,6 +218,7 @@ export function mapPrivilegeRow(row: PrivilegeRow): Privilege {
     discountLabel: row.discount_label ?? "",
     privilegeCode: row.privilege_code?.trim() ?? "",
     codeMode: row.code_mode ?? "shared",
+    mapLocations: parseMapLocations(row.map_locations),
   };
 }
 
