@@ -1,3 +1,5 @@
+import type { I18nLocaleMap } from "@/lib/i18n";
+
 export type MemberStatus =
   | "pending_verification"
   | "pending_approval"
@@ -7,12 +9,16 @@ export type MemberStatus =
 
 export type ResidentStatus = "owner" | "tenant";
 
+export type { I18nLocaleMap };
+
 export interface PrivilegeCategory {
   id: number;
   label: string;
   key: string;
   color: string;
   sortOrder?: number;
+  /** Raw th/ru map for admin editing; display fields are already resolved */
+  i18n?: I18nLocaleMap;
 }
 
 export type CodeMode = "shared" | "unique_pool";
@@ -65,6 +71,7 @@ export interface Privilege {
   codeMode: CodeMode;
   /** Store branches with Google Maps links (maps to privileges.map_locations) */
   mapLocations: PrivilegeMapLocation[];
+  i18n?: I18nLocaleMap;
 }
 
 /** One store branch for privilege directions */
@@ -107,6 +114,7 @@ export interface CommunityMoment {
   eventDate: string;
   isPublished: boolean;
   sortOrder: number;
+  i18n?: I18nLocaleMap;
 }
 
 export interface RedemptionLog {
@@ -127,6 +135,7 @@ export interface ShopPartner {
   sortOrder: number;
   createdAt: string;
   privilegeCount?: number;
+  i18n?: I18nLocaleMap;
 }
 
 export interface CreatePartnerInput {
@@ -136,6 +145,7 @@ export interface CreatePartnerInput {
   description?: string;
   isActive?: boolean;
   sortOrder?: number;
+  i18n?: I18nLocaleMap;
 }
 
 export interface CreatePrivilegeCategoryInput {
@@ -143,6 +153,7 @@ export interface CreatePrivilegeCategoryInput {
   key: string;
   color: string;
   sortOrder?: number;
+  i18n?: I18nLocaleMap;
 }
 
 export interface CreatePrivilegeInput {
@@ -160,6 +171,7 @@ export interface CreatePrivilegeInput {
   sortOrder?: number;
   codeMode?: CodeMode;
   mapLocations?: PrivilegeMapLocation[];
+  i18n?: I18nLocaleMap;
 }
 
 export interface Partner {
@@ -181,6 +193,7 @@ export interface EventVenue {
   endsAt?: string;
   sortOrder: number;
   createdAt: string;
+  i18n?: I18nLocaleMap;
 }
 
 export interface ClubEvent {
@@ -191,6 +204,7 @@ export interface ClubEvent {
   isActive: boolean;
   createdAt: string;
   venues: EventVenue[];
+  i18n?: I18nLocaleMap;
 }
 
 export interface CreateEventVenueInput {
@@ -204,6 +218,7 @@ export interface CreateEventVenueInput {
   startsAt: string;
   endsAt?: string | null;
   sortOrder?: number;
+  i18n?: I18nLocaleMap;
 }
 
 export interface CreateEventInput {
@@ -212,6 +227,7 @@ export interface CreateEventInput {
   description?: string;
   isActive?: boolean;
   venues: CreateEventVenueInput[];
+  i18n?: I18nLocaleMap;
 }
 
 export interface EventRegistration {

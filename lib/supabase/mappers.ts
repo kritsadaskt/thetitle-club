@@ -1,7 +1,23 @@
 import type { ClubEvent, CommunityMoment, EventRegistrant, EventRegistration, EventRegistrationAction, EventRegistrationLog, EventVenue, Member, MemberPromoCode, Privilege, PrivilegeMapLocation, PromoCode, PromoCodeStats, ShopPartner } from "@/lib/types";
 import { sortedEventVenues } from "@/lib/events";
-import type { CodeMode, MemberStatus, PrivilegeCategory, PromoCodeStatus, ResidentStatus } from "@/lib/types";
+import type { CodeMode, I18nLocaleMap, MemberStatus, PrivilegeCategory, PromoCodeStatus, ResidentStatus } from "@/lib/types";
+import { pickLocalized } from "@/lib/i18n";
 import { FALLBACK_PRIVILEGE_CATEGORY } from "./queries";
+
+export function parseI18n(raw: unknown): I18nLocaleMap {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  const out: I18nLocaleMap = {};
+  for (const loc of ["th", "ru"] as const) {
+    const block = (raw as Record<string, unknown>)[loc];
+    if (!block || typeof block !== "object" || Array.isArray(block)) continue;
+    const cleaned: Record<string, string> = {};
+    for (const [key, val] of Object.entries(block as Record<string, unknown>)) {
+      if (typeof val === "string" && val.trim() !== "") cleaned[key] = val;
+    }
+    if (Object.keys(cleaned).length > 0) out[loc] = cleaned;
+  }
+  return out;
+}
 
 export function parseMapLocations(raw: unknown): PrivilegeMapLocation[] {
   if (!Array.isArray(raw)) return [];
@@ -62,6 +78,7 @@ export type PartnerRow = {
   sort_order: number;
   created_at: string;
   updated_at: string;
+  i18n?: unknown;
   privileges?: { count: number }[];
 };
 
@@ -79,6 +96,7 @@ export type PrivilegeCategoryRow = {
   key: string;
   color: string;
   sort_order?: number;
+  i18n?: unknown;
 };
 
 export type PrivilegeRow = {
@@ -104,6 +122,7 @@ export type PrivilegeRow = {
   valid_until: string | null;
   sort_order: number;
   created_at: string;
+  i18n?: unknown;
 };
 
 export type PromoCodeRow = {
@@ -122,6 +141,7 @@ export type PromoCodeWithPrivilegeRow = PromoCodeRow & {
   privileges: {
     title: string;
     discount_label: string | null;
+    i18n?: unknown;
     partners: {
       name: string;
       logo_url: string | null;
@@ -140,6 +160,7 @@ export type CommunityMomentRow = {
   event_date: string | null;
   is_published: boolean;
   sort_order: number;
+  i18n?: unknown;
 };
 
 export function mapProfileToMember(row: ProfileRow, fallbackEmail: string): Member {
@@ -163,51 +184,59 @@ export function mapProfileToMember(row: ProfileRow, fallbackEmail: string): Memb
   };
 }
 
-export function mapPrivilegeCategoryRow(row: PrivilegeCategoryRow): PrivilegeCategory {
+export function mapPrivilegeCategoryRow(
+  row: PrivilegeCategoryRow,
+  locale = "en"
+): PrivilegeCategory {
+  const i18n = parseI18n(row.i18n);
   return {
     id: row.id,
-    label: row.label,
+    label: pickLocalized(locale, row.label, i18n, "label"),
     key: row.key,
     color: row.color,
     sortOrder: row.sort_order ?? 0,
+    i18n,
   };
 }
 
-export function mapPartnerRow(row: PartnerRow): ShopPartner {
+export function mapPartnerRow(row: PartnerRow, locale = "en"): ShopPartner {
   const count = row.privileges?.[0]?.count;
+  const i18n = parseI18n(row.i18n);
   return {
     id: row.id,
     name: row.name,
     logoUrl: row.logo_url ?? "",
     websiteUrl: row.website_url ?? "",
-    description: row.description ?? "",
+    description: pickLocalized(locale, row.description ?? "", i18n, "description"),
     isActive: row.is_active,
     sortOrder: row.sort_order,
     createdAt: row.created_at,
     privilegeCount: count !== undefined ? Number(count) : undefined,
+    i18n,
   };
 }
 
-export function mapPrivilegeRow(row: PrivilegeRow): Privilege {
+export function mapPrivilegeRow(row: PrivilegeRow, locale = "en"): Privilege {
   const vf = row.valid_from?.slice?.(0, 10) ?? String(row.valid_from);
   const vu = row.valid_until ? row.valid_until.slice(0, 10) : undefined;
   const partner = row.partners;
   const partnerName = partner?.name ?? row.partner_name ?? "";
   const partnerLogo = partner?.logo_url ?? row.partner_logo ?? "";
   const category = row.privilege_categories
-    ? mapPrivilegeCategoryRow(row.privilege_categories)
+    ? mapPrivilegeCategoryRow(row.privilege_categories, locale)
     : FALLBACK_PRIVILEGE_CATEGORY;
+  const i18n = parseI18n(row.i18n);
   return {
     id: row.id,
     partnerId: row.partner_id ?? partner?.id ?? "",
-    title: row.title,
+    title: pickLocalized(locale, row.title, i18n, "title"),
     partnerName,
     partnerLogo,
     coverImage: row.cover_image ?? "",
-    summary: row.summary ?? "",
-    description: row.description ?? "",
-    terms: row.terms ?? "",
-    howToRedeem: row.how_to_redeem ?? "",
+    summary: pickLocalized(locale, row.summary ?? "", i18n, "summary"),
+    description: pickLocalized(locale, row.description ?? "", i18n, "description"),
+    terms: pickLocalized(locale, row.terms ?? "", i18n, "terms"),
+    howToRedeem: pickLocalized(locale, row.how_to_redeem ?? "", i18n, "how_to_redeem"),
     categoryId: row.category_id ?? category.id,
     category,
     isActive: row.is_active,
@@ -215,10 +244,11 @@ export function mapPrivilegeRow(row: PrivilegeRow): Privilege {
     validUntil: vu,
     sortOrder: row.sort_order,
     createdAt: row.created_at,
-    discountLabel: row.discount_label ?? "",
+    discountLabel: pickLocalized(locale, row.discount_label ?? "", i18n, "discount_label"),
     privilegeCode: row.privilege_code?.trim() ?? "",
     codeMode: row.code_mode ?? "shared",
     mapLocations: parseMapLocations(row.map_locations),
+    i18n,
   };
 }
 
@@ -236,17 +266,21 @@ export function mapPromoCodeRow(row: PromoCodeRow): PromoCode {
   };
 }
 
-export function mapMemberPromoCodeRow(row: PromoCodeWithPrivilegeRow): MemberPromoCode {
+export function mapMemberPromoCodeRow(
+  row: PromoCodeWithPrivilegeRow,
+  locale = "en"
+): MemberPromoCode {
   const base = mapPromoCodeRow(row);
   const priv = row.privileges;
   const partnerName = priv?.partners?.name ?? priv?.partner_name ?? "";
   const partnerLogo = priv?.partners?.logo_url ?? priv?.partner_logo ?? "";
+  const i18n = parseI18n(priv?.i18n);
   return {
     ...base,
-    privilegeTitle: priv?.title ?? "",
+    privilegeTitle: pickLocalized(locale, priv?.title ?? "", i18n, "title"),
     partnerName,
     partnerLogo,
-    discountLabel: priv?.discount_label ?? "",
+    discountLabel: pickLocalized(locale, priv?.discount_label ?? "", i18n, "discount_label"),
   };
 }
 
@@ -271,6 +305,7 @@ export type EventRow = {
   description: string | null;
   is_active: boolean;
   created_at: string;
+  i18n?: unknown;
 };
 
 export type EventVenueRow = {
@@ -285,6 +320,7 @@ export type EventVenueRow = {
   ends_at: string | null;
   sort_order: number;
   created_at: string;
+  i18n?: unknown;
 };
 
 export type EventRegistrationRow = {
@@ -310,31 +346,39 @@ export type EventRegistrantRow = EventRegistrationRow & {
   } | null;
 };
 
-export function mapEventVenueRow(row: EventVenueRow): EventVenue {
+export function mapEventVenueRow(row: EventVenueRow, locale = "en"): EventVenue {
+  const i18n = parseI18n(row.i18n);
   return {
     id: row.id,
     eventId: row.event_id,
     slug: row.slug,
-    name: row.name,
-    description: row.description ?? "",
-    location: row.location ?? "",
+    name: pickLocalized(locale, row.name, i18n, "name"),
+    description: pickLocalized(locale, row.description ?? "", i18n, "description"),
+    location: pickLocalized(locale, row.location ?? "", i18n, "location"),
     bannerImage: row.banner_image ?? "",
     startsAt: row.starts_at,
     endsAt: row.ends_at ?? undefined,
     sortOrder: row.sort_order,
     createdAt: row.created_at,
+    i18n,
   };
 }
 
-export function mapEventRow(row: EventRow, venues: EventVenueRow[] = []): ClubEvent {
+export function mapEventRow(
+  row: EventRow,
+  venues: EventVenueRow[] = [],
+  locale = "en"
+): ClubEvent {
+  const i18n = parseI18n(row.i18n);
   return {
     id: row.id,
     slug: row.slug,
-    title: row.title,
-    description: row.description ?? "",
+    title: pickLocalized(locale, row.title, i18n, "title"),
+    description: pickLocalized(locale, row.description ?? "", i18n, "description"),
     isActive: row.is_active,
     createdAt: row.created_at,
-    venues: sortedEventVenues(venues.map(mapEventVenueRow)),
+    venues: sortedEventVenues(venues.map((v) => mapEventVenueRow(v, locale))),
+    i18n,
   };
 }
 
@@ -394,13 +438,15 @@ export function mapEventRegistrantRow(row: EventRegistrantRow): EventRegistrant 
   };
 }
 
-export function mapCommunityRow(row: CommunityMomentRow): CommunityMoment {
+export function mapCommunityRow(row: CommunityMomentRow, locale = "en"): CommunityMoment {
+  const i18n = parseI18n(row.i18n);
   return {
     id: row.id,
     imageUrl: row.image_url,
-    caption: row.caption ?? "",
+    caption: pickLocalized(locale, row.caption ?? "", i18n, "caption"),
     eventDate: row.event_date?.slice(0, 10) ?? "",
     isPublished: row.is_published,
     sortOrder: row.sort_order,
+    i18n,
   };
 }

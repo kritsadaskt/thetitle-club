@@ -1,0 +1,440 @@
+{
+  "nav": {
+    "backToHomepage": "← กลับสู่หน้าแรก",
+    "signIn": "เข้าสู่ระบบ",
+    "signOut": "ออกจากระบบ",
+    "dashboard": "แดชบอร์ด",
+    "admin": "ผู้ดูแลระบบ",
+    "back": "กลับ",
+    "logoAlt": "The Title"
+  },
+  "landing": {
+    "nav": {
+      "goToDashboard": "ไปที่แดชบอร์ด",
+      "viewProfile": "ดูโปรไฟล์",
+      "signIn": "เข้าสู่ระบบ",
+      "becomeMember": "สมัครสมาชิก",
+      "logOut": "ออกจากระบบ"
+    },
+    "hero": {
+      "eyebrow": "สมาชิกสุดพิเศษ",
+      "titleLine1": "ค้นพบ",
+      "titleHighlight": "คอมมูนิตี้ของเรา",
+      "body": "ที่ THE TITLE เราเชื่อว่าการเป็นเจ้าของบ้านมีความหมายมากกว่าการถือครองกรรมสิทธิ์ แต่คือการเป็นส่วนหนึ่งของครอบครัว THE TITLE คือคอมมูนิตี้พิเศษที่ออกแบบมาเพื่อรวมผู้อยู่อาศัยเข้าด้วยกันผ่านประสบการณ์ที่คัดสรร สิทธิพิเศษด้านไลฟ์สไตล์ และความสัมพันธ์ที่มีความหมาย เพราะที่นี่ ทุกกรรมสิทธิ์คือส่วนหนึ่งของครอบครัว",
+      "becomeFamily": "เป็นส่วนหนึ่งของครอบครัว",
+      "memberLogin": "เข้าสู่ระบบสมาชิก",
+      "openAdmin": "เปิดแดชบอร์ดผู้ดูแลระบบ",
+      "goToProfile": "ไปที่โปรไฟล์ของฉัน"
+    },
+    "community": {
+      "eyebrow": "คอมมูนิตี้ของเรา",
+      "titleLine1": "ช่วงเวลา",
+      "titleHighlight": "แห่งคอมมูนิตี้",
+      "body": "ใน Community Moments ทุกประสบการณ์ถูกรังสรรค์ขึ้นอย่างตั้งใจสำหรับผู้ที่เห็นคุณค่าของศิลปะแห่งการใช้ชีวิตที่ดี ตั้งแต่งานสังสรรค์ส่วนตัวไปจนถึงการพบปะทางวัฒนธรรมที่ยอดเยี่ยม ที่นี่คือที่ที่คอมมูนิตี้จากทั่วโลกมาเชื่อมต่อกันอย่างมีสไตล์และโดดเด่น",
+      "learnMore": "ดูเพิ่มเติม"
+    },
+    "privileges": {
+      "eyebrow": "สิทธิประโยชน์สำหรับสมาชิก",
+      "title": "สิทธิพิเศษเฉพาะสมาชิก",
+      "body": "ปลดล็อกคอลเลกชันสิทธิประโยชน์ด้านไลฟ์สไตล์ สุขภาพ และประสบการณ์พักผ่อนที่คัดสรรมาเป็นพิเศษ",
+      "viewAll": "ดูสิทธิพิเศษทั้งหมด →",
+      "joinToSee": "สมัครสมาชิกเพื่อดูสิทธิพิเศษทั้งหมด →"
+    },
+    "cta": {
+      "memberAccess": "สำหรับสมาชิก",
+      "joinFamily": "ร่วมเป็นครอบครัวเดียวกัน",
+      "welcomeBackAdmin": "ยินดีต้อนรับกลับ ผู้ดูแลระบบ",
+      "welcomeBack": "ยินดีต้อนรับกลับ",
+      "continueJourney": "เดินทางต่อไปกับเรา",
+      "becomePartOf": "เป็นส่วนหนึ่งของ",
+      "theFamily": "ครอบครัวของเรา",
+      "registerBody": "สมัครตอนนี้เพื่อรับบัตรสมาชิกดิจิทัล เข้าถึงสิทธิพิเศษเฉพาะสมาชิก และเชื่อมต่อกับคอมมูนิตี้ของคุณ",
+      "continueAdminBody": "จัดการสมาชิก สิทธิพิเศษ และเนื้อหาคอมมูนิตี้ต่อไป",
+      "continueMemberBody": "สำรวจบัตรสมาชิก สิทธิประโยชน์ และช่วงเวลาของคอมมูนิตี้ต่อไป",
+      "becomePartOfFamily": "เป็นส่วนหนึ่งของครอบครัว"
+    },
+    "partners": {
+      "eyebrow": "มารู้จักกัน",
+      "title": "พันธมิตรของเรา"
+    },
+    "footer": {
+      "rights": "© {year} The Title Residence สงวนลิขสิทธิ์"
+    },
+    "howToJoin": {
+      "imageAlt": "วิธีสมัครสมาชิก",
+      "scanHere": "<highlight>สแกน</highlight>ที่นี่",
+      "tapBecome": "แตะ <highlight>\"เป็นส่วนหนึ่งของครอบครัว\"</highlight>",
+      "fillDetails": "กรอกข้อมูลของคุณและ<highlight>สมัครสมาชิกให้เสร็จสมบูรณ์</highlight>",
+      "confirmEmail": "อีเมลยืนยันการเป็นสมาชิก<highlight>จะถูกส่งไปยังอีเมลที่คุณลงทะเบียนไว้</highlight>",
+      "startEnjoying": "สมัครสมาชิกให้เสร็จสมบูรณ์ แล้ว<highlight>เริ่มเพลิดเพลินกับสิทธิพิเศษเฉพาะสมาชิก</highlight>"
+    },
+    "howToRedeem": {
+      "imageAlt": "วิธีใช้สิทธิพิเศษ",
+      "title": "วิธีใช้",
+      "titleHighlight": "สิทธิพิเศษ",
+      "step1": "<highlight>• เข้าสู่ระบบโปรไฟล์ของคุณ</highlight> <highlight>• แตะไอคอนเมนู</highlight> ที่มุมขวาบนของหน้าจอ",
+      "step2": "จากเมนูด้านข้าง แตะ <highlight>“สิทธิพิเศษ”</highlight> เพื่อสำรวจสิทธิพิเศษเฉพาะสมาชิก",
+      "step3": "เลือกสิทธิพิเศษที่คุณต้องการ แล้วแตะ <highlight>“ใช้สิทธิพิเศษนี้”</highlight>",
+      "step4": "<highlight>แสดง QR Code หรือรหัสสิทธิพิเศษของคุณ</highlight> ให้ร้านค้าเพื่อใช้สิทธิ"
+    }
+  },
+  "auth": {
+    "brand": {
+      "quoteLine1": "“ค้นพบ",
+      "quoteLine2": "คอมมูนิตี้ของเรา”",
+      "description": "ที่ THE TITLE เราเชื่อว่าการเป็นเจ้าของบ้านมีความหมายมากกว่าการถือครองกรรมสิทธิ์ แต่คือการเป็นส่วนหนึ่งของครอบครัว THE TITLE คือคอมมูนิตี้พิเศษที่ออกแบบมาเพื่อรวมผู้อยู่อาศัยเข้าด้วยกันผ่านประสบการณ์ที่คัดสรร สิทธิพิเศษด้านไลฟ์สไตล์ และความสัมพันธ์ที่มีความหมาย เพราะที่นี่ ทุกกรรมสิทธิ์คือส่วนหนึ่งของครอบครัว",
+      "footerUrl": "thetitleresidence.com/club"
+    },
+    "common": {
+      "emailAddress": "อีเมล",
+      "emailPlaceholder": "you@example.com",
+      "passwordPlaceholderMasked": "••••••••",
+      "showPassword": "แสดงรหัสผ่าน",
+      "hidePassword": "ซ่อนรหัสผ่าน",
+      "backToSignIn": "กลับไปหน้าเข้าสู่ระบบ",
+      "backToHomepage": "← กลับสู่หน้าแรก",
+      "passwordMinLength": "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร",
+      "passwordsDoNotMatch": "รหัสผ่านไม่ตรงกัน"
+    },
+    "login": {
+      "title": "ยินดีต้อนรับกลับ",
+      "subtitle": "เข้าสู่ระบบบัญชีสมาชิกของคุณ",
+      "resetSuccess": "อัปเดตรหัสผ่านของคุณเรียบร้อยแล้ว คุณสามารถเข้าสู่ระบบด้วยรหัสผ่านใหม่ได้",
+      "resetInvalid": "ลิงก์รีเซ็ตนี้ไม่ถูกต้องหรือหมดอายุแล้ว",
+      "requestNewLink": "ขอลิงก์ใหม่",
+      "emailLabel": "อีเมล",
+      "emailPlaceholder": "you@example.com",
+      "passwordLabel": "รหัสผ่าน",
+      "forgotPassword": "ลืมรหัสผ่าน?",
+      "passwordPlaceholder": "••••••••",
+      "submit": "เข้าสู่ระบบ",
+      "submitting": "กำลังเข้าสู่ระบบ...",
+      "loginFailed": "เข้าสู่ระบบไม่สำเร็จ",
+      "notMember": "ยังไม่เป็นสมาชิก?",
+      "registerHere": "สมัครสมาชิกที่นี่",
+      "backToHomepage": "← กลับสู่หน้าแรก"
+    },
+    "register": {
+      "title": "เป็นส่วนหนึ่งของครอบครัว",
+      "subtitle": "กรอกแบบฟอร์มด้านล่างเพื่อสมัครสมาชิก",
+      "brandEyebrow": "The Title",
+      "steps": {
+        "personal": "ข้อมูลส่วนตัว",
+        "contact": "ช่องทางติดต่อ",
+        "property": "ทรัพย์สิน",
+        "agent": "ตัวแทน",
+        "staff": "พนักงาน"
+      },
+      "sections": {
+        "personal": "ข้อมูลส่วนตัว",
+        "contact": "รายละเอียดการติดต่อ",
+        "accountType": "ประเภทบัญชี",
+        "property": "รายละเอียดทรัพย์สิน"
+      },
+      "fields": {
+        "fullName": "ชื่อ-นามสกุล *",
+        "fullNamePlaceholder": "เช่น John Smith",
+        "gender": "เพศ *",
+        "nationality": "สัญชาติ *",
+        "email": "อีเมล *",
+        "emailPlaceholder": "you@example.com",
+        "password": "รหัสผ่าน *",
+        "passwordPlaceholder": "อย่างน้อย 8 ตัวอักษร",
+        "confirmPassword": "ยืนยันรหัสผ่าน *",
+        "confirmPasswordPlaceholder": "พิมพ์รหัสผ่านอีกครั้ง",
+        "phone": "หมายเลขโทรศัพท์",
+        "phonePlaceholder": "+66 8x xxx xxxx",
+        "whatsapp": "หมายเลข WhatsApp *",
+        "whatsappPlaceholder": "+7 999 xxx xx xx",
+        "residentStatus": "สถานะผู้อยู่อาศัย *",
+        "projectName": "โครงการ / ทรัพย์สิน *",
+        "houseNumber": "บ้านเลขที่ *",
+        "houseNumberPlaceholder": "เช่น A-12",
+        "selectPlaceholder": "เลือก...",
+        "accountTypeAria": "ประเภทบัญชี",
+        "showPassword": "แสดงรหัสผ่าน",
+        "hidePassword": "ซ่อนรหัสผ่าน"
+      },
+      "gender": {
+        "male": "ชาย",
+        "female": "หญิง",
+        "other": "ไม่ประสงค์ระบุ"
+      },
+      "nationality": {
+        "Thai": "ไทย",
+        "British": "อังกฤษ",
+        "American": "อเมริกัน",
+        "German": "เยอรมัน",
+        "Australian": "ออสเตรเลีย",
+        "Chinese": "จีน",
+        "Russian": "รัสเซีย",
+        "French": "ฝรั่งเศส",
+        "Scandinavian": "สแกนดิเนเวีย",
+        "Other": "อื่น ๆ"
+      },
+      "residentStatus": {
+        "owner": "เจ้าของ",
+        "tenant": "ผู้เช่า"
+      },
+      "project": {
+        "Other": "อื่น ๆ"
+      },
+      "accountTypes": {
+        "residence": "ผู้อยู่อาศัย",
+        "agent": "ตัวแทน",
+        "staff": "พนักงาน The Title"
+      },
+      "consent": {
+        "before": "ข้าพเจ้ายินยอมให้ The Title Residence เก็บรวบรวมและประมวลผลข้อมูลส่วนบุคคลของข้าพเจ้าตาม",
+        "privacyPolicy": "นโยบายความเป็นส่วนตัว",
+        "after": "(PDPA) และยืนยันว่าข้อมูลทั้งหมดที่ให้ไว้ถูกต้อง"
+      },
+      "validation": {
+        "fullName": "กรุณากรอกชื่อ-นามสกุล",
+        "gender": "กรุณาเลือกเพศ",
+        "nationality": "กรุณาเลือกสัญชาติ",
+        "email": "กรุณากรอกอีเมลที่ถูกต้อง",
+        "password": "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร",
+        "confirmPassword": "รหัสผ่านไม่ตรงกัน",
+        "whatsapp": "กรุณากรอกหมายเลข WhatsApp",
+        "residentStatus": "กรุณาเลือกสถานะ",
+        "projectName": "กรุณาเลือกโครงการ",
+        "houseNumber": "กรุณากรอกบ้านเลขที่",
+        "consent": "กรุณายอมรับข้อกำหนด"
+      },
+      "errors": {
+        "registrationFailed": "สมัครสมาชิกไม่สำเร็จ กรุณาลองอีกครั้ง",
+        "confirmEmailEnabled": "ไม่สามารถสมัครสมาชิกให้เสร็จสมบูรณ์ได้ กรุณาปิด “Confirm email” ในการตั้งค่า Supabase Auth (Authentication → Providers → Email)"
+      },
+      "submit": "ส่งใบสมัคร",
+      "submitting": "กำลังส่ง...",
+      "alreadyMember": "เป็นสมาชิกอยู่แล้ว?",
+      "signIn": "เข้าสู่ระบบ",
+      "success": {
+        "title": "สมัครสมาชิกสำเร็จ!",
+        "thanks": "ขอบคุณที่สมัครสมาชิกด้วยอีเมล",
+        "complete": "การสมัครสมาชิกของคุณเสร็จสมบูรณ์แล้ว",
+        "welcomeEmail": "อีเมลต้อนรับจะถูกส่งไปยังกล่องจดหมายของคุณในไม่ช้า เพียงเข้าสู่ระบบแล้วเริ่มเพลิดเพลินกับสิทธิพิเศษเฉพาะสมาชิก The Title",
+        "backToSignIn": "กลับไปหน้าเข้าสู่ระบบ"
+      }
+    },
+    "forgot": {
+      "title": "ลืมรหัสผ่าน",
+      "subtitle": "กรอกอีเมลของคุณ แล้วเราจะส่งลิงก์สำหรับตั้งรหัสผ่านใหม่ให้",
+      "emailLabel": "อีเมล",
+      "emailPlaceholder": "you@example.com",
+      "submit": "ส่งลิงก์รีเซ็ต",
+      "submitting": "กำลังส่ง...",
+      "rememberedPassword": "จำรหัสผ่านได้แล้ว?",
+      "signIn": "เข้าสู่ระบบ",
+      "backToHomepage": "← กลับสู่หน้าแรก",
+      "sent": {
+        "title": "กรุณาตรวจสอบอีเมลของคุณ",
+        "messageBefore": "หากมีบัญชีที่ใช้อีเมล",
+        "messageAfter": "คุณจะได้รับลิงก์สำหรับตั้งรหัสผ่านใหม่ โปรดตรวจสอบกล่องจดหมายและโฟลเดอร์สแปม",
+        "backToSignIn": "กลับไปหน้าเข้าสู่ระบบ"
+      }
+    },
+    "reset": {
+      "expired": {
+        "title": "ลิงก์หมดอายุ",
+        "message": "ลิงก์รีเซ็ตนี้ไม่ถูกต้องหรือหมดอายุแล้ว กรุณาขอลิงก์ใหม่เพื่อตั้งรหัสผ่านใหม่",
+        "requestNewLink": "ขอลิงก์ใหม่",
+        "backToSignIn": "กลับไปหน้าเข้าสู่ระบบ"
+      },
+      "title": "ตั้งรหัสผ่านใหม่",
+      "subtitle": "เลือกรหัสผ่านใหม่สำหรับบัญชีสมาชิกของคุณ",
+      "newPassword": "รหัสผ่านใหม่",
+      "newPasswordPlaceholder": "อย่างน้อย 8 ตัวอักษร",
+      "confirmPassword": "ยืนยันรหัสผ่าน",
+      "confirmPasswordPlaceholder": "พิมพ์รหัสผ่านอีกครั้ง",
+      "showPassword": "แสดงรหัสผ่าน",
+      "hidePassword": "ซ่อนรหัสผ่าน",
+      "passwordMinLength": "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร",
+      "passwordsDoNotMatch": "รหัสผ่านไม่ตรงกัน",
+      "submit": "อัปเดตรหัสผ่าน",
+      "submitting": "กำลังอัปเดต..."
+    }
+  },
+  "member": {
+    "nav": {
+      "dashboard": "แดชบอร์ด",
+      "myCard": "บัตรของฉัน",
+      "privileges": "สิทธิพิเศษ",
+      "myCodes": "โค้ดของฉัน",
+      "community": "คอมมูนิตี้",
+      "profile": "โปรไฟล์",
+      "backToClub": "กลับสู่คลับ",
+      "signOut": "ออกจากระบบ",
+      "brandEyebrow": "The Title",
+      "brandName": "CLUB",
+      "logoAlt": "The Title"
+    },
+    "dashboard": {
+      "greeting": "สวัสดี",
+      "quickLinks": {
+        "card": {
+          "label": "บัตรสมาชิกของฉัน",
+          "desc": "แสดง QR เพื่อใช้สิทธิ"
+        },
+        "privileges": {
+          "label": "สำรวจสิทธิพิเศษ",
+          "desc": "มีสิทธิประโยชน์ {count} รายการ"
+        },
+        "community": {
+          "label": "ช่วงเวลาของคอมมูนิตี้",
+          "desc": "กิจกรรมและอีเวนต์ล่าสุด"
+        }
+      },
+      "upcomingEvents": "กิจกรรมที่กำลังจะมาถึง",
+      "noUpcomingEvents": "ขณะนี้ยังไม่มีกิจกรรมที่กำลังจะมาถึง",
+      "registered": "ลงทะเบียนแล้ว",
+      "featuredPrivileges": "สิทธิพิเศษแนะนำ",
+      "communityMoments": "ช่วงเวลาของคอมมูนิตี้",
+      "viewAll": "ดูทั้งหมด"
+    },
+    "card": {
+      "title": "บัตรสมาชิก",
+      "subtitle": "แสดงบัตรหรือ QR Code ของคุณให้พันธมิตรเมื่อใช้สิทธิพิเศษ",
+      "brandEyebrow": "The Title Residence",
+      "brandName": "CLUB",
+      "badge": "สมาชิก",
+      "memberName": "ชื่อสมาชิก",
+      "status": "สถานะ",
+      "project": "โครงการ",
+      "since": "สมาชิกตั้งแต่",
+      "memberId": "รหัสสมาชิก",
+      "scanToVerify": "สแกนเพื่อยืนยันการเป็นสมาชิก",
+      "qrUnavailable": "ไม่สามารถสร้าง QR ได้ — ไม่พบโทเคนสมาชิก",
+      "presentQr": "แสดง QR Code นี้ให้พนักงานของพันธมิตรเมื่อใช้สิทธิพิเศษของคุณ",
+      "shareCard": "แชร์บัตร",
+      "saveToPhotos": "บันทึกลงรูปภาพ",
+      "disclaimer": "บัตรนี้สำหรับสมาชิก THE TITLE เท่านั้น กรุณาอย่าแชร์ QR Code ของคุณ"
+    },
+    "privileges": {
+      "title": "สิทธิพิเศษเฉพาะสมาชิก",
+      "benefitsAvailable": "มีสิทธิประโยชน์ {count} รายการสำหรับสมาชิก THE TITLE",
+      "howToRedeemLink": "วิธีใช้สิทธิ?",
+      "searchPlaceholder": "ค้นหาสิทธิพิเศษหรือพันธมิตร...",
+      "filterAll": "ทั้งหมด",
+      "empty": "ไม่พบสิทธิพิเศษ",
+      "until": "ถึง {date}",
+      "redeem": "ใช้สิทธิ",
+      "howToRedeemImageAlt": "วิธีใช้สิทธิพิเศษ"
+    },
+    "privilegeDetail": {
+      "backToPrivileges": "กลับไปที่สิทธิพิเศษ",
+      "uniquePoolNotice": "โปรโมโค้ดมีจำนวนจำกัด — รับโค้ดของคุณและใช้ภายใน 24 ชั่วโมง",
+      "validUntil": "ใช้ได้ถึง <strong>{date}</strong>",
+      "aboutTitle": "เกี่ยวกับสิทธิพิเศษนี้",
+      "howToRedeem": "วิธีใช้สิทธิ",
+      "termsTitle": "ข้อกำหนดและเงื่อนไข",
+      "storeLocations": "สาขาที่ร่วมรายการ",
+      "directions": "เส้นทาง",
+      "usePrivilege": "ใช้สิทธิพิเศษนี้",
+      "loading": "กำลังโหลด…",
+      "privilegeUsed": "ใช้สิทธิแล้ว",
+      "noCodesAvailable": "โค้ดหมดแล้ว",
+      "claiming": "กำลังรับสิทธิ…",
+      "claimPrivilege": "รับสิทธิพิเศษนี้"
+    },
+    "redeem": {
+      "back": "กลับ",
+      "verifiedMember": "สมาชิกที่ยืนยันแล้ว",
+      "redeeming": "กำลังใช้สิทธิ",
+      "expiresIn": "หมดอายุใน <strong>{countdown}</strong>",
+      "displayModeAria": "โหมดการแสดงผล",
+      "modeQr": "QR Code",
+      "modeText": "ข้อความ",
+      "noCodeConfigured": "ยังไม่ได้ตั้งค่ารหัสสิทธิพิเศษ กรุณาติดต่อฝ่ายสนับสนุน THE TITLE",
+      "privilegeCode": "รหัสสิทธิพิเศษ",
+      "instructionQr": "แสดง QR นี้ให้พนักงานของพันธมิตรสแกนรหัสสิทธิพิเศษของคุณ",
+      "instructionText": "แจ้งรหัสนี้ให้พนักงานของพันธมิตร หรือแสดงหน้าจอนี้เพื่อกรอกรหัสด้วยตนเอง",
+      "forStaff": "(สำหรับพนักงาน)",
+      "markAsUsed": "ทำเครื่องหมายว่าใช้แล้ว",
+      "backToMyCodes": "กลับไปที่โค้ดของฉัน",
+      "confirm": {
+        "title": "ยืนยันการใช้สิทธิ",
+        "messageBefore": "คุณได้ใช้สิทธิพิเศษนี้กับพันธมิตรแล้วใช่หรือไม่? โค้ด",
+        "messageAfter": "จะไม่สามารถใช้ซ้ำได้อีก",
+        "cancel": "ยกเลิก",
+        "confirm": "ยืนยัน",
+        "confirming": "กำลังยืนยัน…"
+      }
+    },
+    "myCodes": {
+      "eyebrow": "สิทธิพิเศษของฉัน",
+      "title": "ดูโค้ดของฉัน",
+      "subtitle": "ตรวจสอบสถานะโค้ดที่คุณรับไว้ เปิดโค้ดที่ใช้งานได้เพื่อแสดงให้พันธมิตร",
+      "tabActive": "ใช้งานได้ ({count})",
+      "tabUsed": "ใช้แล้ว ({count})",
+      "statusActive": "ใช้งานได้",
+      "statusUsed": "ใช้แล้ว",
+      "emptyActiveTitle": "ไม่มีโปรโมโค้ดที่ใช้งานได้",
+      "emptyActiveDesc": "รับโค้ดจากสิทธิพิเศษที่มีโปรโมโค้ดจำนวนจำกัด",
+      "emptyUsedTitle": "ยังไม่มีโปรโมโค้ดที่ใช้แล้ว",
+      "emptyUsedDesc": "โค้ดที่คุณทำเครื่องหมายว่าใช้แล้วจะแสดงที่นี่"
+    },
+    "community": {
+      "title": "ช่วงเวลาของคอมมูนิตี้",
+      "subtitle": "กิจกรรม การรวมตัว และความทรงจำที่แบ่งปันโดยครอบครัว THE TITLE",
+      "close": "ปิด"
+    },
+    "profile": {
+      "title": "โปรไฟล์ของฉัน",
+      "activeMember": "✦ สมาชิกที่ใช้งานอยู่",
+      "fields": {
+        "fullName": "ชื่อ-นามสกุล",
+        "email": "อีเมล",
+        "phone": "โทรศัพท์",
+        "whatsapp": "WhatsApp",
+        "project": "โครงการ",
+        "resident": "สถานะผู้อยู่อาศัย",
+        "nationality": "สัญชาติ",
+        "memberSince": "สมาชิกตั้งแต่"
+      },
+      "residentStatus": {
+        "owner": "เจ้าของ",
+        "tenant": "ผู้เช่า"
+      },
+      "signOut": "ออกจากระบบ",
+      "contactToUpdate": "หากต้องการแก้ไขข้อมูลของคุณ กรุณาติดต่อ"
+    }
+  },
+  "events": {
+    "signIn": "เข้าสู่ระบบ",
+    "dashboard": "แดชบอร์ด",
+    "admin": "ผู้ดูแลระบบ",
+    "backToDashboard": "กลับไปที่แดชบอร์ด",
+    "backToClub": "กลับสู่คลับ",
+    "registered": "ลงทะเบียนแล้ว",
+    "locationsCount": "{count} สถานที่",
+    "hub": {
+      "notFoundTitle": "ไม่พบกิจกรรม",
+      "notFoundMessage": "ลิงก์อาจไม่ถูกต้อง หรือกิจกรรมถูกลบไปแล้ว",
+      "eyebrow": "กิจกรรมของคลับ",
+      "youAreRegistered": "คุณลงทะเบียนแล้ว",
+      "youAreRegisteredAt": "คุณลงทะเบียนที่ {venue} แล้ว",
+      "chooseLocation": "เลือกสถานที่"
+    },
+    "venue": {
+      "notFoundTitle": "ไม่พบสถานที่",
+      "notFoundMessage": "ลิงก์อาจไม่ถูกต้อง หรือสถานที่ถูกลบไปแล้ว",
+      "viewAllLocations": "ดูสถานที่ทั้งหมด",
+      "signInToRegister": "เข้าสู่ระบบเพื่อลงทะเบียน",
+      "registrationClosed": "ปิดรับลงทะเบียนแล้ว",
+      "signInToSeeRegistration": "เข้าสู่ระบบเพื่อดูการลงทะเบียนของคุณ",
+      "membershipMustBeActive": "สมาชิกภาพของคุณต้องเปิดใช้งานก่อนจึงจะลงทะเบียนได้",
+      "registeredHere": "คุณลงทะเบียนที่สถานที่นี้แล้ว",
+      "cancelRegistration": "ยกเลิกการลงทะเบียน",
+      "cancelling": "กำลังยกเลิก…",
+      "cancelConfirm": "ยกเลิกการลงทะเบียนสำหรับสถานที่นี้หรือไม่?",
+      "alreadyRegisteredAt": "คุณลงทะเบียนที่ {venue} สำหรับกิจกรรมนี้แล้ว กรุณายกเลิกการลงทะเบียนนั้นก่อนลงทะเบียนที่นี่",
+      "alreadyRegisteredElsewhere": "คุณลงทะเบียนที่สถานที่อื่นสำหรับกิจกรรมนี้แล้ว กรุณายกเลิกการลงทะเบียนนั้นก่อนลงทะเบียนที่นี่",
+      "goToYourLocation": "ไปยังสถานที่ของคุณ",
+      "register": "ลงทะเบียน",
+      "registering": "กำลังลงทะเบียน…",
+      "closedNotRegistered": "ปิดรับลงทะเบียนแล้ว และคุณยังไม่ได้ลงทะเบียนสำหรับสถานที่นี้"
+    }
+  }
+}

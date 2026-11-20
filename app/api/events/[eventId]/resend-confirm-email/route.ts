@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { absoluteAppUrlFromRequest } from "@/lib/app-url";
 import { venuePublicPath } from "@/lib/events";
 import { sendConfirmEmailForRegistrant } from "@/lib/event-confirm-email";
+import { locales } from "@/i18n/routing";
 import { createClient } from "@/lib/supabase/server";
 import type { EventRow, EventVenueRow, ProfileRow } from "@/lib/supabase/mappers";
 
@@ -48,9 +49,13 @@ export async function POST(request: NextRequest, context: RouteContext) {
   const { eventId } = await context.params;
 
   let memberId = "";
+  let locale: string | undefined;
   try {
-    const body = (await request.json()) as { memberId?: string };
+    const body = (await request.json()) as { memberId?: string; locale?: string };
     memberId = body.memberId?.trim() ?? "";
+    if (typeof body.locale === "string" && (locales as readonly string[]).includes(body.locale)) {
+      locale = body.locale;
+    }
   } catch {
     return NextResponse.json({ error: "memberId is required" }, { status: 400 });
   }
@@ -122,6 +127,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     venue,
     registeredAt: registrant.registered_at,
     eventUrl,
+    locale,
   });
 
   if (!result.ok) {

@@ -40,7 +40,7 @@
   --color-ink-light: #4a6855;
   --color-ink-muted: #7a9080;
 
-  --font-sans: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-sans: 'Helvetica Neue', Helvetica, var(--font-noto-sans), var(--font-noto-sans-thai), Arial, sans-serif;
   --font-serif: Georgia, Cambria, serif;
 
   --background-image-primary-gradient: linear-gradient(

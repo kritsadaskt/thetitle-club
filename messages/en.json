@@ -1,0 +1,440 @@
+{
+  "nav": {
+    "backToHomepage": "← Back to homepage",
+    "signIn": "Sign in",
+    "signOut": "Sign Out",
+    "dashboard": "Dashboard",
+    "admin": "Admin",
+    "back": "Back",
+    "logoAlt": "The Title"
+  },
+  "landing": {
+    "nav": {
+      "goToDashboard": "Go to Dashboard",
+      "viewProfile": "View Profile",
+      "signIn": "Sign In",
+      "becomeMember": "Become a Member",
+      "logOut": "Log out"
+    },
+    "hero": {
+      "eyebrow": "Exclusive Membership",
+      "titleLine1": "Discover,",
+      "titleHighlight": "Our Community.",
+      "body": "At THE TITLE, we believe that owning a home is more than holding a title — it is becoming part of a family. THE TITLE is our exclusive community designed to bring residents together through curated experiences, lifestyle privileges, and meaningful connections. Because here, every title belongs to a family.",
+      "becomeFamily": "Become Part of the Family",
+      "memberLogin": "Member Login",
+      "openAdmin": "Open Admin Dashboard",
+      "goToProfile": "Go to My Profile"
+    },
+    "community": {
+      "eyebrow": "Our Community",
+      "titleLine1": "Community",
+      "titleHighlight": "Moments",
+      "body": "Within Community Moments, every experience is intentionally crafted for those who appreciate the art of living well. From intimate soirées to exceptional cultural encounters, it is where a global community connects in style and distinction.",
+      "learnMore": "Learn More"
+    },
+    "privileges": {
+      "eyebrow": "Member Benefits",
+      "title": "Exclusive Privileges",
+      "body": "Unlock a curated collection of lifestyle benefits, health perks, and leisure experiences",
+      "viewAll": "View All Privileges →",
+      "joinToSee": "Join to See All Privileges →"
+    },
+    "cta": {
+      "memberAccess": "Member Access",
+      "joinFamily": "Join the Family",
+      "welcomeBackAdmin": "Welcome back, Admin",
+      "welcomeBack": "Welcome back",
+      "continueJourney": "Continue Your Journey",
+      "becomePartOf": "Become Part of",
+      "theFamily": "the Family",
+      "registerBody": "Register now to receive your digital membership card, access exclusive privileges, and connect with your community.",
+      "continueAdminBody": "Continue managing members, privileges, and community content.",
+      "continueMemberBody": "Continue exploring your member card, benefits, and community moments.",
+      "becomePartOfFamily": "Become a part of the family"
+    },
+    "partners": {
+      "eyebrow": "let's meet",
+      "title": "Our Partners"
+    },
+    "footer": {
+      "rights": "© {year} The Title Residence. All rights reserved."
+    },
+    "howToJoin": {
+      "imageAlt": "How to Join",
+      "scanHere": "<highlight>Scan</highlight> Here",
+      "tapBecome": "Tap <highlight>\"Become Part of the Family\"</highlight>",
+      "fillDetails": "Fill in Your Details and <highlight>Complete the Registration.</highlight>",
+      "confirmEmail": "A Membership confirmation E-mail <highlight>will be Sent to Your Registered E-mail Address.</highlight>",
+      "startEnjoying": "Complete Your Registration and <highlight>Start Enjoying Exclusive Member Privileges.</highlight>"
+    },
+    "howToRedeem": {
+      "imageAlt": "How to Redeem",
+      "title": "How to Redeem",
+      "titleHighlight": "Privileges",
+      "step1": "<highlight>• Sign in to Your Profile</highlight> <highlight>• Tap the Menu Icon</highlight> at the Top-Right Corner of the Screen.",
+      "step2": "From the Side Menu, Tap <highlight>“Privileges”</highlight> to Explore Exclusive Member.",
+      "step3": "Choose Your Preferred Privilege and Tap <highlight>“Use This Privilege”</highlight>",
+      "step4": "<highlight>Show Your QR Code or Privilege Code</highlight> to the Merchant to Redeem Your Privilege."
+    }
+  },
+  "auth": {
+    "brand": {
+      "quoteLine1": "“Discover,",
+      "quoteLine2": "Our Community.”",
+      "description": "At THE TITLE, we believe that owning a home is more than holding a title — it is becoming part of a family. THE TITLE is our exclusive community designed to bring residents together through curated experiences, lifestyle privileges, and meaningful connections. Because here, every title belongs to a family.",
+      "footerUrl": "thetitleresidence.com/club"
+    },
+    "common": {
+      "emailAddress": "Email Address",
+      "emailPlaceholder": "you@example.com",
+      "passwordPlaceholderMasked": "••••••••",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "backToSignIn": "Back to Sign In",
+      "backToHomepage": "← Back to homepage",
+      "passwordMinLength": "Password must be at least 8 characters",
+      "passwordsDoNotMatch": "Passwords do not match"
+    },
+    "login": {
+      "title": "Welcome back",
+      "subtitle": "Sign in to your membership account",
+      "resetSuccess": "Your password has been updated. You can sign in with your new password.",
+      "resetInvalid": "This reset link is invalid or has expired.",
+      "requestNewLink": "Request a new one",
+      "emailLabel": "Email Address",
+      "emailPlaceholder": "you@example.com",
+      "passwordLabel": "Password",
+      "forgotPassword": "Forgot password?",
+      "passwordPlaceholder": "••••••••",
+      "submit": "Sign In",
+      "submitting": "Signing in...",
+      "loginFailed": "Login failed",
+      "notMember": "Not a member?",
+      "registerHere": "Register here",
+      "backToHomepage": "← Back to homepage"
+    },
+    "register": {
+      "title": "Become Part of the Family",
+      "subtitle": "Complete the form below to apply for membership",
+      "brandEyebrow": "The Title",
+      "steps": {
+        "personal": "Personal",
+        "contact": "Contact",
+        "property": "Property",
+        "agent": "Agent",
+        "staff": "Staff"
+      },
+      "sections": {
+        "personal": "Personal Information",
+        "contact": "Contact Details",
+        "accountType": "Account Type",
+        "property": "Property Details"
+      },
+      "fields": {
+        "fullName": "Full Name *",
+        "fullNamePlaceholder": "e.g. John Smith",
+        "gender": "Gender *",
+        "nationality": "Nationality *",
+        "email": "Email Address *",
+        "emailPlaceholder": "you@example.com",
+        "password": "Password *",
+        "passwordPlaceholder": "At least 8 characters",
+        "confirmPassword": "Confirm Password *",
+        "confirmPasswordPlaceholder": "Repeat password",
+        "phone": "Phone Number",
+        "phonePlaceholder": "+66 8x xxx xxxx",
+        "whatsapp": "WhatsApp Number *",
+        "whatsappPlaceholder": "+7 999 xxx xx xx",
+        "residentStatus": "Resident Status *",
+        "projectName": "Project / Property *",
+        "houseNumber": "House Number *",
+        "houseNumberPlaceholder": "e.g. A-12",
+        "selectPlaceholder": "Select...",
+        "accountTypeAria": "Account type",
+        "showPassword": "Show password",
+        "hidePassword": "Hide password"
+      },
+      "gender": {
+        "male": "Male",
+        "female": "Female",
+        "other": "Prefer not to say"
+      },
+      "nationality": {
+        "Thai": "Thai",
+        "British": "British",
+        "American": "American",
+        "German": "German",
+        "Australian": "Australian",
+        "Chinese": "Chinese",
+        "Russian": "Russian",
+        "French": "French",
+        "Scandinavian": "Scandinavian",
+        "Other": "Other"
+      },
+      "residentStatus": {
+        "owner": "Owner",
+        "tenant": "Tenant"
+      },
+      "project": {
+        "Other": "Other"
+      },
+      "accountTypes": {
+        "residence": "Residence",
+        "agent": "Agent",
+        "staff": "The Title Staff"
+      },
+      "consent": {
+        "before": "I consent to The Title Residence collecting and processing my personal data in accordance with the",
+        "privacyPolicy": "Privacy Policy",
+        "after": "(PDPA) and confirm that all information provided is accurate."
+      },
+      "validation": {
+        "fullName": "Full name is required",
+        "gender": "Please select gender",
+        "nationality": "Please select nationality",
+        "email": "Valid email required",
+        "password": "Password must be at least 8 characters",
+        "confirmPassword": "Passwords do not match",
+        "whatsapp": "WhatsApp number required",
+        "residentStatus": "Please select status",
+        "projectName": "Please select project",
+        "houseNumber": "House number is required",
+        "consent": "Please accept the terms"
+      },
+      "errors": {
+        "registrationFailed": "Registration failed. Please try again.",
+        "confirmEmailEnabled": "Registration could not be completed. Disable “Confirm email” in Supabase Auth settings (Authentication → Providers → Email)."
+      },
+      "submit": "Submit Application",
+      "submitting": "Submitting...",
+      "alreadyMember": "Already a member?",
+      "signIn": "Sign in",
+      "success": {
+        "title": "Registration Successful!",
+        "thanks": "Thank you for registering with",
+        "complete": "Your registration is complete.",
+        "welcomeEmail": "A welcome email will be sent to your inbox shortly. Simply sign in and start enjoying your exclusive The Title member privileges.",
+        "backToSignIn": "Back to Sign In"
+      }
+    },
+    "forgot": {
+      "title": "Forgot password",
+      "subtitle": "Enter your email and we will send you a link to set a new password.",
+      "emailLabel": "Email Address",
+      "emailPlaceholder": "you@example.com",
+      "submit": "Send reset link",
+      "submitting": "Sending...",
+      "rememberedPassword": "Remembered your password?",
+      "signIn": "Sign in",
+      "backToHomepage": "← Back to homepage",
+      "sent": {
+        "title": "Check your email",
+        "messageBefore": "If an account exists for",
+        "messageAfter": "you will receive a link to set a new password. Check your inbox and spam folder.",
+        "backToSignIn": "Back to Sign In"
+      }
+    },
+    "reset": {
+      "expired": {
+        "title": "Link expired",
+        "message": "This reset link is invalid or has expired. Request a new one to set a new password.",
+        "requestNewLink": "Request a new link",
+        "backToSignIn": "Back to Sign In"
+      },
+      "title": "Set a new password",
+      "subtitle": "Choose a new password for your membership account.",
+      "newPassword": "New password",
+      "newPasswordPlaceholder": "At least 8 characters",
+      "confirmPassword": "Confirm password",
+      "confirmPasswordPlaceholder": "Repeat password",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "passwordMinLength": "Password must be at least 8 characters",
+      "passwordsDoNotMatch": "Passwords do not match",
+      "submit": "Update password",
+      "submitting": "Updating..."
+    }
+  },
+  "member": {
+    "nav": {
+      "dashboard": "Dashboard",
+      "myCard": "My Card",
+      "privileges": "Privileges",
+      "myCodes": "My Codes",
+      "community": "Community",
+      "profile": "Profile",
+      "backToClub": "Back to Club",
+      "signOut": "Sign Out",
+      "brandEyebrow": "The Title",
+      "brandName": "CLUB",
+      "logoAlt": "The Title"
+    },
+    "dashboard": {
+      "greeting": "Good day,",
+      "quickLinks": {
+        "card": {
+          "label": "My Membership Card",
+          "desc": "Show QR to redeem"
+        },
+        "privileges": {
+          "label": "Explore Privileges",
+          "desc": "{count} benefits available"
+        },
+        "community": {
+          "label": "Community Moments",
+          "desc": "Latest events & activities"
+        }
+      },
+      "upcomingEvents": "Upcoming Events",
+      "noUpcomingEvents": "No upcoming events right now.",
+      "registered": "Registered",
+      "featuredPrivileges": "Featured Privileges",
+      "communityMoments": "Community Moments",
+      "viewAll": "View all"
+    },
+    "card": {
+      "title": "Membership Card",
+      "subtitle": "Show your card or QR code to partners when redeeming privileges",
+      "brandEyebrow": "The Title Residence",
+      "brandName": "CLUB",
+      "badge": "MEMBER",
+      "memberName": "Member Name",
+      "status": "Status",
+      "project": "Project",
+      "since": "Since",
+      "memberId": "Member ID",
+      "scanToVerify": "Scan to Verify Membership",
+      "qrUnavailable": "Unable to generate QR — missing member token.",
+      "presentQr": "Present this QR code to partner staff when redeeming your privileges",
+      "shareCard": "Share Card",
+      "saveToPhotos": "Save to Photos",
+      "disclaimer": "This card is for THE TITLE members only. Do not share your QR code."
+    },
+    "privileges": {
+      "title": "Exclusive Privileges",
+      "benefitsAvailable": "{count} benefits available for THE TITLE members",
+      "howToRedeemLink": "How to Redeem ?",
+      "searchPlaceholder": "Search privileges or partners...",
+      "filterAll": "All",
+      "empty": "No privileges found",
+      "until": "Until {date}",
+      "redeem": "Redeem",
+      "howToRedeemImageAlt": "How to Redeem"
+    },
+    "privilegeDetail": {
+      "backToPrivileges": "Back to Privileges",
+      "uniquePoolNotice": "Limited promo codes — claim yours and use within 24 hours.",
+      "validUntil": "Valid until <strong>{date}</strong>",
+      "aboutTitle": "About This Privilege",
+      "howToRedeem": "How to Redeem",
+      "termsTitle": "Terms & Conditions",
+      "storeLocations": "Store Locations",
+      "directions": "Directions",
+      "usePrivilege": "Use This Privilege",
+      "loading": "Loading…",
+      "privilegeUsed": "Privilege used",
+      "noCodesAvailable": "No codes available",
+      "claiming": "Claiming…",
+      "claimPrivilege": "Claim This Privilege"
+    },
+    "redeem": {
+      "back": "Back",
+      "verifiedMember": "Verified Member",
+      "redeeming": "Redeeming",
+      "expiresIn": "Expires in <strong>{countdown}</strong>",
+      "displayModeAria": "Display mode",
+      "modeQr": "QR Code",
+      "modeText": "Text",
+      "noCodeConfigured": "No privilege code configured. Please contact THE TITLE support.",
+      "privilegeCode": "Privilege code",
+      "instructionQr": "Show this QR to partner staff to scan your privilege code.",
+      "instructionText": "Tell partner staff this code or show this screen for manual entry.",
+      "forStaff": "(For staff)",
+      "markAsUsed": "Mark as Used",
+      "backToMyCodes": "Back to My Codes",
+      "confirm": {
+        "title": "Confirm Use",
+        "messageBefore": "Have you used this privilege at the partner? The code",
+        "messageAfter": "cannot be used again.",
+        "cancel": "Cancel",
+        "confirm": "Confirm",
+        "confirming": "Confirming…"
+      }
+    },
+    "myCodes": {
+      "eyebrow": "My Privileges",
+      "title": "View My Codes",
+      "subtitle": "Check the status of codes you claimed. Open an active code to show it at the partner.",
+      "tabActive": "Active ({count})",
+      "tabUsed": "Used ({count})",
+      "statusActive": "Active",
+      "statusUsed": "Used",
+      "emptyActiveTitle": "No active promo codes",
+      "emptyActiveDesc": "Claim a code from a privilege with limited promo codes.",
+      "emptyUsedTitle": "No used promo codes yet",
+      "emptyUsedDesc": "Codes you mark as used will appear here."
+    },
+    "community": {
+      "title": "Community Moments",
+      "subtitle": "Events, gatherings, and memories shared by THE TITLE family",
+      "close": "Close"
+    },
+    "profile": {
+      "title": "My Profile",
+      "activeMember": "✦ Active Member",
+      "fields": {
+        "fullName": "Full Name",
+        "email": "Email",
+        "phone": "Phone",
+        "whatsapp": "WhatsApp",
+        "project": "Project",
+        "resident": "Resident",
+        "nationality": "Nationality",
+        "memberSince": "Member Since"
+      },
+      "residentStatus": {
+        "owner": "Owner",
+        "tenant": "Tenant"
+      },
+      "signOut": "Sign Out",
+      "contactToUpdate": "To update your details, please contact"
+    }
+  },
+  "events": {
+    "signIn": "Sign in",
+    "dashboard": "Dashboard",
+    "admin": "Admin",
+    "backToDashboard": "Back to dashboard",
+    "backToClub": "Back to club",
+    "registered": "Registered",
+    "locationsCount": "{count} locations",
+    "hub": {
+      "notFoundTitle": "Event not found",
+      "notFoundMessage": "The link may be incorrect or the event was removed.",
+      "eyebrow": "Club event",
+      "youAreRegistered": "You are registered",
+      "youAreRegisteredAt": "You are registered at {venue}.",
+      "chooseLocation": "Choose a location"
+    },
+    "venue": {
+      "notFoundTitle": "Location not found",
+      "notFoundMessage": "The link may be incorrect or the location was removed.",
+      "viewAllLocations": "View all locations",
+      "signInToRegister": "Sign in to register",
+      "registrationClosed": "Registration is closed.",
+      "signInToSeeRegistration": "Sign in to see your registration",
+      "membershipMustBeActive": "Your membership must be active before you can register.",
+      "registeredHere": "You are registered at this location.",
+      "cancelRegistration": "Cancel registration",
+      "cancelling": "Cancelling…",
+      "cancelConfirm": "Cancel your registration for this location?",
+      "alreadyRegisteredAt": "You are already registered at {venue} for this event. Cancel that registration before registering here.",
+      "alreadyRegisteredElsewhere": "You are already registered at another location for this event. Cancel that registration before registering here.",
+      "goToYourLocation": "Go to your location",
+      "register": "Register",
+      "registering": "Registering…",
+      "closedNotRegistered": "Registration is closed. You are not registered for this location."
+    }
+  }
+}

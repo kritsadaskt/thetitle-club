@@ -9,9 +9,11 @@ import type {
   PrivilegeCategory,
   PrivilegeMapLocation,
 } from "@/lib/types";
+import { buildI18nPayload } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { ActiveToggle } from "./active-toggle";
 import { ImageUploadField } from "./image-upload-field";
+import { LocaleTextFields, getLocaleField, setLocaleField } from "./locale-text-fields";
 
 const EMPTY_LOCATION: PrivilegeMapLocation = { name: "", mapUrl: "" };
 
@@ -30,6 +32,7 @@ const EMPTY: CreatePrivilegeInput = {
   sortOrder: 0,
   codeMode: "shared",
   mapLocations: [],
+  i18n: {},
 };
 
 export function privilegeToFormInput(p: Privilege): CreatePrivilegeInput {
@@ -50,6 +53,10 @@ export function privilegeToFormInput(p: Privilege): CreatePrivilegeInput {
     mapLocations: p.mapLocations?.length
       ? p.mapLocations.map((loc) => ({ ...loc }))
       : [],
+    i18n: {
+      ...(p.i18n?.th ? { th: { ...p.i18n.th } } : {}),
+      ...(p.i18n?.ru ? { ru: { ...p.i18n.ru } } : {}),
+    },
   };
 }
 
@@ -112,6 +119,19 @@ export function AddPrivilegeForm({
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
+  const setTranslation = (locale: "th" | "ru", field: string, value: string) => {
+    setForm((prev) => ({ ...prev, i18n: setLocaleField(prev.i18n, locale, field, value) }));
+  };
+
+  /** Props for a LocaleTextFields block bound to one i18n field key. */
+  const translationProps = (field: string) => ({
+    valueTh: getLocaleField(form.i18n, "th", field),
+    valueRu: getLocaleField(form.i18n, "ru", field),
+    onChangeTh: (v: string) => setTranslation("th", field, v),
+    onChangeRu: (v: string) => setTranslation("ru", field, v),
+    disabled: saving,
+  });
+
   const locations = form.mapLocations ?? [];
 
   const updateLocation = (index: number, key: keyof PrivilegeMapLocation, value: string) => {
@@ -151,7 +171,11 @@ export function AddPrivilegeForm({
     }
     setSaving(true);
     setError(null);
-    const res = await onSubmit(form, coverFileRef.current ?? coverFile);
+    const payload: CreatePrivilegeInput = {
+      ...form,
+      i18n: buildI18nPayload({ th: form.i18n?.th, ru: form.i18n?.ru }),
+    };
+    const res = await onSubmit(payload, coverFileRef.current ?? coverFile);
     setSaving(false);
     if (!res.ok) {
       setError(res.error ?? (mode === "edit" ? "Could not save privilege." : "Could not create privilege."));
@@ -195,6 +219,11 @@ export function AddPrivilegeForm({
               className="mt-1.5 w-full rounded-lg border border-cream-300 bg-cream-50 px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
             />
           </label>
+          <LocaleTextFields
+            className="sm:col-span-2"
+            label="Title"
+            {...translationProps("title")}
+          />
           <label className="block">
             <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">Discount label</span>
             <input
@@ -222,6 +251,12 @@ export function AddPrivilegeForm({
               )}
             </select>
           </label>
+          <LocaleTextFields
+            className="sm:col-span-2"
+            label="Discount label"
+            placeholder="15% OFF"
+            {...translationProps("discount_label")}
+          />
           <label className="block">
             <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">Valid from</span>
             <input
@@ -259,6 +294,11 @@ export function AddPrivilegeForm({
               className="mt-1.5 w-full rounded-lg border border-cream-300 bg-cream-50 px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
             />
           </label>
+          <LocaleTextFields
+            className="sm:col-span-2"
+            label="Summary"
+            {...translationProps("summary")}
+          />
           <label className="sm:col-span-2 block">
             <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">Description</span>
             <textarea
@@ -268,6 +308,13 @@ export function AddPrivilegeForm({
               className="mt-1.5 w-full rounded-lg border border-cream-300 bg-cream-50 px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
             />
           </label>
+          <LocaleTextFields
+            className="sm:col-span-2"
+            label="Description"
+            multiline
+            rows={3}
+            {...translationProps("description")}
+          />
           <label className="sm:col-span-2 block">
             <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">How to redeem</span>
             <textarea
@@ -278,6 +325,14 @@ export function AddPrivilegeForm({
               className="mt-1.5 w-full rounded-lg border border-cream-300 bg-cream-50 px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
             />
           </label>
+          <LocaleTextFields
+            className="sm:col-span-2"
+            label="How to redeem"
+            multiline
+            rows={3}
+            placeholder="One step per line"
+            {...translationProps("how_to_redeem")}
+          />
           <div className="sm:col-span-2 space-y-3">
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -343,6 +398,13 @@ export function AddPrivilegeForm({
               className="mt-1.5 w-full rounded-lg border border-cream-300 bg-cream-50 px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
             />
           </label>
+          <LocaleTextFields
+            className="sm:col-span-2"
+            label="Terms"
+            multiline
+            rows={3}
+            {...translationProps("terms")}
+          />
           {!hideCodeMode && (
             <label className="block">
               <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">Code mode</span>

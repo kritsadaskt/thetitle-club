@@ -59,11 +59,15 @@ export function eventPrimaryBanner(event: ClubEvent): string {
   return sortedEventVenues(event.venues).find((v) => v.bannerImage)?.bannerImage ?? "";
 }
 
-export function eventLocationSummary(event: ClubEvent): string {
+export function eventLocationSummary(
+  event: ClubEvent,
+  /** Optional localized label for multi-venue events (defaults to English). */
+  multiLabel?: (count: number) => string
+): string {
   const venues = sortedEventVenues(event.venues);
   if (venues.length === 0) return "";
   if (venues.length === 1) return venues[0].location || venues[0].name;
-  return `${venues.length} locations`;
+  return multiLabel ? multiLabel(venues.length) : `${venues.length} locations`;
 }
 
 export function isEventUpcomingOrOngoing(event: ClubEvent, now = Date.now()): boolean {
@@ -74,8 +78,8 @@ export function venuePublicPath(eventSlug: string, venueSlug: string): string {
   return `/events/${eventSlug}/${venueSlug}`;
 }
 
-function bangkokParts(iso: string) {
-  const parts = new Intl.DateTimeFormat("en-GB", {
+function bangkokParts(iso: string, bcp47 = "en-GB") {
+  const parts = new Intl.DateTimeFormat(bcp47, {
     timeZone: BANGKOK,
     day: "numeric",
     month: "short",
@@ -103,19 +107,20 @@ function bangkokDateKey(iso: string): string {
   }).format(new Date(iso));
 }
 
-export function formatEventDateTime(iso: string): string {
-  const { day, month, year, hour, minute } = bangkokParts(iso);
+/** `bcp47` defaults to en-GB (admin); pass a locale tag (e.g. from localeToBcp47) for member-facing UI. */
+export function formatEventDateTime(iso: string, bcp47?: string): string {
+  const { day, month, year, hour, minute } = bangkokParts(iso, bcp47);
   return `${day} ${month} ${year}, ${hour}:${minute}`;
 }
 
-export function formatEventSchedule(startsAt: string, endsAt?: string): string {
-  const start = formatEventDateTime(startsAt);
+export function formatEventSchedule(startsAt: string, endsAt?: string, bcp47?: string): string {
+  const start = formatEventDateTime(startsAt, bcp47);
   if (!endsAt) return start;
   if (bangkokDateKey(startsAt) === bangkokDateKey(endsAt)) {
-    const end = bangkokParts(endsAt);
+    const end = bangkokParts(endsAt, bcp47);
     return `${start} – ${end.hour}:${end.minute}`;
   }
-  return `${start} – ${formatEventDateTime(endsAt)}`;
+  return `${start} – ${formatEventDateTime(endsAt, bcp47)}`;
 }
 
 /** `datetime-local` value in Asia/Bangkok. */

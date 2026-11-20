@@ -9,8 +9,9 @@ export function buildEventRegistrationConfirmPayload(input: {
   venue: EventVenueRow;
   registeredAt: string;
   eventUrl: string;
+  locale?: string;
 }): EventRegistrationConfirmedPayload {
-  const { member, email, clubEvent, venue, registeredAt, eventUrl } = input;
+  const { member, email, clubEvent, venue, registeredAt, eventUrl, locale } = input;
   return {
     event: "event_registration_confirmed",
     eventName: clubEvent.title,
@@ -40,6 +41,7 @@ export function buildEventRegistrationConfirmPayload(input: {
     },
     registeredAt,
     eventUrl,
+    locale: locale ?? "en",
   };
 }
 
@@ -51,6 +53,7 @@ export async function sendConfirmEmailForRegistrant(
     venue: EventVenueRow;
     registeredAt: string;
     eventUrl: string;
+    locale?: string;
   },
   options: WebhookSendOptions = {}
 ) {

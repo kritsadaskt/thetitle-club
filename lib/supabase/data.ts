@@ -67,7 +67,7 @@ const ADMIN_ACTIVE_CREATED_ORDER = [
 const PROMO_PRIVILEGE_SELECT =
   "*, privileges(title, discount_label, partner_name, partner_logo, partners(name, logo_url))";
 
-export async function fetchActivePrivileges(): Promise<Privilege[]> {
+export async function fetchActivePrivileges(locale = "en"): Promise<Privilege[]> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("privileges")
@@ -76,7 +76,7 @@ export async function fetchActivePrivileges(): Promise<Privilege[]> {
     .eq("partners.is_active", true)
     .order("sort_order");
   if (error) return [];
-  return (data ?? []).map((r) => mapPrivilegeRow(r as PrivilegeRow));
+  return (data ?? []).map((r) => mapPrivilegeRow(r as PrivilegeRow, locale));
 }
 
 export async function fetchAllPrivileges(): Promise<Privilege[]> {
@@ -101,7 +101,10 @@ export async function fetchPrivilegesByPartner(partnerId: string): Promise<Privi
   return (data ?? []).map((r) => mapPrivilegeRow(r as PrivilegeRow));
 }
 
-export async function fetchPrivilegeById(id: string): Promise<Privilege | null> {
+export async function fetchPrivilegeById(
+  id: string,
+  locale = "en"
+): Promise<Privilege | null> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("privileges")
@@ -111,7 +114,7 @@ export async function fetchPrivilegeById(id: string): Promise<Privilege | null> 
     .eq("partners.is_active", true)
     .maybeSingle();
   if (error || !data) return null;
-  return mapPrivilegeRow(data as PrivilegeRow);
+  return mapPrivilegeRow(data as PrivilegeRow, locale);
 }
 
 export async function fetchAllPartners(): Promise<ShopPartner[]> {
@@ -161,6 +164,7 @@ export async function createPartner(input: CreatePartnerInput): Promise<MutateRe
       description: input.description?.trim() || null,
       is_active: input.isActive ?? true,
       sort_order: input.sortOrder ?? 0,
+      i18n: input.i18n ?? {},
     })
     .select("*")
     .single();
@@ -180,6 +184,7 @@ export async function updatePartner(
   if (input.description !== undefined) patch.description = input.description.trim() || null;
   if (input.isActive !== undefined) patch.is_active = input.isActive;
   if (input.sortOrder !== undefined) patch.sort_order = input.sortOrder;
+  if (input.i18n !== undefined) patch.i18n = input.i18n;
 
   const { data, error } = await supabase
     .from("partners")
@@ -291,6 +296,7 @@ export async function createPrivilege(
       sort_order: input.sortOrder ?? 0,
       code_mode: input.codeMode ?? "shared",
       map_locations: sanitizeMapLocations(input.mapLocations),
+      i18n: input.i18n ?? {},
     })
     .select(PRIVILEGE_SELECT)
     .single();
@@ -320,6 +326,7 @@ export async function updatePrivilege(
   if (input.mapLocations !== undefined) {
     patch.map_locations = sanitizeMapLocations(input.mapLocations);
   }
+  if (input.i18n !== undefined) patch.i18n = input.i18n;
 
   const { data, error } = await supabase
     .from("privileges")
@@ -344,7 +351,7 @@ export async function updatePrivilegeWithCover(
   return updatePrivilege(id, input);
 }
 
-export async function fetchPublishedCommunity(): Promise<CommunityMoment[]> {
+export async function fetchPublishedCommunity(locale = "en"): Promise<CommunityMoment[]> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("community_moments")
@@ -352,7 +359,7 @@ export async function fetchPublishedCommunity(): Promise<CommunityMoment[]> {
     .eq("is_published", true)
     .order("sort_order");
   if (error) return [];
-  return (data ?? []).map((r) => mapCommunityRow(r as CommunityMomentRow));
+  return (data ?? []).map((r) => mapCommunityRow(r as CommunityMomentRow, locale));
 }
 
 export async function releaseExpiredPromoCodes(): Promise<void> {
@@ -360,7 +367,7 @@ export async function releaseExpiredPromoCodes(): Promise<void> {
   await supabase.rpc("release_expired_promo_codes");
 }
 
-export async function fetchMyPromoCodes(): Promise<MemberPromoCode[]> {
+export async function fetchMyPromoCodes(locale = "en"): Promise<MemberPromoCode[]> {
   const supabase = createClient();
   await releaseExpiredPromoCodes();
   const { data, error } = await supabase
@@ -371,11 +378,14 @@ export async function fetchMyPromoCodes(): Promise<MemberPromoCode[]> {
     .eq("privileges.partners.is_active", true)
     .order("claimed_at", { ascending: false });
   if (error) return [];
-  return (data ?? []).map((r) => mapMemberPromoCodeRow(r as PromoCodeWithPrivilegeRow));
+  return (data ?? []).map((r) =>
+    mapMemberPromoCodeRow(r as PromoCodeWithPrivilegeRow, locale)
+  );
 }
 
 export async function fetchMemberPromoCodeForPrivilege(
-  privilegeId: string
+  privilegeId: string,
+  locale = "en"
 ): Promise<MemberPromoCode | null> {
   const supabase = createClient();
   await releaseExpiredPromoCodes();
@@ -389,7 +399,7 @@ export async function fetchMemberPromoCodeForPrivilege(
     .limit(1)
     .maybeSingle();
   if (error || !data) return null;
-  return mapMemberPromoCodeRow(data as PromoCodeWithPrivilegeRow);
+  return mapMemberPromoCodeRow(data as PromoCodeWithPrivilegeRow, locale);
 }
 
 export type ClaimPromoCodeResult =
@@ -520,6 +530,7 @@ export async function createPrivilegeCategory(
       key,
       color: input.color.trim(),
       sort_order: input.sortOrder ?? 0,
+      i18n: input.i18n ?? {},
     })
     .select("*")
     .single();
@@ -537,6 +548,7 @@ export async function updatePrivilegeCategory(
   if (input.key !== undefined) patch.key = input.key.trim().toLowerCase().replace(/\s+/g, "_");
   if (input.color !== undefined) patch.color = input.color.trim();
   if (input.sortOrder !== undefined) patch.sort_order = input.sortOrder;
+  if (input.i18n !== undefined) patch.i18n = input.i18n;
 
   const { data, error } = await supabase
     .from("privilege_categories")
@@ -588,6 +600,7 @@ function eventMetaPatch(input: Partial<CreateEventInput>): Record<string, unknow
   if (input.slug !== undefined) patch.slug = ensureEventSlug(input.title ?? "", input.slug);
   if (input.description !== undefined) patch.description = input.description.trim() || null;
   if (input.isActive !== undefined) patch.is_active = input.isActive;
+  if (input.i18n !== undefined) patch.i18n = input.i18n;
   return patch;
 }
 
@@ -602,13 +615,14 @@ function venueInsertPayload(eventId: string, venue: CreateEventVenueInput, index
     starts_at: venue.startsAt,
     ends_at: venue.endsAt || null,
     sort_order: venue.sortOrder ?? index,
+    i18n: venue.i18n ?? {},
   };
 }
 
 type EventWithVenuesRow = EventRow & { event_venues: EventVenueRow[] | null };
 
-function mapEventWithVenues(row: EventWithVenuesRow): ClubEvent {
-  return mapEventRow(row, row.event_venues ?? []);
+function mapEventWithVenues(row: EventWithVenuesRow, locale = "en"): ClubEvent {
+  return mapEventRow(row, row.event_venues ?? [], locale);
 }
 
 async function fetchEventById(id: string): Promise<ClubEvent | null> {
@@ -716,7 +730,7 @@ export async function fetchMyRegisteredVenueByEventId(): Promise<Map<string, str
   return new Map(data.map((row) => [row.event_id as string, row.venue_id as string]));
 }
 
-export async function fetchUpcomingEvents(): Promise<ClubEvent[]> {
+export async function fetchUpcomingEvents(locale = "en"): Promise<ClubEvent[]> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("events")
@@ -724,7 +738,7 @@ export async function fetchUpcomingEvents(): Promise<ClubEvent[]> {
     .eq("is_active", true);
   if (error) return [];
   return (data ?? [])
-    .map((row) => mapEventWithVenues(row as unknown as EventWithVenuesRow))
+    .map((row) => mapEventWithVenues(row as unknown as EventWithVenuesRow, locale))
     .filter((event) => isEventUpcomingOrOngoing(event))
     .sort((a, b) => {
       const aStart = eventEarliestStartsAt(a) ?? "";
@@ -744,7 +758,10 @@ export async function fetchAllEvents(): Promise<ClubEvent[]> {
   return (data ?? []).map((row) => mapEventWithVenues(row as unknown as EventWithVenuesRow));
 }
 
-export async function fetchEventBySlug(slug: string): Promise<ClubEvent | null> {
+export async function fetchEventBySlug(
+  slug: string,
+  locale = "en"
+): Promise<ClubEvent | null> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("events")
@@ -752,14 +769,15 @@ export async function fetchEventBySlug(slug: string): Promise<ClubEvent | null> 
     .eq("slug", slug)
     .maybeSingle();
   if (error || !data) return null;
-  return mapEventWithVenues(data as unknown as EventWithVenuesRow);
+  return mapEventWithVenues(data as unknown as EventWithVenuesRow, locale);
 }
 
 export async function fetchEventVenue(
   eventSlug: string,
-  venueSlug: string
+  venueSlug: string,
+  locale = "en"
 ): Promise<{ event: ClubEvent; venue: EventVenue } | null> {
-  const event = await fetchEventBySlug(eventSlug);
+  const event = await fetchEventBySlug(eventSlug, locale);
   if (!event) return null;
   const venue = event.venues.find((v) => v.slug === venueSlug);
   if (!venue) return null;
@@ -779,6 +797,7 @@ export async function createEvent(input: CreateEventInput): Promise<MutateResult
       slug: ensureEventSlug(input.title, input.slug),
       description: input.description?.trim() || null,
       is_active: input.isActive ?? true,
+      i18n: input.i18n ?? {},
     })
     .select("*")
     .single();

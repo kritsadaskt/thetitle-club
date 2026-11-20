@@ -10,10 +10,19 @@ import {
   slugifyEventTitle,
   toDatetimeLocalValue,
 } from "@/lib/events";
+import { buildI18nPayload, type I18nLocaleMap } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { VenueBannerFiles } from "@/lib/supabase/data";
 import { ActiveToggle } from "./active-toggle";
 import { ImageUploadField } from "./image-upload-field";
+import { LocaleTextFields, getLocaleField, setLocaleField } from "./locale-text-fields";
+
+function cloneI18n(i18n?: I18nLocaleMap): I18nLocaleMap {
+  return {
+    ...(i18n?.th ? { th: { ...i18n.th } } : {}),
+    ...(i18n?.ru ? { ru: { ...i18n.ru } } : {}),
+  };
+}
 
 type VenueFormState = {
   key: string;
@@ -23,6 +32,8 @@ type VenueFormState = {
   slugTouched: boolean;
   description: string;
   location: string;
+  /** Thai / Russian: name, description, location */
+  i18n: I18nLocaleMap;
   startsAt: string;
   endsAt: string;
   bannerImage: string;
@@ -34,6 +45,8 @@ type FormState = {
   title: string;
   slug: string;
   description: string;
+  /** Thai / Russian: title, description */
+  i18n: I18nLocaleMap;
   isActive: boolean;
   multiVenue: boolean;
   /** Main event schedule — venues can inherit via “Same as main event”. */
@@ -66,6 +79,7 @@ function emptyVenue(overrides?: Partial<VenueFormState>): VenueFormState {
     slugTouched: false,
     description: "",
     location: "",
+    i18n: {},
     startsAt: "",
     endsAt: "",
     bannerImage: "",
@@ -79,6 +93,7 @@ const EMPTY: FormState = {
   title: "",
   slug: "",
   description: "",
+  i18n: {},
   isActive: true,
   multiVenue: false,
   mainStartsAt: "",
@@ -109,6 +124,7 @@ function fromEvent(event?: ClubEvent): FormState {
             slugTouched: true,
             description: venue.description,
             location: venue.location,
+            i18n: cloneI18n(venue.i18n),
             startsAt,
             endsAt,
             bannerImage: venue.bannerImage,
@@ -122,6 +138,7 @@ function fromEvent(event?: ClubEvent): FormState {
     title: event.title,
     slug: event.slug,
     description: event.description,
+    i18n: cloneI18n(event.i18n),
     isActive: event.isActive,
     multiVenue: venues.length > 1,
     mainStartsAt,
@@ -174,6 +191,21 @@ export function EventForm({ open, event, title, submitLabel, onClose, onSubmit }
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const setEventTranslation = (locale: "th" | "ru", field: string, value: string) => {
+    setForm((prev) => ({ ...prev, i18n: setLocaleField(prev.i18n, locale, field, value) }));
+  };
+
+  const setVenueTranslation = (key: string, locale: "th" | "ru", field: string, value: string) => {
+    setForm((prev) => ({
+      ...prev,
+      venues: prev.venues.map((venue) =>
+        venue.key === key
+          ? { ...venue, i18n: setLocaleField(venue.i18n, locale, field, value) }
+          : venue
+      ),
+    }));
   };
 
   const updateVenue = (key: string, patch: Partial<VenueFormState>) => {
@@ -351,6 +383,17 @@ export function EventForm({ open, event, title, submitLabel, onClose, onSubmit }
       const name = resolveVenueName(venue);
       const startsAt = resolveVenueStartsAt(venue);
       const endsAt = resolveVenueEndsAt(venue);
+      // "Same as main event" venues reuse the event title translations as their name.
+      const venueI18n = buildI18nPayload({
+        th: {
+          ...venue.i18n.th,
+          name: venue.sameNameAsEvent ? form.i18n.th?.title : venue.i18n.th?.name,
+        },
+        ru: {
+          ...venue.i18n.ru,
+          name: venue.sameNameAsEvent ? form.i18n.ru?.title : venue.i18n.ru?.name,
+        },
+      });
       return {
         id: venue.id,
         name,
@@ -361,6 +404,7 @@ export function EventForm({ open, event, title, submitLabel, onClose, onSubmit }
         startsAt: fromDatetimeLocalValue(startsAt),
         endsAt: endsAt ? fromDatetimeLocalValue(endsAt) : null,
         sortOrder: index,
+        i18n: venueI18n,
       };
     });
 
@@ -370,6 +414,7 @@ export function EventForm({ open, event, title, submitLabel, onClose, onSubmit }
       description: form.description,
       isActive: form.isActive,
       venues,
+      i18n: buildI18nPayload({ th: form.i18n.th, ru: form.i18n.ru }),
     };
 
     const files: VenueBannerFiles = { ...bannerFilesRef.current, ...bannerFiles };
@@ -430,6 +475,14 @@ export function EventForm({ open, event, title, submitLabel, onClose, onSubmit }
               className={inputClass}
             />
           </label>
+          <LocaleTextFields
+            label="Title"
+            valueTh={getLocaleField(form.i18n, "th", "title")}
+            valueRu={getLocaleField(form.i18n, "ru", "title")}
+            onChangeTh={(v) => setEventTranslation("th", "title", v)}
+            onChangeRu={(v) => setEventTranslation("ru", "title", v)}
+            disabled={saving}
+          />
           <label className="block">
             <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">
               Event link slug
@@ -488,6 +541,16 @@ export function EventForm({ open, event, title, submitLabel, onClose, onSubmit }
               className={inputClass}
             />
           </label>
+          <LocaleTextFields
+            label="Event overview"
+            multiline
+            rows={3}
+            valueTh={getLocaleField(form.i18n, "th", "description")}
+            valueRu={getLocaleField(form.i18n, "ru", "description")}
+            onChangeTh={(v) => setEventTranslation("th", "description", v)}
+            onChangeRu={(v) => setEventTranslation("ru", "description", v)}
+            disabled={saving}
+          />
 
           <div className="rounded-xl border border-cream-300 bg-cream-50/80 p-4 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -554,6 +617,20 @@ export function EventForm({ open, event, title, submitLabel, onClose, onSubmit }
                       className={inputClass}
                     />
                   </div>
+                  {venue.sameNameAsEvent ? (
+                    <p className="text-ink-muted text-[11px] -mt-1">
+                      Thai/Russian name follows the event title translations.
+                    </p>
+                  ) : (
+                    <LocaleTextFields
+                      label="Name"
+                      valueTh={getLocaleField(venue.i18n, "th", "name")}
+                      valueRu={getLocaleField(venue.i18n, "ru", "name")}
+                      onChangeTh={(v) => setVenueTranslation(venue.key, "th", "name", v)}
+                      onChangeRu={(v) => setVenueTranslation(venue.key, "ru", "name", v)}
+                      disabled={saving}
+                    />
+                  )}
 
                   <label className="block">
                     <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">
@@ -586,6 +663,14 @@ export function EventForm({ open, event, title, submitLabel, onClose, onSubmit }
                       className={inputClass}
                     />
                   </label>
+                  <LocaleTextFields
+                    label="Address / place"
+                    valueTh={getLocaleField(venue.i18n, "th", "location")}
+                    valueRu={getLocaleField(venue.i18n, "ru", "location")}
+                    onChangeTh={(v) => setVenueTranslation(venue.key, "th", "location", v)}
+                    onChangeRu={(v) => setVenueTranslation(venue.key, "ru", "location", v)}
+                    disabled={saving}
+                  />
 
                   <div>
                     <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
@@ -635,6 +720,16 @@ export function EventForm({ open, event, title, submitLabel, onClose, onSubmit }
                       className={inputClass}
                     />
                   </label>
+                  <LocaleTextFields
+                    label="Location details"
+                    multiline
+                    rows={3}
+                    valueTh={getLocaleField(venue.i18n, "th", "description")}
+                    valueRu={getLocaleField(venue.i18n, "ru", "description")}
+                    onChangeTh={(v) => setVenueTranslation(venue.key, "th", "description", v)}
+                    onChangeRu={(v) => setVenueTranslation(venue.key, "ru", "description", v)}
+                    disabled={saving}
+                  />
                   <ImageUploadField
                     label="Banner (AW)"
                     hint="JPEG, PNG, WebP, or GIF — max 1 MB"

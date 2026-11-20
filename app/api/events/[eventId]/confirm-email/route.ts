@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { absoluteAppUrlFromRequest } from "@/lib/app-url";
 import { venuePublicPath } from "@/lib/events";
 import { sendConfirmEmailForRegistrant } from "@/lib/event-confirm-email";
+import { locales } from "@/i18n/routing";
 import { requestWantsTestWebhook } from "@/lib/n8n";
 import { createClient } from "@/lib/supabase/server";
 import type { EventRow, EventVenueRow, ProfileRow } from "@/lib/supabase/mappers";
@@ -29,6 +30,19 @@ export async function POST(request: NextRequest, context: RouteContext) {
   }
 
   const { eventId } = await context.params;
+
+  // Optional UI locale from the client (JSON body `{ locale }` or `?locale=`).
+  let requestedLocale: string | undefined;
+  try {
+    const body = (await request.json()) as { locale?: unknown };
+    if (typeof body?.locale === "string") requestedLocale = body.locale;
+  } catch {
+    // No/invalid body — fall back to query string
+  }
+  requestedLocale ??= new URL(request.url).searchParams.get("locale") ?? undefined;
+  const locale = (locales as readonly string[]).includes(requestedLocale ?? "")
+    ? requestedLocale
+    : undefined;
 
   const [{ data: profileRow, error: profileError }, { data: eventRow, error: eventError }, { data: registration, error: registrationError }] =
     await Promise.all([
@@ -92,6 +106,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
       venue,
       registeredAt: reg.registered_at,
       eventUrl: absoluteAppUrlFromRequest(request, venuePublicPath(clubEvent.slug, venue.slug)),
+      locale,
     },
     { useTestWebhook }
   );

@@ -1,12 +1,15 @@
 "use client";
 
-import Link from "next/link";
+import NextLink from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { useAuth } from "@/lib/auth-context";
 
 type LandingNavAuthProps = {
   isSignedIn: boolean;
   memberEntryHref: string;
-  memberEntryLabel: string;
+  /** Optional override; defaults to a translated label based on memberEntryHref */
+  memberEntryLabel?: string;
 };
 
 export function LandingNavAuth({
@@ -14,20 +17,33 @@ export function LandingNavAuth({
   memberEntryHref,
   memberEntryLabel,
 }: LandingNavAuthProps) {
+  const t = useTranslations("landing.nav");
   const { logout } = useAuth();
 
   if (isSignedIn) {
+    const isAdminHref = memberEntryHref.startsWith("/admin");
+    const label =
+      memberEntryLabel ?? (isAdminHref ? t("goToDashboard") : t("viewProfile"));
+    const entryClassName = "btn-primary font-semibold px-5 py-2.5 rounded-lg";
+
     return (
       <>
-        <Link href={memberEntryHref} className="btn-primary font-semibold px-5 py-2.5 rounded-lg">
-          {memberEntryLabel}
-        </Link>
+        {isAdminHref ? (
+          // Admin lives outside the [locale] segment — use plain next/link
+          <NextLink href={memberEntryHref} className={entryClassName}>
+            {label}
+          </NextLink>
+        ) : (
+          <Link href={memberEntryHref} className={entryClassName}>
+            {label}
+          </Link>
+        )}
         <button
           type="button"
           className="btn-outline-primary text-sm"
           onClick={() => void logout()}
         >
-          Log out
+          {t("logOut")}
         </button>
       </>
     );
@@ -36,10 +52,10 @@ export function LandingNavAuth({
   return (
     <>
       <Link href="/login" className="text-sm text-ink-light hover:text-primary-dark transition-colors font-medium">
-        Sign In
+        {t("signIn")}
       </Link>
       <Link href="/register" className="btn-primary font-semibold px-5 py-2.5 rounded-lg">
-        Become a Member
+        {t("becomeMember")}
       </Link>
     </>
   );

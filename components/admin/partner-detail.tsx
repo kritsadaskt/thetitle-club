@@ -201,6 +201,7 @@ export function PartnerDetail({ partner, onBack, onPartnerUpdated }: Props) {
           description: partner.description,
           isActive: partner.isActive,
           sortOrder: partner.sortOrder,
+          i18n: partner.i18n,
         }}
         onClose={() => setShowEditPartner(false)}
         onSubmit={handleUpdatePartner}

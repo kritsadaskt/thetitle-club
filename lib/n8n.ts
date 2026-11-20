@@ -44,6 +44,8 @@ export type EventRegistrationConfirmedPayload = {
   registeredAt: string;
   /** Absolute URL of the venue registration page */
   eventUrl: string;
+  /** Member UI locale when they registered (en/th/ru) — for future n8n email templates */
+  locale?: string;
 };
 
 export type WebhookSendOptions = {

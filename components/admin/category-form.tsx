@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { CreatePrivilegeCategoryInput, PrivilegeCategory } from "@/lib/types";
+import { buildI18nPayload } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { LocaleTextFields, getLocaleField, setLocaleField } from "./locale-text-fields";
 
 const COLOR_PRESETS = [
   { label: "Emerald", value: "bg-emerald-50 text-emerald-700 border-emerald-200" },
@@ -18,6 +20,7 @@ const EMPTY: CreatePrivilegeCategoryInput = {
   key: "",
   color: COLOR_PRESETS[0].value,
   sortOrder: 0,
+  i18n: {},
 };
 
 type Props = {
@@ -77,7 +80,10 @@ export function CategoryForm({ open, initial, title, submitLabel, onClose, onSub
     }
     setSaving(true);
     setError(null);
-    const res = await onSubmit(form);
+    const res = await onSubmit({
+      ...form,
+      i18n: buildI18nPayload({ th: form.i18n?.th, ru: form.i18n?.ru }),
+    });
     setSaving(false);
     if (!res.ok) {
       setError(res.error ?? "Could not save category.");
@@ -118,6 +124,18 @@ export function CategoryForm({ open, initial, title, submitLabel, onClose, onSub
               className="mt-1.5 w-full rounded-lg border border-cream-300 bg-cream-50 px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
             />
           </label>
+          <LocaleTextFields
+            label="Label"
+            valueTh={getLocaleField(form.i18n, "th", "label")}
+            valueRu={getLocaleField(form.i18n, "ru", "label")}
+            onChangeTh={(v) =>
+              setForm((prev) => ({ ...prev, i18n: setLocaleField(prev.i18n, "th", "label", v) }))
+            }
+            onChangeRu={(v) =>
+              setForm((prev) => ({ ...prev, i18n: setLocaleField(prev.i18n, "ru", "label", v) }))
+            }
+            disabled={saving}
+          />
           <label className="block">
             <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">Key *</span>
             <input
@@ -196,5 +214,9 @@ export function categoryToFormInput(c: PrivilegeCategory): CreatePrivilegeCatego
     key: c.key,
     color: c.color,
     sortOrder: c.sortOrder ?? 0,
+    i18n: {
+      ...(c.i18n?.th ? { th: { ...c.i18n.th } } : {}),
+      ...(c.i18n?.ru ? { ru: { ...c.i18n.ru } } : {}),
+    },
   };
 }

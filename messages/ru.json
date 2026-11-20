@@ -1,0 +1,440 @@
+{
+  "nav": {
+    "backToHomepage": "← На главную",
+    "signIn": "Войти",
+    "signOut": "Выйти",
+    "dashboard": "Панель управления",
+    "admin": "Админ",
+    "back": "Назад",
+    "logoAlt": "The Title"
+  },
+  "landing": {
+    "nav": {
+      "goToDashboard": "Перейти в панель управления",
+      "viewProfile": "Посмотреть профиль",
+      "signIn": "Войти",
+      "becomeMember": "Стать участником",
+      "logOut": "Выйти"
+    },
+    "hero": {
+      "eyebrow": "Эксклюзивное членство",
+      "titleLine1": "Откройте для себя",
+      "titleHighlight": "наше сообщество.",
+      "body": "В THE TITLE мы верим, что владение домом — это больше, чем право собственности: это возможность стать частью семьи. THE TITLE — наше эксклюзивное сообщество, объединяющее резидентов через тщательно подобранные события, привилегии образа жизни и значимые связи. Ведь здесь каждый титул принадлежит семье.",
+      "becomeFamily": "Стать частью семьи",
+      "memberLogin": "Вход для участников",
+      "openAdmin": "Открыть панель администратора",
+      "goToProfile": "Перейти в мой профиль"
+    },
+    "community": {
+      "eyebrow": "Наше сообщество",
+      "titleLine1": "Моменты",
+      "titleHighlight": "сообщества",
+      "body": "В Community Moments каждое событие продумано для тех, кто ценит искусство хорошей жизни. От камерных вечеров до выдающихся культурных встреч — здесь глобальное сообщество объединяется со вкусом и стилем.",
+      "learnMore": "Узнать больше"
+    },
+    "privileges": {
+      "eyebrow": "Преимущества для участников",
+      "title": "Эксклюзивные привилегии",
+      "body": "Откройте для себя подборку преимуществ для образа жизни, здоровья и отдыха",
+      "viewAll": "Смотреть все привилегии →",
+      "joinToSee": "Присоединяйтесь, чтобы увидеть все привилегии →"
+    },
+    "cta": {
+      "memberAccess": "Доступ для участников",
+      "joinFamily": "Присоединяйтесь к семье",
+      "welcomeBackAdmin": "С возвращением, администратор",
+      "welcomeBack": "С возвращением",
+      "continueJourney": "Продолжите свой путь",
+      "becomePartOf": "Станьте частью",
+      "theFamily": "нашей семьи",
+      "registerBody": "Зарегистрируйтесь сейчас, чтобы получить цифровую карту участника, доступ к эксклюзивным привилегиям и общение с вашим сообществом.",
+      "continueAdminBody": "Продолжайте управлять участниками, привилегиями и контентом сообщества.",
+      "continueMemberBody": "Продолжайте изучать вашу карту участника, преимущества и моменты сообщества.",
+      "becomePartOfFamily": "Стать частью семьи"
+    },
+    "partners": {
+      "eyebrow": "давайте знакомиться",
+      "title": "Наши партнёры"
+    },
+    "footer": {
+      "rights": "© {year} The Title Residence. Все права защищены."
+    },
+    "howToJoin": {
+      "imageAlt": "Как присоединиться",
+      "scanHere": "<highlight>Сканируйте</highlight> здесь",
+      "tapBecome": "Нажмите <highlight>«Стать частью семьи»</highlight>",
+      "fillDetails": "Заполните свои данные и <highlight>завершите регистрацию.</highlight>",
+      "confirmEmail": "Письмо с подтверждением членства <highlight>будет отправлено на указанный вами адрес электронной почты.</highlight>",
+      "startEnjoying": "Завершите регистрацию и <highlight>наслаждайтесь эксклюзивными привилегиями участников.</highlight>"
+    },
+    "howToRedeem": {
+      "imageAlt": "Как воспользоваться привилегией",
+      "title": "Как воспользоваться",
+      "titleHighlight": "привилегиями",
+      "step1": "<highlight>• Войдите в свой профиль</highlight> <highlight>• Нажмите на значок меню</highlight> в правом верхнем углу экрана.",
+      "step2": "В боковом меню нажмите <highlight>«Привилегии»</highlight>, чтобы увидеть эксклюзивные предложения для участников.",
+      "step3": "Выберите нужную привилегию и нажмите <highlight>«Использовать привилегию»</highlight>",
+      "step4": "<highlight>Покажите свой QR-код или код привилегии</highlight> продавцу, чтобы воспользоваться привилегией."
+    }
+  },
+  "auth": {
+    "brand": {
+      "quoteLine1": "«Откройте для себя",
+      "quoteLine2": "наше сообщество.»",
+      "description": "В THE TITLE мы верим, что владение домом — это больше, чем право собственности: это возможность стать частью семьи. THE TITLE — наше эксклюзивное сообщество, объединяющее резидентов через тщательно подобранные события, привилегии образа жизни и значимые связи. Ведь здесь каждый титул принадлежит семье.",
+      "footerUrl": "thetitleresidence.com/club"
+    },
+    "common": {
+      "emailAddress": "Адрес электронной почты",
+      "emailPlaceholder": "you@example.com",
+      "passwordPlaceholderMasked": "••••••••",
+      "showPassword": "Показать пароль",
+      "hidePassword": "Скрыть пароль",
+      "backToSignIn": "Вернуться ко входу",
+      "backToHomepage": "← На главную",
+      "passwordMinLength": "Пароль должен содержать не менее 8 символов",
+      "passwordsDoNotMatch": "Пароли не совпадают"
+    },
+    "login": {
+      "title": "С возвращением",
+      "subtitle": "Войдите в свою учётную запись участника",
+      "resetSuccess": "Ваш пароль обновлён. Теперь вы можете войти с новым паролем.",
+      "resetInvalid": "Эта ссылка для сброса недействительна или срок её действия истёк.",
+      "requestNewLink": "Запросить новую",
+      "emailLabel": "Адрес электронной почты",
+      "emailPlaceholder": "you@example.com",
+      "passwordLabel": "Пароль",
+      "forgotPassword": "Забыли пароль?",
+      "passwordPlaceholder": "••••••••",
+      "submit": "Войти",
+      "submitting": "Вход...",
+      "loginFailed": "Не удалось войти",
+      "notMember": "Ещё не участник?",
+      "registerHere": "Зарегистрируйтесь здесь",
+      "backToHomepage": "← На главную"
+    },
+    "register": {
+      "title": "Станьте частью семьи",
+      "subtitle": "Заполните форму ниже, чтобы подать заявку на членство",
+      "brandEyebrow": "The Title",
+      "steps": {
+        "personal": "Личные данные",
+        "contact": "Контакты",
+        "property": "Недвижимость",
+        "agent": "Агент",
+        "staff": "Сотрудник"
+      },
+      "sections": {
+        "personal": "Личная информация",
+        "contact": "Контактные данные",
+        "accountType": "Тип учётной записи",
+        "property": "Данные о недвижимости"
+      },
+      "fields": {
+        "fullName": "Полное имя *",
+        "fullNamePlaceholder": "например, John Smith",
+        "gender": "Пол *",
+        "nationality": "Гражданство *",
+        "email": "Адрес электронной почты *",
+        "emailPlaceholder": "you@example.com",
+        "password": "Пароль *",
+        "passwordPlaceholder": "Не менее 8 символов",
+        "confirmPassword": "Подтверждение пароля *",
+        "confirmPasswordPlaceholder": "Повторите пароль",
+        "phone": "Номер телефона",
+        "phonePlaceholder": "+66 8x xxx xxxx",
+        "whatsapp": "Номер WhatsApp *",
+        "whatsappPlaceholder": "+7 999 xxx xx xx",
+        "residentStatus": "Статус резидента *",
+        "projectName": "Проект / объект *",
+        "houseNumber": "Номер дома *",
+        "houseNumberPlaceholder": "например, A-12",
+        "selectPlaceholder": "Выберите...",
+        "accountTypeAria": "Тип учётной записи",
+        "showPassword": "Показать пароль",
+        "hidePassword": "Скрыть пароль"
+      },
+      "gender": {
+        "male": "Мужской",
+        "female": "Женский",
+        "other": "Предпочитаю не указывать"
+      },
+      "nationality": {
+        "Thai": "Таиландское",
+        "British": "Британское",
+        "American": "Американское",
+        "German": "Германское",
+        "Australian": "Австралийское",
+        "Chinese": "Китайское",
+        "Russian": "Российское",
+        "French": "Французское",
+        "Scandinavian": "Скандинавское",
+        "Other": "Другое"
+      },
+      "residentStatus": {
+        "owner": "Владелец",
+        "tenant": "Арендатор"
+      },
+      "project": {
+        "Other": "Другое"
+      },
+      "accountTypes": {
+        "residence": "Резидент",
+        "agent": "Агент",
+        "staff": "Сотрудник The Title"
+      },
+      "consent": {
+        "before": "Я даю согласие The Title Residence на сбор и обработку моих персональных данных в соответствии с",
+        "privacyPolicy": "Политикой конфиденциальности",
+        "after": "(PDPA) и подтверждаю, что вся предоставленная информация достоверна."
+      },
+      "validation": {
+        "fullName": "Укажите полное имя",
+        "gender": "Выберите пол",
+        "nationality": "Выберите гражданство",
+        "email": "Укажите корректный адрес электронной почты",
+        "password": "Пароль должен содержать не менее 8 символов",
+        "confirmPassword": "Пароли не совпадают",
+        "whatsapp": "Укажите номер WhatsApp",
+        "residentStatus": "Выберите статус",
+        "projectName": "Выберите проект",
+        "houseNumber": "Укажите номер дома",
+        "consent": "Примите условия"
+      },
+      "errors": {
+        "registrationFailed": "Не удалось зарегистрироваться. Пожалуйста, попробуйте ещё раз.",
+        "confirmEmailEnabled": "Не удалось завершить регистрацию. Отключите «Confirm email» в настройках Supabase Auth (Authentication → Providers → Email)."
+      },
+      "submit": "Отправить заявку",
+      "submitting": "Отправка...",
+      "alreadyMember": "Уже участник?",
+      "signIn": "Войти",
+      "success": {
+        "title": "Регистрация прошла успешно!",
+        "thanks": "Спасибо за регистрацию с адресом",
+        "complete": "Ваша регистрация завершена.",
+        "welcomeEmail": "Приветственное письмо скоро поступит на вашу почту. Просто войдите и наслаждайтесь эксклюзивными привилегиями участников The Title.",
+        "backToSignIn": "Вернуться ко входу"
+      }
+    },
+    "forgot": {
+      "title": "Забыли пароль",
+      "subtitle": "Введите свой адрес электронной почты, и мы отправим вам ссылку для установки нового пароля.",
+      "emailLabel": "Адрес электронной почты",
+      "emailPlaceholder": "you@example.com",
+      "submit": "Отправить ссылку для сброса",
+      "submitting": "Отправка...",
+      "rememberedPassword": "Вспомнили пароль?",
+      "signIn": "Войти",
+      "backToHomepage": "← На главную",
+      "sent": {
+        "title": "Проверьте свою почту",
+        "messageBefore": "Если учётная запись для адреса",
+        "messageAfter": "существует, вы получите ссылку для установки нового пароля. Проверьте папки «Входящие» и «Спам».",
+        "backToSignIn": "Вернуться ко входу"
+      }
+    },
+    "reset": {
+      "expired": {
+        "title": "Срок действия ссылки истёк",
+        "message": "Эта ссылка для сброса недействительна или срок её действия истёк. Запросите новую, чтобы установить новый пароль.",
+        "requestNewLink": "Запросить новую ссылку",
+        "backToSignIn": "Вернуться ко входу"
+      },
+      "title": "Установите новый пароль",
+      "subtitle": "Выберите новый пароль для своей учётной записи участника.",
+      "newPassword": "Новый пароль",
+      "newPasswordPlaceholder": "Не менее 8 символов",
+      "confirmPassword": "Подтверждение пароля",
+      "confirmPasswordPlaceholder": "Повторите пароль",
+      "showPassword": "Показать пароль",
+      "hidePassword": "Скрыть пароль",
+      "passwordMinLength": "Пароль должен содержать не менее 8 символов",
+      "passwordsDoNotMatch": "Пароли не совпадают",
+      "submit": "Обновить пароль",
+      "submitting": "Обновление..."
+    }
+  },
+  "member": {
+    "nav": {
+      "dashboard": "Панель управления",
+      "myCard": "Моя карта",
+      "privileges": "Привилегии",
+      "myCodes": "Мои коды",
+      "community": "Сообщество",
+      "profile": "Профиль",
+      "backToClub": "Назад в клуб",
+      "signOut": "Выйти",
+      "brandEyebrow": "The Title",
+      "brandName": "CLUB",
+      "logoAlt": "The Title"
+    },
+    "dashboard": {
+      "greeting": "Добрый день,",
+      "quickLinks": {
+        "card": {
+          "label": "Моя карта участника",
+          "desc": "Покажите QR для использования"
+        },
+        "privileges": {
+          "label": "Изучить привилегии",
+          "desc": "Доступно преимуществ: {count}"
+        },
+        "community": {
+          "label": "Моменты сообщества",
+          "desc": "Последние события и активности"
+        }
+      },
+      "upcomingEvents": "Предстоящие события",
+      "noUpcomingEvents": "Сейчас нет предстоящих событий.",
+      "registered": "Вы зарегистрированы",
+      "featuredPrivileges": "Избранные привилегии",
+      "communityMoments": "Моменты сообщества",
+      "viewAll": "Смотреть все"
+    },
+    "card": {
+      "title": "Карта участника",
+      "subtitle": "Показывайте карту или QR-код партнёрам при использовании привилегий",
+      "brandEyebrow": "The Title Residence",
+      "brandName": "CLUB",
+      "badge": "УЧАСТНИК",
+      "memberName": "Имя участника",
+      "status": "Статус",
+      "project": "Проект",
+      "since": "С",
+      "memberId": "ID участника",
+      "scanToVerify": "Отсканируйте для подтверждения членства",
+      "qrUnavailable": "Не удалось создать QR — отсутствует токен участника.",
+      "presentQr": "Покажите этот QR-код сотруднику партнёра при использовании привилегий",
+      "shareCard": "Поделиться картой",
+      "saveToPhotos": "Сохранить в Фото",
+      "disclaimer": "Эта карта предназначена только для участников THE TITLE. Не передавайте свой QR-код другим."
+    },
+    "privileges": {
+      "title": "Эксклюзивные привилегии",
+      "benefitsAvailable": "Доступно преимуществ для участников THE TITLE: {count}",
+      "howToRedeemLink": "Как воспользоваться?",
+      "searchPlaceholder": "Поиск привилегий или партнёров...",
+      "filterAll": "Все",
+      "empty": "Привилегии не найдены",
+      "until": "До {date}",
+      "redeem": "Использовать",
+      "howToRedeemImageAlt": "Как воспользоваться привилегией"
+    },
+    "privilegeDetail": {
+      "backToPrivileges": "Назад к привилегиям",
+      "uniquePoolNotice": "Количество промокодов ограничено — получите свой и используйте в течение 24 часов.",
+      "validUntil": "Действует до <strong>{date}</strong>",
+      "aboutTitle": "Об этой привилегии",
+      "howToRedeem": "Как воспользоваться",
+      "termsTitle": "Условия и положения",
+      "storeLocations": "Адреса магазинов",
+      "directions": "Маршрут",
+      "usePrivilege": "Использовать привилегию",
+      "loading": "Загрузка…",
+      "privilegeUsed": "Привилегия использована",
+      "noCodesAvailable": "Коды недоступны",
+      "claiming": "Получение…",
+      "claimPrivilege": "Получить привилегию"
+    },
+    "redeem": {
+      "back": "Назад",
+      "verifiedMember": "Подтверждённый участник",
+      "redeeming": "Использование привилегии",
+      "expiresIn": "Истекает через <strong>{countdown}</strong>",
+      "displayModeAria": "Режим отображения",
+      "modeQr": "QR-код",
+      "modeText": "Текст",
+      "noCodeConfigured": "Код привилегии не настроен. Пожалуйста, обратитесь в службу поддержки THE TITLE.",
+      "privilegeCode": "Код привилегии",
+      "instructionQr": "Покажите этот QR сотруднику партнёра, чтобы он отсканировал код вашей привилегии.",
+      "instructionText": "Назовите этот код сотруднику партнёра или покажите этот экран для ручного ввода.",
+      "forStaff": "(для сотрудников)",
+      "markAsUsed": "Отметить как использованный",
+      "backToMyCodes": "Назад к моим кодам",
+      "confirm": {
+        "title": "Подтвердите использование",
+        "messageBefore": "Вы использовали эту привилегию у партнёра? Код",
+        "messageAfter": "больше нельзя будет использовать.",
+        "cancel": "Отмена",
+        "confirm": "Подтвердить",
+        "confirming": "Подтверждение…"
+      }
+    },
+    "myCodes": {
+      "eyebrow": "Мои привилегии",
+      "title": "Мои коды",
+      "subtitle": "Проверьте статус полученных кодов. Откройте активный код, чтобы показать его партнёру.",
+      "tabActive": "Активные ({count})",
+      "tabUsed": "Использованные ({count})",
+      "statusActive": "Активен",
+      "statusUsed": "Использован",
+      "emptyActiveTitle": "Нет активных промокодов",
+      "emptyActiveDesc": "Получите код в привилегии с ограниченным количеством промокодов.",
+      "emptyUsedTitle": "Использованных промокодов пока нет",
+      "emptyUsedDesc": "Коды, которые вы отметите как использованные, появятся здесь."
+    },
+    "community": {
+      "title": "Моменты сообщества",
+      "subtitle": "События, встречи и воспоминания, которыми делится семья THE TITLE",
+      "close": "Закрыть"
+    },
+    "profile": {
+      "title": "Мой профиль",
+      "activeMember": "✦ Активный участник",
+      "fields": {
+        "fullName": "Полное имя",
+        "email": "Эл. почта",
+        "phone": "Телефон",
+        "whatsapp": "WhatsApp",
+        "project": "Проект",
+        "resident": "Статус резидента",
+        "nationality": "Гражданство",
+        "memberSince": "Участник с"
+      },
+      "residentStatus": {
+        "owner": "Владелец",
+        "tenant": "Арендатор"
+      },
+      "signOut": "Выйти",
+      "contactToUpdate": "Чтобы изменить свои данные, свяжитесь с нами:"
+    }
+  },
+  "events": {
+    "signIn": "Войти",
+    "dashboard": "Панель управления",
+    "admin": "Админ",
+    "backToDashboard": "Назад в панель управления",
+    "backToClub": "Назад в клуб",
+    "registered": "Вы зарегистрированы",
+    "locationsCount": "Локаций: {count}",
+    "hub": {
+      "notFoundTitle": "Событие не найдено",
+      "notFoundMessage": "Возможно, ссылка неверна или событие было удалено.",
+      "eyebrow": "Событие клуба",
+      "youAreRegistered": "Вы зарегистрированы",
+      "youAreRegisteredAt": "Вы зарегистрированы: {venue}.",
+      "chooseLocation": "Выберите место"
+    },
+    "venue": {
+      "notFoundTitle": "Место не найдено",
+      "notFoundMessage": "Возможно, ссылка неверна или место было удалено.",
+      "viewAllLocations": "Посмотреть все места",
+      "signInToRegister": "Войдите, чтобы зарегистрироваться",
+      "registrationClosed": "Регистрация закрыта.",
+      "signInToSeeRegistration": "Войдите, чтобы увидеть свою регистрацию",
+      "membershipMustBeActive": "Для регистрации ваше членство должно быть активным.",
+      "registeredHere": "Вы зарегистрированы в этом месте.",
+      "cancelRegistration": "Отменить регистрацию",
+      "cancelling": "Отмена…",
+      "cancelConfirm": "Отменить вашу регистрацию в этом месте?",
+      "alreadyRegisteredAt": "Вы уже зарегистрированы на это событие: {venue}. Отмените ту регистрацию, прежде чем регистрироваться здесь.",
+      "alreadyRegisteredElsewhere": "Вы уже зарегистрированы на это событие в другом месте. Отмените ту регистрацию, прежде чем регистрироваться здесь.",
+      "goToYourLocation": "Перейти к вашему месту",
+      "register": "Зарегистрироваться",
+      "registering": "Регистрация…",
+      "closedNotRegistered": "Регистрация закрыта. Вы не зарегистрированы в этом месте."
+    }
+  }
+}
