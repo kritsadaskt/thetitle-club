@@ -1,6 +1,6 @@
 "use client";
 
-import { absoluteAppUrl } from "@/lib/app-url";
+import { absoluteAppUrl, isBrowserVercelPreview } from "@/lib/app-url";
 import { VenueQrCard } from "./venue-qr-card";
 
 type Props = {
@@ -16,6 +16,7 @@ export function VenueQrModal({ open, title, path, fileBaseName, onClose }: Props
   if (!open) return null;
 
   const url = absoluteAppUrl(path);
+  const previewHint = isBrowserVercelPreview();
 
   return (
     <div
@@ -47,6 +48,11 @@ export function VenueQrModal({ open, title, path, fileBaseName, onClose }: Props
         <p className="text-[10px] text-ink-muted mt-3 text-center">
           Open 1000×1000, save PNG, or copy image for print.
         </p>
+        {previewHint && (
+          <p className="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-3 text-center">
+            Preview deployment — this QR points at this Vercel URL, not production.
+          </p>
+        )}
       </div>
     </div>
   );
