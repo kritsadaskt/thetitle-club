@@ -1137,6 +1137,12 @@ function surveyWriteError(message: string): string {
   if (/cannot remove an option/i.test(message)) return "Cannot remove an option that already has answers.";
   if (/at least 2 options/i.test(message)) return "Single-choice questions need at least 2 options.";
   if (/prompt is required/i.test(message)) return "Question text is required.";
+  if (/feedback required for low rating/i.test(message)) {
+    return "Please share feedback for ratings below 3.";
+  }
+  if (/row-level security policy.*event_survey_answers/i.test(message)) {
+    return "Could not save the question because of a database policy conflict. Please retry, or ask an admin to apply supabase/fix_survey_protect_trigger_rls.sql.";
+  }
   return message;
 }
 
@@ -1368,6 +1374,13 @@ export async function fetchVenueSurveySummary(
         ...base,
         averageRating: answers.length ? sum / answers.length : undefined,
         ratingDistribution: dist,
+        textAnswers: answers
+          .filter(({ answer }) => Boolean(answer.textValue))
+          .map(({ answer, response }) => ({
+            memberName: response.fullName ?? response.memberCode ?? "Member",
+            text: `${answer.ratingValue ?? "?"}/5 — ${answer.textValue ?? ""}`,
+            submittedAt: response.submittedAt,
+          })),
       };
     }
 

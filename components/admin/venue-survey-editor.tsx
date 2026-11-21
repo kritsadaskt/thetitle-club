@@ -16,6 +16,7 @@ import {
 import { absoluteAppUrl } from "@/lib/app-url";
 import { surveyPublicPath } from "@/lib/events";
 import { localeFromCookie } from "@/lib/i18n";
+import { invalidateSurveyCacheForVenue } from "@/lib/survey-page-cache";
 import type {
   ClubEvent,
   CreateEventSurveyQuestionInput,
@@ -58,6 +59,7 @@ export function VenueSurveyEditor({ event, venue }: Props) {
       fetchVenueSurveyQuestions(venue.id, "en"),
       fetchVenueSurveySummary(venue.id),
     ]);
+    invalidateSurveyCacheForVenue(venue.id);
     setSurvey(s);
     setQuestions(qs);
     setSummary(sum);
@@ -158,7 +160,11 @@ export function VenueSurveyEditor({ event, venue }: Props) {
         ...qs.map((q) => {
           const a = byQ.get(q.id);
           if (!a) return "";
-          if (a.questionType === "rating") return a.ratingValue ?? "";
+          if (a.questionType === "rating") {
+            return a.textValue
+              ? `${a.ratingValue ?? ""} — ${a.textValue}`
+              : (a.ratingValue ?? "");
+          }
           if (a.questionType === "single") return a.optionLabelSnapshot ?? "";
           if (a.questionType === "yesno") return a.yesnoValue ? "Yes" : "No";
           return a.textValue ?? "";
@@ -327,6 +333,16 @@ export function VenueSurveyEditor({ event, venue }: Props) {
                       {n}: {q.ratingDistribution?.[n] ?? 0}
                     </p>
                   ))}
+                  {q.textAnswers && q.textAnswers.length > 0 && (
+                    <ul className="mt-2 space-y-2 max-h-40 overflow-y-auto border-t border-cream-200 pt-2">
+                      {q.textAnswers.map((row, i) => (
+                        <li key={`${row.submittedAt}-${i}`} className="text-[11px] text-ink-light">
+                          <span className="font-medium text-forest">{row.memberName}: </span>
+                          {row.text}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               )}
               {q.questionType === "single" && q.optionCounts && (

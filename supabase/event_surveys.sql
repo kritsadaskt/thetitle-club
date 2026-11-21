@@ -165,7 +165,8 @@ create table if not exists public.event_survey_answers (
   constraint event_survey_answers_value_shape check (
     (question_type = 'rating' and rating_value is not null
       and option_id is null and option_label_snapshot is null
-      and yesno_value is null and text_value is null)
+      and yesno_value is null
+      and (text_value is null or char_length(text_value) <= 2000))
     or
     (question_type = 'single' and option_id is not null and option_label_snapshot is not null
       and rating_value is null and yesno_value is null and text_value is null)
@@ -187,10 +188,15 @@ create index if not exists idx_event_survey_answers_question
 create index if not exists idx_event_survey_answers_response
   on public.event_survey_answers (response_id);
 
--- Block destructive edits once answers exist (after answers table exists)
+-- Block destructive edits once answers exist (after answers table exists).
+-- SECURITY DEFINER + row_security off: the trigger must read answers even when
+-- the invoking admin/member would otherwise hit RLS on event_survey_answers
+-- ("query would be affected by row-level security policy").
 create or replace function public.protect_answered_survey_question()
 returns trigger
 language plpgsql
+security definer
+set search_path = public
 as $$
 declare
   has_answers boolean;
@@ -198,6 +204,8 @@ declare
   new_opt_ids text[];
   removed_id text;
 begin
+  set local row_security = off;
+
   select exists (
     select 1
     from public.event_survey_answers a
@@ -368,10 +376,24 @@ begin
       if v_rating is null or v_rating < 1 or v_rating > 5 then
         raise exception 'rating must be 1–5 for question %', v_question.id;
       end if;
+
+      -- Score below half of 1–5 (i.e. 1 or 2) requires feedback text
+      v_text := nullif(trim(coalesce(v_answer->>'text', '')), '');
+      if v_rating < 3 then
+        if v_text is null then
+          raise exception 'feedback required for low rating on question %', v_question.id;
+        end if;
+        if char_length(v_text) > 2000 then
+          raise exception 'text too long for question %', v_question.id;
+        end if;
+      else
+        v_text := null;
+      end if;
+
       insert into public.event_survey_answers (
-        response_id, question_id, question_type, prompt_snapshot, rating_value
+        response_id, question_id, question_type, prompt_snapshot, rating_value, text_value
       ) values (
-        v_response_id, v_question.id, 'rating', v_question.prompt, v_rating
+        v_response_id, v_question.id, 'rating', v_question.prompt, v_rating, v_text
       );
 
     elsif v_question.question_type = 'single' then

@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import type { AppLocale } from "@/i18n/routing";
-import { CalendarDays, CheckCircle2 } from "lucide-react";
+import { CheckCircle2, ClipboardList } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { formatEventSchedule, surveyPublicPath, venuePublicPath } from "@/lib/events";
 import { localeToBcp47 } from "@/lib/i18n";
@@ -18,6 +18,15 @@ import {
   fetchVenueSurveyQuestions,
   submitVenueSurvey,
 } from "@/lib/supabase/data";
+import {
+  getCachedEventVenue,
+  getCachedRegistration,
+  getCachedSurveyBundle,
+  invalidateSurveyCacheForVenue,
+  setCachedEventVenue,
+  setCachedRegistration,
+  setCachedSurveyBundle,
+} from "@/lib/survey-page-cache";
 import type {
   ClubEvent,
   EventRegistration,
@@ -34,6 +43,13 @@ type AnswersState = Record<
   { rating?: number; optionId?: string; yesno?: boolean; text?: string }
 >;
 
+/** 1–5 scale: below half means 1 or 2 → show follow-up feedback. */
+const LOW_RATING_THRESHOLD = 3;
+
+function isLowRating(rating: number | undefined): boolean {
+  return typeof rating === "number" && rating < LOW_RATING_THRESHOLD;
+}
+
 export default function EventVenueSurveyPage() {
   const t = useTranslations("events");
   const tNav = useTranslations("nav");
@@ -44,8 +60,12 @@ export default function EventVenueSurveyPage() {
   const venueSlug = decodeURIComponent(params.venueSlug);
   const { member, isAdmin, isLoading } = useAuth();
 
-  const [event, setEvent] = useState<ClubEvent | null | undefined>(undefined);
-  const [venue, setVenue] = useState<EventVenue | null>(null);
+  const [event, setEvent] = useState<ClubEvent | null | undefined>(() =>
+    getCachedEventVenue(eventSlug, venueSlug, locale)?.event ?? undefined
+  );
+  const [venue, setVenue] = useState<EventVenue | null>(
+    () => getCachedEventVenue(eventSlug, venueSlug, locale)?.venue ?? null
+  );
   const [registration, setRegistration] = useState<EventRegistration | null>(null);
   const [survey, setSurvey] = useState<EventVenueSurvey | null>(null);
   const [questions, setQuestions] = useState<EventSurveyQuestion[]>([]);
@@ -58,6 +78,11 @@ export default function EventVenueSurveyPage() {
 
   useEffect(() => {
     let cancelled = false;
+    const cached = getCachedEventVenue(eventSlug, venueSlug, locale);
+    if (cached) {
+      setEvent(cached.event);
+      setVenue(cached.venue);
+    }
     void (async () => {
       const result = await fetchEventVenue(eventSlug, venueSlug, locale);
       if (cancelled) return;
@@ -66,6 +91,7 @@ export default function EventVenueSurveyPage() {
         setVenue(null);
         return;
       }
+      setCachedEventVenue(eventSlug, venueSlug, locale, result.event, result.venue);
       setEvent(result.event);
       setVenue(result.venue);
     })();
@@ -80,9 +106,13 @@ export default function EventVenueSurveyPage() {
       return;
     }
     let cancelled = false;
+    const cached = getCachedRegistration(event.id, member.id);
+    if (cached !== undefined) setRegistration(cached);
     void (async () => {
       const row = await fetchMyEventRegistration(event.id);
-      if (!cancelled) setRegistration(row);
+      if (cancelled) return;
+      setCachedRegistration(event.id, member.id, row);
+      setRegistration(row);
     })();
     return () => {
       cancelled = true;
@@ -96,32 +126,54 @@ export default function EventVenueSurveyPage() {
   useEffect(() => {
     // Admins can preview the form without registering; members need a registration here.
     if (!venue || !member || (!isAdmin && !registeredHere)) {
-      setSurvey(null);
-      setQuestions([]);
-      setExisting(null);
+      // Keep cached form visible while auth/registration is still resolving.
+      if (!member || (!isAdmin && registration !== null && !registeredHere)) {
+        setSurvey(null);
+        setQuestions([]);
+        setExisting(null);
+        setSubmitted(false);
+      }
       return;
     }
+
+    const mode = isAdmin && !registeredHere ? "preview" : "member";
+    const cached = getCachedSurveyBundle(venue.id, locale, member.id, mode);
     let cancelled = false;
-    setLoadingSurvey(true);
+
+    if (cached) {
+      setSurvey(cached.survey);
+      setQuestions(cached.questions);
+      setExisting(cached.existing);
+      setSubmitted(cached.submitted);
+      setLoadingSurvey(false);
+    } else {
+      setLoadingSurvey(true);
+    }
+
     void (async () => {
       const [s, qs, mine] = await Promise.all([
         fetchVenueSurvey(venue.id),
         fetchVenueSurveyQuestions(venue.id, locale),
-        isAdmin && !registeredHere
-          ? Promise.resolve(null)
-          : fetchMyVenueSurveyResponse(venue.id),
+        mode === "preview" ? Promise.resolve(null) : fetchMyVenueSurveyResponse(venue.id),
       ]);
       if (cancelled) return;
-      setSurvey(s);
-      setQuestions(qs);
-      setExisting(mine);
-      setSubmitted(Boolean(mine));
+      const bundle = {
+        survey: s,
+        questions: qs,
+        existing: mine,
+        submitted: Boolean(mine),
+      };
+      setCachedSurveyBundle(venue.id, locale, member.id, mode, bundle);
+      setSurvey(bundle.survey);
+      setQuestions(bundle.questions);
+      setExisting(bundle.existing);
+      setSubmitted(bundle.submitted);
       setLoadingSurvey(false);
     })();
     return () => {
       cancelled = true;
     };
-  }, [venue, member, registeredHere, isAdmin, locale]);
+  }, [venue, member, registeredHere, isAdmin, locale, registration]);
 
   const surveyPath = surveyPublicPath(eventSlug, venueSlug);
   const loginHref = `/login?next=${encodeURIComponent(surveyPath)}`;
@@ -163,7 +215,15 @@ export default function EventVenueSurveyPage() {
         continue;
       }
       if (q.questionType === "rating") {
-        payload.push({ questionId: q.id, rating: a!.rating });
+        if (isLowRating(a!.rating) && !a!.text?.trim()) {
+          setError(t("survey.lowRatingFeedbackRequired"));
+          return;
+        }
+        payload.push({
+          questionId: q.id,
+          rating: a!.rating,
+          ...(isLowRating(a!.rating) ? { text: a!.text?.trim() } : {}),
+        });
       } else if (q.questionType === "single") {
         payload.push({ questionId: q.id, optionId: a!.optionId });
       } else if (q.questionType === "yesno") {
@@ -181,6 +241,7 @@ export default function EventVenueSurveyPage() {
       setError(res.error);
       return;
     }
+    invalidateSurveyCacheForVenue(venue.id);
     setSubmitted(true);
   };
 
@@ -231,7 +292,7 @@ export default function EventVenueSurveyPage() {
           </div>
         ) : !event || !venue ? (
           <div className="bg-white border border-cream-300 rounded-2xl p-10 text-center shadow-card">
-            <CalendarDays size={32} className="text-ink-muted mx-auto mb-3" strokeWidth={1} />
+            <ClipboardList size={32} className="text-ink-muted mx-auto mb-3" strokeWidth={1} />
             <h1 className="text-forest font-semibold text-xl">{t("survey.notFoundTitle")}</h1>
             <p className="text-ink-muted text-sm mt-2">{t("survey.notFoundMessage")}</p>
             <Link
@@ -250,7 +311,7 @@ export default function EventVenueSurveyPage() {
                 className="h-28 bg-forest-900 flex items-center justify-center"
                 style={{ backgroundImage: "url('/club/club-bg.webp')" }}
               >
-                <CalendarDays size={28} className="text-primary" />
+                <ClipboardList size={28} className="text-primary" />
               </div>
             )}
             <div className="p-6 sm:p-8">
@@ -371,22 +432,46 @@ export default function EventVenueSurveyPage() {
                         </legend>
 
                         {q.questionType === "rating" && (
-                          <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t("survey.ratingLabel")}>
-                            {[1, 2, 3, 4, 5].map((n) => (
-                              <button
-                                key={n}
-                                type="button"
-                                onClick={() => setAnswer(q.id, { rating: n })}
-                                className={cn(
-                                  "h-10 w-10 rounded-xl border text-sm font-semibold",
-                                  answers[q.id]?.rating === n
-                                    ? "border-primary bg-primary text-forest"
-                                    : "border-cream-300 bg-white text-forest hover:bg-cream-100"
-                                )}
-                              >
-                                {n}
-                              </button>
-                            ))}
+                          <div className="space-y-3">
+                            <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t("survey.ratingLabel")}>
+                              {[1, 2, 3, 4, 5].map((n) => (
+                                <button
+                                  key={n}
+                                  type="button"
+                                  onClick={() =>
+                                    setAnswer(q.id, {
+                                      rating: n,
+                                      ...(n >= LOW_RATING_THRESHOLD ? { text: undefined } : {}),
+                                    })
+                                  }
+                                  className={cn(
+                                    "h-10 w-10 rounded-xl border text-sm font-semibold",
+                                    answers[q.id]?.rating === n
+                                      ? "border-primary bg-primary text-forest"
+                                      : "border-cream-300 bg-white text-forest hover:bg-cream-100"
+                                  )}
+                                >
+                                  {n}
+                                </button>
+                              ))}
+                            </div>
+                            {isLowRating(answers[q.id]?.rating) && (
+                              <div className="space-y-1.5">
+                                <p className="text-xs text-ink-muted">
+                                  {t("survey.lowRatingFeedbackLabel")}{" "}
+                                  <span className="text-ink-muted font-normal">· {t("survey.required")}</span>
+                                </p>
+                                <textarea
+                                  rows={3}
+                                  maxLength={2000}
+                                  required
+                                  value={answers[q.id]?.text ?? ""}
+                                  onChange={(e) => setAnswer(q.id, { text: e.target.value })}
+                                  placeholder={t("survey.lowRatingFeedbackPlaceholder")}
+                                  className="w-full rounded-xl border border-cream-300 bg-white px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                                />
+                              </div>
+                            )}
                           </div>
                         )}
 

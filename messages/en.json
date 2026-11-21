@@ -476,7 +476,7 @@
     },
     "survey": {
       "eyebrow": "Exit survey",
-      "title": "How was the event?",
+      "title": "We’d love to hear your feedback!",
       "notFoundTitle": "Survey not found",
       "notFoundMessage": "The link may be incorrect or the location was removed.",
       "signInPrompt": "Sign in to answer the survey",
@@ -500,7 +500,10 @@
       "previewBannerTitle": "Admin preview",
       "previewBannerBody": "You can check the form layout before the event starts. Answers are not saved in preview mode.",
       "previewSubmit": "Preview only — cannot submit",
-      "previewSubmitBlocked": "Preview mode — responses are not saved until the survey is open for registered guests."
+      "previewSubmitBlocked": "Preview mode — responses are not saved until the survey is open for registered guests.",
+      "lowRatingFeedbackLabel": "Tell us more",
+      "lowRatingFeedbackPlaceholder": "Please tell us which part of the event you were not satisfied with, or any suggestions we can use to improve the next one.",
+      "lowRatingFeedbackRequired": "Please share feedback for ratings below 3."
     }
   }
 }
