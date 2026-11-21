@@ -94,7 +94,8 @@ export default function EventVenueSurveyPage() {
   );
 
   useEffect(() => {
-    if (!venue || !member || !registeredHere) {
+    // Admins can preview the form without registering; members need a registration here.
+    if (!venue || !member || (!isAdmin && !registeredHere)) {
       setSurvey(null);
       setQuestions([]);
       setExisting(null);
@@ -106,7 +107,9 @@ export default function EventVenueSurveyPage() {
       const [s, qs, mine] = await Promise.all([
         fetchVenueSurvey(venue.id),
         fetchVenueSurveyQuestions(venue.id, locale),
-        fetchMyVenueSurveyResponse(venue.id),
+        isAdmin && !registeredHere
+          ? Promise.resolve(null)
+          : fetchMyVenueSurveyResponse(venue.id),
       ]);
       if (cancelled) return;
       setSurvey(s);
@@ -118,17 +121,19 @@ export default function EventVenueSurveyPage() {
     return () => {
       cancelled = true;
     };
-  }, [venue, member, registeredHere, locale]);
+  }, [venue, member, registeredHere, isAdmin, locale]);
 
   const surveyPath = surveyPublicPath(eventSlug, venueSlug);
   const loginHref = `/login?next=${encodeURIComponent(surveyPath)}`;
   const membershipActive = member?.status === "active";
   const started = venue ? new Date(venue.startsAt).getTime() <= Date.now() : false;
   const surveyOpen = Boolean(survey?.isActive) && started && questions.length > 0;
-
-  const canShowForm = Boolean(
+  const canSubmitForReal = Boolean(
     member && membershipActive && registeredHere && surveyOpen && !existing && !submitted
   );
+  /** Admin-only: view/interact with the live form when guests cannot submit yet. */
+  const isAdminPreview = Boolean(isAdmin && questions.length > 0 && !canSubmitForReal);
+  const canShowForm = canSubmitForReal || isAdminPreview;
 
   const setAnswer = (questionId: string, patch: AnswersState[string]) => {
     setAnswers((prev) => ({ ...prev, [questionId]: { ...prev[questionId], ...patch } }));
@@ -137,6 +142,10 @@ export default function EventVenueSurveyPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!venue) return;
+    if (!canSubmitForReal) {
+      setError(t("survey.previewSubmitBlocked"));
+      return;
+    }
     const payload: EventSurveyAnswerInput[] = [];
     for (const q of questions) {
       const a = answers[q.id];
@@ -265,6 +274,13 @@ export default function EventVenueSurveyPage() {
                   </div>
                 )}
 
+                {isAdminPreview && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    <p className="font-semibold">{t("survey.previewBannerTitle")}</p>
+                    <p className="text-xs mt-1 text-amber-800/90">{t("survey.previewBannerBody")}</p>
+                  </div>
+                )}
+
                 {!member && (
                   <Link
                     href={loginHref}
@@ -274,11 +290,11 @@ export default function EventVenueSurveyPage() {
                   </Link>
                 )}
 
-                {member && !membershipActive && (
+                {member && !isAdmin && !membershipActive && (
                   <p className="text-ink-muted text-sm">{t("survey.membershipMustBeActive")}</p>
                 )}
 
-                {member && membershipActive && !registeredHere && (
+                {member && !isAdmin && membershipActive && !registeredHere && (
                   <div className="space-y-3">
                     <p className="text-ink-muted text-sm">{t("survey.notRegistered")}</p>
                     <Link
@@ -290,13 +306,14 @@ export default function EventVenueSurveyPage() {
                   </div>
                 )}
 
-                {member && membershipActive && registeredHere && loadingSurvey && (
+                {member && (isAdmin || registeredHere) && loadingSurvey && (
                   <div className="flex justify-center py-8">
                     <div className="w-7 h-7 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
                   </div>
                 )}
 
                 {member &&
+                  !isAdminPreview &&
                   membershipActive &&
                   registeredHere &&
                   !loadingSurvey &&
@@ -314,6 +331,7 @@ export default function EventVenueSurveyPage() {
                   )}
 
                 {member &&
+                  !isAdminPreview &&
                   membershipActive &&
                   registeredHere &&
                   !loadingSurvey &&
@@ -324,6 +342,7 @@ export default function EventVenueSurveyPage() {
                   )}
 
                 {member &&
+                  !isAdminPreview &&
                   membershipActive &&
                   registeredHere &&
                   !loadingSurvey &&
@@ -335,6 +354,10 @@ export default function EventVenueSurveyPage() {
                       {questions.length === 0 ? t("survey.noQuestions") : t("survey.closed")}
                     </p>
                   )}
+
+                {isAdmin && !loadingSurvey && questions.length === 0 && (
+                  <p className="text-ink-muted text-sm">{t("survey.noQuestions")}</p>
+                )}
 
                 {canShowForm && (
                   <form onSubmit={(e) => void handleSubmit(e)} className="space-y-6">
@@ -430,10 +453,14 @@ export default function EventVenueSurveyPage() {
 
                     <button
                       type="submit"
-                      disabled={saving}
+                      disabled={saving || !canSubmitForReal}
                       className="btn-primary rounded-xl px-5 py-2.5 text-sm font-semibold disabled:opacity-60"
                     >
-                      {saving ? t("survey.submitting") : t("survey.submit")}
+                      {canSubmitForReal
+                        ? saving
+                          ? t("survey.submitting")
+                          : t("survey.submit")
+                        : t("survey.previewSubmit")}
                     </button>
                   </form>
                 )}

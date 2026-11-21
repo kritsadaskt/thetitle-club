@@ -163,10 +163,15 @@ export function VenueEditModal({ open, event, venue, onClose, onSaved }: Props) 
       }}
       role="presentation"
     >
-      <form
-        onSubmit={(e) => void handleSubmit(e)}
+      <div
         onClick={(e) => e.stopPropagation()}
         className="bg-white rounded-2xl border border-cream-300 shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Edit location"
+      >
+      <form
+        onSubmit={(e) => void handleSubmit(e)}
       >
         <div className="px-6 py-5 border-b border-cream-200 sticky top-0 bg-white z-10">
           <h3 className="text-forest font-semibold text-lg">Edit location</h3>
@@ -305,8 +310,6 @@ export function VenueEditModal({ open, event, venue, onClose, onSaved }: Props) 
             disabled={saving}
             onFileChange={(file) => setBannerFile(file)}
           />
-
-          <VenueSurveyEditor event={event} venue={venue} />
         </div>
 
         <div className="px-6 py-4 border-t border-cream-200 flex justify-end gap-2 sticky bottom-0 bg-white">
@@ -330,6 +333,12 @@ export function VenueEditModal({ open, event, venue, onClose, onSaved }: Props) 
           </button>
         </div>
       </form>
+
+      {/* Outside the location <form> — nested forms break submit / can look like a forced logout. */}
+      <div className="px-6 pb-6 border-t border-cream-200 pt-4">
+        <VenueSurveyEditor event={event} venue={venue} />
+      </div>
+      </div>
     </div>
   );
 }

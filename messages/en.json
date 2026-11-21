@@ -496,7 +496,11 @@
       "ratingLabel": "Rate 1 to 5",
       "textPlaceholder": "Your answer",
       "missingRequired": "Please answer all required questions.",
-      "backToLocation": "Back to location"
+      "backToLocation": "Back to location",
+      "previewBannerTitle": "Admin preview",
+      "previewBannerBody": "You can check the form layout before the event starts. Answers are not saved in preview mode.",
+      "previewSubmit": "Preview only — cannot submit",
+      "previewSubmitBlocked": "Preview mode — responses are not saved until the survey is open for registered guests."
     }
   }
 }

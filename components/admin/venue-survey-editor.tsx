@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ChevronDown, ChevronUp, Download, Pencil, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Download, ExternalLink, Pencil, Plus, Trash2 } from "lucide-react";
 import {
   createSurveyQuestion,
   deleteSurveyQuestion,
@@ -13,6 +13,8 @@ import {
   updateSurveyQuestion,
   upsertVenueSurveyActive,
 } from "@/lib/supabase/data";
+import { surveyPublicPath } from "@/lib/events";
+import { localeFromCookie } from "@/lib/i18n";
 import type {
   ClubEvent,
   CreateEventSurveyQuestionInput,
@@ -201,16 +203,26 @@ export function VenueSurveyEditor({ event, venue }: Props) {
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-ink-muted text-xs font-semibold uppercase tracking-wide">Questions</p>
-        <button
-          type="button"
-          onClick={() => {
-            setEditing(undefined);
-            setFormOpen(true);
-          }}
-          className="inline-flex items-center gap-1 rounded-xl border border-cream-300 bg-white px-3 py-1.5 text-xs text-forest hover:bg-cream-100"
-        >
-          <Plus size={12} /> Add question
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <a
+            href={`/${localeFromCookie()}${surveyPublicPath(event.slug, venue.slug)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 rounded-xl border border-cream-300 bg-white px-3 py-1.5 text-xs text-forest hover:bg-cream-100"
+          >
+            <ExternalLink size={12} /> Preview form
+          </a>
+          <button
+            type="button"
+            onClick={() => {
+              setEditing(undefined);
+              setFormOpen(true);
+            }}
+            className="inline-flex items-center gap-1 rounded-xl border border-cream-300 bg-white px-3 py-1.5 text-xs text-forest hover:bg-cream-100"
+          >
+            <Plus size={12} /> Add question
+          </button>
+        </div>
       </div>
 
       {loading ? (

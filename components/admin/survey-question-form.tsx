@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import type {
   CreateEventSurveyQuestionInput,
   EventSurveyOptionInput,
@@ -96,7 +97,12 @@ export function SurveyQuestionForm({
     setError(null);
   }, [open, initial]);
 
-  if (!open) return null;
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!open || !mounted) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -136,9 +142,9 @@ export function SurveyQuestionForm({
     onClose();
   };
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-forest-900/50 backdrop-blur-sm"
+      className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-forest-900/50 backdrop-blur-sm"
       onClick={() => {
         if (!saving) onClose();
       }}
@@ -327,6 +333,7 @@ export function SurveyQuestionForm({
           </button>
         </div>
       </form>
-    </div>
+    </div>,
+    document.body
   );
 }
