@@ -1,0 +1,266 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
+import { localeToBcp47 } from "@/lib/i18n";
+import type { AppLocale } from "@/i18n/routing";
+import { useAuth } from "@/lib/auth-context";
+import type { ClubEvent, CommunityMoment, Privilege } from "@/lib/types";
+import {
+  eventEarliestStartsAt,
+  eventLatestEndsAt,
+  eventLocationSummary,
+  eventPrimaryBanner,
+  formatEventSchedule,
+  venuePublicPath,
+} from "@/lib/events";
+import {
+  fetchActivePrivileges,
+  fetchMyRegisteredEventIds,
+  fetchMyRegisteredVenueByEventId,
+  fetchPublishedCommunity,
+  fetchUpcomingEvents,
+} from "@/lib/supabase/data";
+import { CalendarDays, CreditCard, Gift, Image, ChevronRight, MapPin } from "lucide-react";
+import { categoryLabel, categoryColor } from "@/lib/utils";
+
+export default function DashboardPage() {
+  const t = useTranslations("member.dashboard");
+  const tProfile = useTranslations("member.profile");
+  const tEvents = useTranslations("events");
+  const locale = useLocale() as AppLocale;
+  const bcp47 = localeToBcp47[locale] ?? "en-US";
+  const { member } = useAuth();
+  const [privileges, setPrivileges] = useState<Privilege[]>([]);
+  const [community, setCommunity] = useState<CommunityMoment[]>([]);
+  const [events, setEvents] = useState<ClubEvent[]>([]);
+  const [registeredEventIds, setRegisteredEventIds] = useState<Set<string>>(new Set());
+  const [registeredVenueByEvent, setRegisteredVenueByEvent] = useState<Map<string, string>>(new Map());
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const [p, c, e, registered, venueMap] = await Promise.all([
+        fetchActivePrivileges(locale),
+        fetchPublishedCommunity(locale),
+        fetchUpcomingEvents(locale),
+        fetchMyRegisteredEventIds(),
+        fetchMyRegisteredVenueByEventId(),
+      ]);
+      if (!cancelled) {
+        setPrivileges(p);
+        setCommunity(c);
+        setEvents(e);
+        setRegisteredEventIds(registered);
+        setRegisteredVenueByEvent(venueMap);
+        setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [locale]);
+
+  const featuredPrivileges = privileges.filter((p) => p.isActive).slice(0, 3);
+  const latestCommunity = community.filter((c) => c.isPublished).slice(0, 3);
+
+  if (loading) {
+    return (
+      <div className="p-6 lg:p-10 max-w-5xl mx-auto flex justify-center py-24">
+        <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4 sm:p-6 lg:p-10 max-w-5xl mx-auto w-full min-w-0">
+      <div className="bg-deep-blue rounded-2xl p-5 sm:p-7 mb-8 relative overflow-hidden" style={{ backgroundImage: "url('/club/club-bg.webp')" }}>
+        <div className="relative min-w-0">
+          <p className="text-white text-sm">{t("greeting")}</p>
+          <h1 className="text-2xl font-semibold text-white mt-1 break-words">
+            {member?.fullName.split(" ")[0]}{" "}
+            <span className="text-primary text-lg">✦</span>
+          </h1>
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-3 min-w-0">
+            <span className="text-[11px] bg-white/20 text-white border border-white/30 px-3 py-1 rounded-full font-mono tracking-wider max-w-full truncate">
+              {member?.memberId}
+            </span>
+            <span className="text-white text-xs capitalize break-words min-w-0">
+              {member ? tProfile(`residentStatus.${member.residentStatus}`) : ""} · {member?.projectName}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
+        {[
+          {
+            href: "/card",
+            icon: CreditCard,
+            label: t("quickLinks.card.label"),
+            desc: t("quickLinks.card.desc"),
+            color: "bg-forest-50 text-forest-700",
+          },
+          {
+            href: "/privileges",
+            icon: Gift,
+            label: t("quickLinks.privileges.label"),
+            desc: t("quickLinks.privileges.desc", { count: privileges.length }),
+            color: "bg-primary/10 text-primary-dark",
+          },
+          {
+            href: "/community",
+            icon: Image,
+            label: t("quickLinks.community.label"),
+            desc: t("quickLinks.community.desc"),
+            color: "bg-forest-50 text-forest-700",
+          },
+        ].map(({ href, icon: Icon, label, desc, color }) => (
+          <Link
+            key={href}
+            href={href}
+            className="group bg-white border border-cream-300 rounded-2xl p-5 flex items-start gap-4 card-hover shadow-card min-w-0"
+          >
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
+              <Icon size={18} strokeWidth={1.5} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-forest font-medium text-sm">{label}</p>
+              <p className="text-ink-muted text-xs mt-0.5">{desc}</p>
+            </div>
+            <ChevronRight size={14} className="text-ink-muted group-hover:text-primary-dark transition-colors mt-0.5 shrink-0" />
+          </Link>
+        ))}
+      </div>
+
+      <div className="mb-10 min-w-0">
+        <h2 className="text-forest font-semibold mb-5">{t("upcomingEvents")}</h2>
+        {events.length === 0 ? (
+          <p className="text-ink-muted text-sm">{t("noUpcomingEvents")}</p>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            {events.map((event) => {
+              const cover = eventPrimaryBanner(event);
+              const startsAt = eventEarliestStartsAt(event);
+              const endsAt = eventLatestEndsAt(event);
+              const location = eventLocationSummary(event, (count) => tEvents("locationsCount", { count }));
+              const registeredVenueId = registeredVenueByEvent.get(event.id);
+              const registeredVenue = registeredVenueId
+                ? event.venues.find((v) => v.id === registeredVenueId)
+                : undefined;
+              const href =
+                registeredVenue
+                  ? venuePublicPath(event.slug, registeredVenue.slug)
+                  : event.venues.length === 1
+                    ? venuePublicPath(event.slug, event.venues[0].slug)
+                    : `/events/${event.slug}`;
+
+              return (
+              <Link
+                key={event.id}
+                href={href}
+                className="flex items-center gap-3 sm:gap-4 bg-white border border-cream-300 rounded-2xl p-3 sm:p-4 card-hover group shadow-card min-w-0"
+              >
+                {cover ? (
+                  <img src={cover} alt="" className="w-16 h-12 sm:w-20 sm:h-14 object-cover rounded-lg shrink-0" />
+                ) : (
+                  <div className="w-16 h-12 sm:w-20 sm:h-14 rounded-lg bg-forest-50 text-forest-700 flex items-center justify-center shrink-0">
+                    <CalendarDays size={18} strokeWidth={1.5} />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <p className="text-forest text-sm font-medium truncate">{event.title}</p>
+                    {registeredEventIds.has(event.id) && (
+                      <span className="shrink-0 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                        {t("registered")}
+                      </span>
+                    )}
+                  </div>
+                  {startsAt && (
+                    <p className="text-ink-muted text-xs mt-0.5">{formatEventSchedule(startsAt, endsAt, bcp47)}</p>
+                  )}
+                  {location && (
+                    <p className="text-ink-muted text-xs mt-0.5 truncate flex items-center gap-1">
+                      <MapPin size={11} className="shrink-0" /> {location}
+                    </p>
+                  )}
+                </div>
+                <ChevronRight size={14} className="text-cream-400 group-hover:text-primary-dark transition-colors shrink-0" />
+              </Link>
+            );
+            })}
+          </div>
+        )}
+      </div>
+
+      <div className="mb-10 min-w-0">
+        <div className="flex items-center justify-between gap-3 mb-5">
+          <h2 className="text-forest font-semibold min-w-0">{t("featuredPrivileges")}</h2>
+          <Link href="/privileges" className="text-primary-dark text-xs hover:text-primary flex items-center gap-1 font-medium shrink-0">
+            {t("viewAll")} <ChevronRight size={12} />
+          </Link>
+        </div>
+        <div className="space-y-3">
+          {featuredPrivileges.map((priv) => (
+            <Link
+              key={priv.id}
+              href={`/privileges/${priv.id}`}
+              className="flex items-center gap-3 sm:gap-4 bg-white border border-cream-300 rounded-2xl p-3 sm:p-4 card-hover group shadow-card min-w-0"
+            >
+              <img
+                src={priv.partnerLogo}
+                alt={priv.partnerName}
+                className="w-12 h-9 sm:w-16 sm:h-10 object-contain rounded-lg bg-cream-200 p-1 shrink-0"
+              />
+              <div className="flex-1 min-w-0">
+                <p className="text-forest text-sm font-medium truncate">{priv.title}</p>
+                <p className="text-ink-muted text-xs truncate">{priv.summary}</p>
+                <span className="mt-1.5 inline-block bg-primary/15 text-primary-dark text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-md border border-primary/20 max-w-full truncate">
+                  {priv.discountLabel}
+                </span>
+              </div>
+              <div className="hidden sm:flex items-center gap-3 shrink-0">
+                <span
+                  className={`text-xs px-2 py-0.5 rounded border ${categoryColor(priv.category)}`}
+                >
+                  {categoryLabel(priv.category)}
+                </span>
+                <ChevronRight size={14} className="text-cream-400 group-hover:text-primary-dark transition-colors" />
+              </div>
+              <ChevronRight size={14} className="sm:hidden text-cream-400 shrink-0" />
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      <div className="min-w-0">
+        <div className="flex items-center justify-between gap-3 mb-5">
+          <h2 className="text-forest font-semibold min-w-0">{t("communityMoments")}</h2>
+          <Link href="/community" className="text-primary-dark text-xs hover:text-primary flex items-center gap-1 font-medium shrink-0">
+            {t("viewAll")} <ChevronRight size={12} />
+          </Link>
+        </div>
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+          {latestCommunity.map((item) => (
+            <div
+              key={item.id}
+              className="relative aspect-video overflow-hidden rounded-xl sm:rounded-2xl group shadow-card border border-cream-300 min-w-0"
+            >
+              <img
+                src={item.imageUrl}
+                alt={item.caption}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-linear-to-t from-forest-900/55 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2 sm:p-3">
+                <p className="text-white text-xs font-medium line-clamp-2 break-words">{item.caption}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}

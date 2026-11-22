@@ -1,6 +1,7 @@
 import type {
   ClubEvent,
   CreateEventInput,
+  CreateEventSurveyQuestionInput,
   CreateEventVenueInput,
   CreatePartnerInput,
   CreatePrivilegeCategoryInput,
@@ -8,13 +9,23 @@ import type {
   EventRegistrant,
   EventRegistration,
   EventRegistrationLog,
+  EventSurveyAnswerInput,
+  EventSurveyQuestion,
+  EventSurveyQuestionSummary,
+  EventSurveyResponse,
   EventVenue,
+  EventVenueSurvey,
+  EventVenueSurveySummary,
   MemberPromoCode,
   Privilege,
   PrivilegeCategory,
+  CreateResidenceProjectInput,
+  ResidenceProject,
   PromoCode,
   PromoCodeStats,
+  SharedRedeemPeriod,
   ShopPartner,
+  UpdateEventSurveyQuestionInput,
 } from "@/lib/types";
 import {
   ensureEventSlug,
@@ -22,6 +33,7 @@ import {
   eventEarliestStartsAt,
   isEventUpcomingOrOngoing,
 } from "@/lib/events";
+import { bangkokTodayIsoDate, isPrivilegeInValidityWindow } from "@/lib/utils";
 import { createClient } from "./client";
 import { uploadPartnerLogo, uploadPrivilegeCover, uploadVenueBanner } from "./storage";
 import {
@@ -30,23 +42,32 @@ import {
   mapEventRegistrationLogRow,
   mapEventRegistrationRow,
   mapEventRow,
+  mapEventSurveyQuestionRow,
+  mapEventSurveyResponseRow,
   mapEventVenueRow,
+  mapEventVenueSurveyRow,
   mapMemberPromoCodeRow,
   mapPartnerRow,
   mapPrivilegeCategoryRow,
   mapPrivilegeRow,
+  mapResidenceProjectRow,
   mapPromoCodeRow,
   mapPromoCodeStats,
   sanitizeMapLocations,
+  serializeSurveyOptions,
   type CommunityMomentRow,
   type EventRegistrantRow,
   type EventRegistrationLogRow,
   type EventRegistrationRow,
   type EventRow,
+  type EventSurveyQuestionRow,
+  type EventSurveyResponseRow,
   type EventVenueRow,
+  type EventVenueSurveyRow,
   type PartnerRow,
   type PrivilegeCategoryRow,
   type PrivilegeRow,
+  type ResidenceProjectRow,
   type PromoCodeRow,
   type PromoCodeWithPrivilegeRow,
 } from "./mappers";
@@ -67,16 +88,21 @@ const ADMIN_ACTIVE_CREATED_ORDER = [
 const PROMO_PRIVILEGE_SELECT =
   "*, privileges(title, discount_label, partner_name, partner_logo, partners(name, logo_url))";
 
-export async function fetchActivePrivileges(): Promise<Privilege[]> {
+export async function fetchActivePrivileges(locale = "en"): Promise<Privilege[]> {
   const supabase = createClient();
+  const today = bangkokTodayIsoDate();
   const { data, error } = await supabase
     .from("privileges")
     .select(PUBLIC_PRIVILEGE_SELECT)
     .eq("is_active", true)
     .eq("partners.is_active", true)
+    .lte("valid_from", today)
+    .or(`valid_until.is.null,valid_until.gte.${today}`)
     .order("sort_order");
   if (error) return [];
-  return (data ?? []).map((r) => mapPrivilegeRow(r as PrivilegeRow));
+  return (data ?? [])
+    .map((r) => mapPrivilegeRow(r as PrivilegeRow, locale))
+    .filter((p) => isPrivilegeInValidityWindow(p.validFrom, p.validUntil, today));
 }
 
 export async function fetchAllPrivileges(): Promise<Privilege[]> {
@@ -101,17 +127,27 @@ export async function fetchPrivilegesByPartner(partnerId: string): Promise<Privi
   return (data ?? []).map((r) => mapPrivilegeRow(r as PrivilegeRow));
 }
 
-export async function fetchPrivilegeById(id: string): Promise<Privilege | null> {
+export async function fetchPrivilegeById(
+  id: string,
+  locale = "en"
+): Promise<Privilege | null> {
   const supabase = createClient();
+  const today = bangkokTodayIsoDate();
   const { data, error } = await supabase
     .from("privileges")
     .select(PUBLIC_PRIVILEGE_SELECT)
     .eq("id", id)
     .eq("is_active", true)
     .eq("partners.is_active", true)
+    .lte("valid_from", today)
+    .or(`valid_until.is.null,valid_until.gte.${today}`)
     .maybeSingle();
   if (error || !data) return null;
-  return mapPrivilegeRow(data as PrivilegeRow);
+  const privilege = mapPrivilegeRow(data as PrivilegeRow, locale);
+  if (!isPrivilegeInValidityWindow(privilege.validFrom, privilege.validUntil, today)) {
+    return null;
+  }
+  return privilege;
 }
 
 export async function fetchAllPartners(): Promise<ShopPartner[]> {
@@ -161,6 +197,7 @@ export async function createPartner(input: CreatePartnerInput): Promise<MutateRe
       description: input.description?.trim() || null,
       is_active: input.isActive ?? true,
       sort_order: input.sortOrder ?? 0,
+      i18n: input.i18n ?? {},
     })
     .select("*")
     .single();
@@ -180,6 +217,7 @@ export async function updatePartner(
   if (input.description !== undefined) patch.description = input.description.trim() || null;
   if (input.isActive !== undefined) patch.is_active = input.isActive;
   if (input.sortOrder !== undefined) patch.sort_order = input.sortOrder;
+  if (input.i18n !== undefined) patch.i18n = input.i18n;
 
   const { data, error } = await supabase
     .from("partners")
@@ -290,12 +328,36 @@ export async function createPrivilege(
       is_active: input.isActive ?? true,
       sort_order: input.sortOrder ?? 0,
       code_mode: input.codeMode ?? "shared",
+      shared_redeem_limit:
+        input.codeMode === "unique_pool" ? null : normalizeSharedRedeemLimit(input.sharedRedeemLimit),
+      shared_redeem_period:
+        input.codeMode === "unique_pool"
+          ? null
+          : normalizeSharedRedeemPeriod(input.sharedRedeemLimit, input.sharedRedeemPeriod),
       map_locations: sanitizeMapLocations(input.mapLocations),
+      i18n: input.i18n ?? {},
     })
     .select(PRIVILEGE_SELECT)
     .single();
   if (error) return { ok: false, error: error.message };
   return { ok: true, data: mapPrivilegeRow(data as PrivilegeRow) };
+}
+
+function normalizeSharedRedeemLimit(limit?: number | null): number | null {
+  if (limit == null || !Number.isFinite(limit) || limit <= 0) return null;
+  return Math.floor(limit);
+}
+
+function normalizeSharedRedeemPeriod(
+  limit?: number | null,
+  period?: SharedRedeemPeriod | null
+): SharedRedeemPeriod | null {
+  const normalizedLimit = normalizeSharedRedeemLimit(limit);
+  if (normalizedLimit == null) return null;
+  if (period === "day" || period === "week" || period === "month" || period === "year") {
+    return period;
+  }
+  return "month";
 }
 
 export async function updatePrivilege(
@@ -317,9 +379,22 @@ export async function updatePrivilege(
   if (input.isActive !== undefined) patch.is_active = input.isActive;
   if (input.sortOrder !== undefined) patch.sort_order = input.sortOrder;
   if (input.codeMode !== undefined) patch.code_mode = input.codeMode;
+  if (input.codeMode === "unique_pool") {
+    patch.shared_redeem_limit = null;
+    patch.shared_redeem_period = null;
+  } else if (
+    input.sharedRedeemLimit !== undefined ||
+    input.sharedRedeemPeriod !== undefined ||
+    input.codeMode === "shared"
+  ) {
+    const limit = normalizeSharedRedeemLimit(input.sharedRedeemLimit);
+    patch.shared_redeem_limit = limit;
+    patch.shared_redeem_period = normalizeSharedRedeemPeriod(limit, input.sharedRedeemPeriod);
+  }
   if (input.mapLocations !== undefined) {
     patch.map_locations = sanitizeMapLocations(input.mapLocations);
   }
+  if (input.i18n !== undefined) patch.i18n = input.i18n;
 
   const { data, error } = await supabase
     .from("privileges")
@@ -344,7 +419,7 @@ export async function updatePrivilegeWithCover(
   return updatePrivilege(id, input);
 }
 
-export async function fetchPublishedCommunity(): Promise<CommunityMoment[]> {
+export async function fetchPublishedCommunity(locale = "en"): Promise<CommunityMoment[]> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("community_moments")
@@ -352,7 +427,7 @@ export async function fetchPublishedCommunity(): Promise<CommunityMoment[]> {
     .eq("is_published", true)
     .order("sort_order");
   if (error) return [];
-  return (data ?? []).map((r) => mapCommunityRow(r as CommunityMomentRow));
+  return (data ?? []).map((r) => mapCommunityRow(r as CommunityMomentRow, locale));
 }
 
 export async function releaseExpiredPromoCodes(): Promise<void> {
@@ -360,7 +435,7 @@ export async function releaseExpiredPromoCodes(): Promise<void> {
   await supabase.rpc("release_expired_promo_codes");
 }
 
-export async function fetchMyPromoCodes(): Promise<MemberPromoCode[]> {
+export async function fetchMyPromoCodes(locale = "en"): Promise<MemberPromoCode[]> {
   const supabase = createClient();
   await releaseExpiredPromoCodes();
   const { data, error } = await supabase
@@ -371,11 +446,14 @@ export async function fetchMyPromoCodes(): Promise<MemberPromoCode[]> {
     .eq("privileges.partners.is_active", true)
     .order("claimed_at", { ascending: false });
   if (error) return [];
-  return (data ?? []).map((r) => mapMemberPromoCodeRow(r as PromoCodeWithPrivilegeRow));
+  return (data ?? []).map((r) =>
+    mapMemberPromoCodeRow(r as PromoCodeWithPrivilegeRow, locale)
+  );
 }
 
 export async function fetchMemberPromoCodeForPrivilege(
-  privilegeId: string
+  privilegeId: string,
+  locale = "en"
 ): Promise<MemberPromoCode | null> {
   const supabase = createClient();
   await releaseExpiredPromoCodes();
@@ -389,7 +467,7 @@ export async function fetchMemberPromoCodeForPrivilege(
     .limit(1)
     .maybeSingle();
   if (error || !data) return null;
-  return mapMemberPromoCodeRow(data as PromoCodeWithPrivilegeRow);
+  return mapMemberPromoCodeRow(data as PromoCodeWithPrivilegeRow, locale);
 }
 
 export type ClaimPromoCodeResult =
@@ -431,6 +509,65 @@ export async function redeemPromoCode(
   }
 
   return { ok: true, code };
+}
+
+export type SharedRedeemQuota = {
+  allowed: boolean;
+  used: number;
+  limit: number | null;
+  period: SharedRedeemPeriod | null;
+  redemptionId?: string | null;
+};
+
+function mapSharedRedeemQuota(raw: unknown): SharedRedeemQuota {
+  const row = (raw ?? {}) as Record<string, unknown>;
+  const period = row.period;
+  return {
+    allowed: Boolean(row.allowed),
+    used: typeof row.used === "number" ? row.used : Number(row.used) || 0,
+    limit:
+      row.limit == null
+        ? null
+        : typeof row.limit === "number"
+          ? row.limit
+          : Number(row.limit) || null,
+    period:
+      period === "day" || period === "week" || period === "month" || period === "year"
+        ? period
+        : null,
+    redemptionId:
+      typeof row.redemption_id === "string" ? row.redemption_id : null,
+  };
+}
+
+export type SharedRedeemResult =
+  | { ok: true; quota: SharedRedeemQuota }
+  | { ok: false; error: string; quota?: SharedRedeemQuota };
+
+export async function getSharedRedeemQuota(
+  privilegeId: string
+): Promise<SharedRedeemResult> {
+  const supabase = createClient();
+  const { data, error } = await supabase.rpc("get_shared_redeem_quota", {
+    p_privilege_id: privilegeId,
+  });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, quota: mapSharedRedeemQuota(data) };
+}
+
+export async function beginSharedRedeem(
+  privilegeId: string
+): Promise<SharedRedeemResult> {
+  const supabase = createClient();
+  const { data, error } = await supabase.rpc("begin_shared_redeem", {
+    p_privilege_id: privilegeId,
+  });
+  if (error) return { ok: false, error: error.message };
+  const quota = mapSharedRedeemQuota(data);
+  if (!quota.allowed) {
+    return { ok: false, error: "Shared redeem limit reached", quota };
+  }
+  return { ok: true, quota };
 }
 
 export async function fetchPromoCodeStats(privilegeId: string): Promise<PromoCodeStats> {
@@ -497,6 +634,100 @@ export async function updatePrivilegeCodeMode(
   return { ok: true };
 }
 
+function residenceProjectWriteError(message: string): string {
+  if (/residence_projects_name_lower_idx|duplicate key value/i.test(message)) {
+    return "A project with that name already exists.";
+  }
+  if (/residence_projects_name_trimmed/i.test(message)) {
+    return "Project name is required.";
+  }
+  if (/row-level security/i.test(message)) {
+    return "Only administrators can change projects.";
+  }
+  return message;
+}
+
+/** Active projects for the public registration form. Anonymous clients can read these. */
+export async function fetchActiveResidenceProjects(): Promise<{
+  projects: ResidenceProject[];
+  error: string | null;
+}> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("residence_projects")
+    .select("id, name, sort_order, is_active")
+    .eq("is_active", true)
+    .order("sort_order")
+    .order("name");
+  if (error) return { projects: [], error: error.message };
+  return {
+    projects: (data ?? []).map((row) => mapResidenceProjectRow(row as ResidenceProjectRow)),
+    error: null,
+  };
+}
+
+/** Every project, including inactive ones. Requires an admin session. */
+export async function fetchAllResidenceProjects(): Promise<{
+  projects: ResidenceProject[];
+  error: string | null;
+}> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("residence_projects")
+    .select("id, name, sort_order, is_active")
+    .order("sort_order")
+    .order("name");
+  if (error) return { projects: [], error: error.message };
+  return {
+    projects: (data ?? []).map((row) => mapResidenceProjectRow(row as ResidenceProjectRow)),
+    error: null,
+  };
+}
+
+export async function createResidenceProject(
+  input: CreateResidenceProjectInput
+): Promise<MutateResult<ResidenceProject>> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("residence_projects")
+    .insert({
+      name: input.name.trim(),
+      sort_order: input.sortOrder ?? 0,
+      is_active: input.isActive ?? true,
+    })
+    .select("id, name, sort_order, is_active")
+    .single();
+  if (error) return { ok: false, error: residenceProjectWriteError(error.message) };
+  return { ok: true, data: mapResidenceProjectRow(data as ResidenceProjectRow) };
+}
+
+export async function updateResidenceProject(
+  id: string,
+  input: Partial<CreateResidenceProjectInput>
+): Promise<MutateResult<ResidenceProject>> {
+  const supabase = createClient();
+  const patch: Record<string, unknown> = {};
+  if (input.name !== undefined) patch.name = input.name.trim();
+  if (input.sortOrder !== undefined) patch.sort_order = input.sortOrder;
+  if (input.isActive !== undefined) patch.is_active = input.isActive;
+
+  const { data, error } = await supabase
+    .from("residence_projects")
+    .update(patch)
+    .eq("id", id)
+    .select("id, name, sort_order, is_active")
+    .single();
+  if (error) return { ok: false, error: residenceProjectWriteError(error.message) };
+  return { ok: true, data: mapResidenceProjectRow(data as ResidenceProjectRow) };
+}
+
+export async function deleteResidenceProject(id: string): Promise<{ ok: boolean; error?: string }> {
+  const supabase = createClient();
+  const { error } = await supabase.from("residence_projects").delete().eq("id", id);
+  if (error) return { ok: false, error: residenceProjectWriteError(error.message) };
+  return { ok: true };
+}
+
 export async function fetchAllPrivilegeCategories(): Promise<PrivilegeCategory[]> {
   const supabase = createClient();
   const { data, error } = await supabase
@@ -520,6 +751,7 @@ export async function createPrivilegeCategory(
       key,
       color: input.color.trim(),
       sort_order: input.sortOrder ?? 0,
+      i18n: input.i18n ?? {},
     })
     .select("*")
     .single();
@@ -537,6 +769,7 @@ export async function updatePrivilegeCategory(
   if (input.key !== undefined) patch.key = input.key.trim().toLowerCase().replace(/\s+/g, "_");
   if (input.color !== undefined) patch.color = input.color.trim();
   if (input.sortOrder !== undefined) patch.sort_order = input.sortOrder;
+  if (input.i18n !== undefined) patch.i18n = input.i18n;
 
   const { data, error } = await supabase
     .from("privilege_categories")
@@ -588,6 +821,7 @@ function eventMetaPatch(input: Partial<CreateEventInput>): Record<string, unknow
   if (input.slug !== undefined) patch.slug = ensureEventSlug(input.title ?? "", input.slug);
   if (input.description !== undefined) patch.description = input.description.trim() || null;
   if (input.isActive !== undefined) patch.is_active = input.isActive;
+  if (input.i18n !== undefined) patch.i18n = input.i18n;
   return patch;
 }
 
@@ -602,13 +836,14 @@ function venueInsertPayload(eventId: string, venue: CreateEventVenueInput, index
     starts_at: venue.startsAt,
     ends_at: venue.endsAt || null,
     sort_order: venue.sortOrder ?? index,
+    i18n: venue.i18n ?? {},
   };
 }
 
 type EventWithVenuesRow = EventRow & { event_venues: EventVenueRow[] | null };
 
-function mapEventWithVenues(row: EventWithVenuesRow): ClubEvent {
-  return mapEventRow(row, row.event_venues ?? []);
+function mapEventWithVenues(row: EventWithVenuesRow, locale = "en"): ClubEvent {
+  return mapEventRow(row, row.event_venues ?? [], locale);
 }
 
 async function fetchEventById(id: string): Promise<ClubEvent | null> {
@@ -716,7 +951,7 @@ export async function fetchMyRegisteredVenueByEventId(): Promise<Map<string, str
   return new Map(data.map((row) => [row.event_id as string, row.venue_id as string]));
 }
 
-export async function fetchUpcomingEvents(): Promise<ClubEvent[]> {
+export async function fetchUpcomingEvents(locale = "en"): Promise<ClubEvent[]> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("events")
@@ -724,7 +959,7 @@ export async function fetchUpcomingEvents(): Promise<ClubEvent[]> {
     .eq("is_active", true);
   if (error) return [];
   return (data ?? [])
-    .map((row) => mapEventWithVenues(row as unknown as EventWithVenuesRow))
+    .map((row) => mapEventWithVenues(row as unknown as EventWithVenuesRow, locale))
     .filter((event) => isEventUpcomingOrOngoing(event))
     .sort((a, b) => {
       const aStart = eventEarliestStartsAt(a) ?? "";
@@ -744,7 +979,10 @@ export async function fetchAllEvents(): Promise<ClubEvent[]> {
   return (data ?? []).map((row) => mapEventWithVenues(row as unknown as EventWithVenuesRow));
 }
 
-export async function fetchEventBySlug(slug: string): Promise<ClubEvent | null> {
+export async function fetchEventBySlug(
+  slug: string,
+  locale = "en"
+): Promise<ClubEvent | null> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("events")
@@ -752,14 +990,15 @@ export async function fetchEventBySlug(slug: string): Promise<ClubEvent | null> 
     .eq("slug", slug)
     .maybeSingle();
   if (error || !data) return null;
-  return mapEventWithVenues(data as unknown as EventWithVenuesRow);
+  return mapEventWithVenues(data as unknown as EventWithVenuesRow, locale);
 }
 
 export async function fetchEventVenue(
   eventSlug: string,
-  venueSlug: string
+  venueSlug: string,
+  locale = "en"
 ): Promise<{ event: ClubEvent; venue: EventVenue } | null> {
-  const event = await fetchEventBySlug(eventSlug);
+  const event = await fetchEventBySlug(eventSlug, locale);
   if (!event) return null;
   const venue = event.venues.find((v) => v.slug === venueSlug);
   if (!venue) return null;
@@ -779,6 +1018,7 @@ export async function createEvent(input: CreateEventInput): Promise<MutateResult
       slug: ensureEventSlug(input.title, input.slug),
       description: input.description?.trim() || null,
       is_active: input.isActive ?? true,
+      i18n: input.i18n ?? {},
     })
     .select("*")
     .single();
@@ -982,4 +1222,317 @@ export async function fetchEventRegistrationLogs(
     .order("occurred_at", { ascending: true });
   if (error) return { rows: [], error: error.message };
   return { rows: (data ?? []).map((row) => mapEventRegistrationLogRow(row as unknown as EventRegistrationLogRow)) };
+}
+
+function surveyWriteError(message: string): string {
+  if (/already submitted/i.test(message)) return "You have already submitted this survey.";
+  if (/only registered/i.test(message)) return "Only members registered at this location can submit.";
+  if (/not open yet/i.test(message)) return "The survey is not open yet.";
+  if (/not active/i.test(message)) return "The survey is not open.";
+  if (/membership must be active/i.test(message)) return "Your membership must be active.";
+  if (/cannot delete a question/i.test(message)) return "Cannot delete a question that already has answers.";
+  if (/cannot change type/i.test(message)) return "Cannot change the type of a question that already has answers.";
+  if (/cannot remove an option/i.test(message)) return "Cannot remove an option that already has answers.";
+  if (/at least 2 options/i.test(message)) return "Single-choice questions need at least 2 options.";
+  if (/prompt is required/i.test(message)) return "Question text is required.";
+  if (/feedback required for low rating/i.test(message)) {
+    return "Please share feedback for ratings below 3.";
+  }
+  if (/row-level security policy.*event_survey_answers/i.test(message)) {
+    return "Could not save the question because of a database policy conflict. Please retry, or ask an admin to apply supabase/fix_survey_protect_trigger_rls.sql.";
+  }
+  return message;
+}
+
+export async function fetchVenueSurvey(venueId: string): Promise<EventVenueSurvey | null> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("event_venue_surveys")
+    .select("*")
+    .eq("venue_id", venueId)
+    .maybeSingle();
+  if (error || !data) return null;
+  return mapEventVenueSurveyRow(data as EventVenueSurveyRow);
+}
+
+export async function upsertVenueSurveyActive(
+  venueId: string,
+  eventId: string,
+  isActive: boolean
+): Promise<MutateResult<EventVenueSurvey>> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("event_venue_surveys")
+    .upsert(
+      { venue_id: venueId, event_id: eventId, is_active: isActive },
+      { onConflict: "venue_id" }
+    )
+    .select("*")
+    .single();
+  if (error) return { ok: false, error: surveyWriteError(error.message) };
+  return { ok: true, data: mapEventVenueSurveyRow(data as EventVenueSurveyRow) };
+}
+
+export async function fetchVenueSurveyQuestions(
+  venueId: string,
+  locale = "en"
+): Promise<EventSurveyQuestion[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("event_survey_questions")
+    .select("*")
+    .eq("venue_id", venueId)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+  if (error || !data) return [];
+
+  const questionIds = data.map((row) => (row as EventSurveyQuestionRow).id);
+  const answered = new Set<string>();
+  if (questionIds.length > 0) {
+    const { data: answerRows } = await supabase
+      .from("event_survey_answers")
+      .select("question_id")
+      .in("question_id", questionIds);
+    for (const row of answerRows ?? []) {
+      const qid = (row as { question_id: string }).question_id;
+      if (qid) answered.add(qid);
+    }
+  }
+
+  return data.map((row) => {
+    const mapped = mapEventSurveyQuestionRow(row as EventSurveyQuestionRow, locale);
+    return { ...mapped, hasAnswers: answered.has(mapped.id) };
+  });
+}
+
+export async function createSurveyQuestion(
+  venueId: string,
+  input: CreateEventSurveyQuestionInput
+): Promise<MutateResult<EventSurveyQuestion>> {
+  const supabase = createClient();
+  const options =
+    input.questionType === "single" ? serializeSurveyOptions(input.options) : [];
+  const { data, error } = await supabase
+    .from("event_survey_questions")
+    .insert({
+      venue_id: venueId,
+      prompt: input.prompt.trim(),
+      question_type: input.questionType,
+      options,
+      required: input.required ?? true,
+      sort_order: input.sortOrder ?? 0,
+      i18n: input.i18n ?? {},
+    })
+    .select("*")
+    .single();
+  if (error) return { ok: false, error: surveyWriteError(error.message) };
+  return { ok: true, data: mapEventSurveyQuestionRow(data as EventSurveyQuestionRow) };
+}
+
+export async function updateSurveyQuestion(
+  questionId: string,
+  input: UpdateEventSurveyQuestionInput
+): Promise<MutateResult<EventSurveyQuestion>> {
+  const supabase = createClient();
+  const patch: Record<string, unknown> = {};
+  if (input.prompt !== undefined) patch.prompt = input.prompt.trim();
+  if (input.questionType !== undefined) patch.question_type = input.questionType;
+  if (input.required !== undefined) patch.required = input.required;
+  if (input.sortOrder !== undefined) patch.sort_order = input.sortOrder;
+  if (input.i18n !== undefined) patch.i18n = input.i18n;
+  if (input.questionType === "single") {
+    patch.options = serializeSurveyOptions(input.options);
+  } else if (input.questionType !== undefined) {
+    patch.options = [];
+  } else if (input.options !== undefined) {
+    patch.options = serializeSurveyOptions(input.options);
+  }
+
+  const { data, error } = await supabase
+    .from("event_survey_questions")
+    .update(patch)
+    .eq("id", questionId)
+    .select("*")
+    .single();
+  if (error) return { ok: false, error: surveyWriteError(error.message) };
+  return { ok: true, data: mapEventSurveyQuestionRow(data as EventSurveyQuestionRow) };
+}
+
+export async function deleteSurveyQuestion(questionId: string): Promise<MutateResult<true>> {
+  const supabase = createClient();
+  const { error } = await supabase.from("event_survey_questions").delete().eq("id", questionId);
+  if (error) return { ok: false, error: surveyWriteError(error.message) };
+  return { ok: true, data: true };
+}
+
+export async function reorderSurveyQuestions(
+  venueId: string,
+  orderedIds: string[]
+): Promise<MutateResult<true>> {
+  const supabase = createClient();
+  for (let i = 0; i < orderedIds.length; i++) {
+    const { error } = await supabase
+      .from("event_survey_questions")
+      .update({ sort_order: i })
+      .eq("id", orderedIds[i])
+      .eq("venue_id", venueId);
+    if (error) return { ok: false, error: surveyWriteError(error.message) };
+  }
+  return { ok: true, data: true };
+}
+
+export async function fetchMyVenueSurveyResponse(
+  venueId: string
+): Promise<EventSurveyResponse | null> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data, error } = await supabase
+    .from("event_survey_responses")
+    .select("*, event_survey_answers(*)")
+    .eq("venue_id", venueId)
+    .eq("member_id", user.id)
+    .maybeSingle();
+  if (error || !data) return null;
+  return mapEventSurveyResponseRow(data as unknown as EventSurveyResponseRow);
+}
+
+export async function submitVenueSurvey(
+  venueId: string,
+  answers: EventSurveyAnswerInput[]
+): Promise<MutateResult<{ responseId: string }>> {
+  const supabase = createClient();
+  const payload = answers.map((a) => ({
+    questionId: a.questionId,
+    ...(a.rating !== undefined ? { rating: a.rating } : {}),
+    ...(a.optionId !== undefined ? { optionId: a.optionId } : {}),
+    ...(a.yesno !== undefined ? { yesno: a.yesno } : {}),
+    ...(a.text !== undefined ? { text: a.text } : {}),
+  }));
+  const { data, error } = await supabase.rpc("submit_venue_survey", {
+    p_venue_id: venueId,
+    p_answers: payload,
+  });
+  if (error) return { ok: false, error: surveyWriteError(error.message) };
+  return { ok: true, data: { responseId: data as string } };
+}
+
+export async function fetchVenueSurveyResponses(
+  venueId: string
+): Promise<{ rows: EventSurveyResponse[]; error?: string }> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("event_survey_responses")
+    .select(
+      "*, profiles!event_survey_responses_member_id_fkey(member_id, full_name, email), event_survey_answers(*)"
+    )
+    .eq("venue_id", venueId)
+    .order("submitted_at", { ascending: true });
+  if (error) return { rows: [], error: error.message };
+  return {
+    rows: (data ?? []).map((row) =>
+      mapEventSurveyResponseRow(row as unknown as EventSurveyResponseRow)
+    ),
+  };
+}
+
+export async function fetchVenueSurveySummary(
+  venueId: string
+): Promise<EventVenueSurveySummary> {
+  const questions = await fetchVenueSurveyQuestions(venueId, "en");
+  const { rows } = await fetchVenueSurveyResponses(venueId);
+
+  const questionSummaries: EventSurveyQuestionSummary[] = questions.map((q) => {
+    const answers = rows.flatMap((r) =>
+      r.answers
+        .filter((a) => a.questionId === q.id)
+        .map((a) => ({ answer: a, response: r }))
+    );
+    const base: EventSurveyQuestionSummary = {
+      questionId: q.id,
+      prompt: q.prompt,
+      questionType: q.questionType,
+      responseCount: answers.length,
+    };
+
+    if (q.questionType === "rating") {
+      const dist: Record<1 | 2 | 3 | 4 | 5, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+      let sum = 0;
+      for (const { answer } of answers) {
+        const v = answer.ratingValue;
+        if (v && v >= 1 && v <= 5) {
+          dist[v as 1 | 2 | 3 | 4 | 5] += 1;
+          sum += v;
+        }
+      }
+      return {
+        ...base,
+        averageRating: answers.length ? sum / answers.length : undefined,
+        ratingDistribution: dist,
+        textAnswers: answers
+          .filter(({ answer }) => Boolean(answer.textValue))
+          .map(({ answer, response }) => ({
+            memberName: response.fullName ?? response.memberCode ?? "Member",
+            text: `${answer.ratingValue ?? "?"}/5 — ${answer.textValue ?? ""}`,
+            submittedAt: response.submittedAt,
+          })),
+      };
+    }
+
+    if (q.questionType === "single") {
+      const counts = new Map<string, { label: string; count: number }>();
+      for (const opt of q.options) {
+        counts.set(opt.id, { label: opt.label, count: 0 });
+      }
+      for (const { answer } of answers) {
+        if (!answer.optionId) continue;
+        const existing = counts.get(answer.optionId);
+        if (existing) existing.count += 1;
+        else {
+          counts.set(answer.optionId, {
+            label: answer.optionLabelSnapshot ?? answer.optionId,
+            count: 1,
+          });
+        }
+      }
+      return {
+        ...base,
+        optionCounts: [...counts.entries()].map(([optionId, v]) => ({
+          optionId,
+          label: v.label,
+          count: v.count,
+        })),
+      };
+    }
+
+    if (q.questionType === "yesno") {
+      let yesCount = 0;
+      let noCount = 0;
+      for (const { answer } of answers) {
+        if (answer.yesnoValue === true) yesCount += 1;
+        else if (answer.yesnoValue === false) noCount += 1;
+      }
+      return { ...base, yesCount, noCount };
+    }
+
+    return {
+      ...base,
+      textAnswers: answers
+        .filter(({ answer }) => Boolean(answer.textValue))
+        .map(({ answer, response }) => ({
+          memberName: response.fullName ?? response.memberCode ?? "Member",
+          text: answer.textValue ?? "",
+          submittedAt: response.submittedAt,
+        })),
+    };
+  });
+
+  return {
+    venueId,
+    responseCount: rows.length,
+    questions: questionSummaries,
+  };
 }

@@ -8,10 +8,13 @@ import type {
   Privilege,
   PrivilegeCategory,
   PrivilegeMapLocation,
+  SharedRedeemPeriod,
 } from "@/lib/types";
+import { buildI18nPayload } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { ActiveToggle } from "./active-toggle";
 import { ImageUploadField } from "./image-upload-field";
+import { LocaleTextFields, getLocaleField, setLocaleField } from "./locale-text-fields";
 
 const EMPTY_LOCATION: PrivilegeMapLocation = { name: "", mapUrl: "" };
 
@@ -29,7 +32,10 @@ const EMPTY: CreatePrivilegeInput = {
   isActive: true,
   sortOrder: 0,
   codeMode: "shared",
+  sharedRedeemLimit: null,
+  sharedRedeemPeriod: null,
   mapLocations: [],
+  i18n: {},
 };
 
 export function privilegeToFormInput(p: Privilege): CreatePrivilegeInput {
@@ -47,9 +53,15 @@ export function privilegeToFormInput(p: Privilege): CreatePrivilegeInput {
     isActive: p.isActive,
     sortOrder: p.sortOrder,
     codeMode: p.codeMode,
+    sharedRedeemLimit: p.sharedRedeemLimit ?? null,
+    sharedRedeemPeriod: p.sharedRedeemPeriod ?? null,
     mapLocations: p.mapLocations?.length
       ? p.mapLocations.map((loc) => ({ ...loc }))
       : [],
+    i18n: {
+      ...(p.i18n?.th ? { th: { ...p.i18n.th } } : {}),
+      ...(p.i18n?.ru ? { ru: { ...p.i18n.ru } } : {}),
+    },
   };
 }
 
@@ -112,6 +124,19 @@ export function AddPrivilegeForm({
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
+  const setTranslation = (locale: "th" | "ru", field: string, value: string) => {
+    setForm((prev) => ({ ...prev, i18n: setLocaleField(prev.i18n, locale, field, value) }));
+  };
+
+  /** Props for a LocaleTextFields block bound to one i18n field key. */
+  const translationProps = (field: string) => ({
+    valueTh: getLocaleField(form.i18n, "th", field),
+    valueRu: getLocaleField(form.i18n, "ru", field),
+    onChangeTh: (v: string) => setTranslation("th", field, v),
+    onChangeRu: (v: string) => setTranslation("ru", field, v),
+    disabled: saving,
+  });
+
   const locations = form.mapLocations ?? [];
 
   const updateLocation = (index: number, key: keyof PrivilegeMapLocation, value: string) => {
@@ -151,7 +176,11 @@ export function AddPrivilegeForm({
     }
     setSaving(true);
     setError(null);
-    const res = await onSubmit(form, coverFileRef.current ?? coverFile);
+    const payload: CreatePrivilegeInput = {
+      ...form,
+      i18n: buildI18nPayload({ th: form.i18n?.th, ru: form.i18n?.ru }),
+    };
+    const res = await onSubmit(payload, coverFileRef.current ?? coverFile);
     setSaving(false);
     if (!res.ok) {
       setError(res.error ?? (mode === "edit" ? "Could not save privilege." : "Could not create privilege."));
@@ -195,6 +224,11 @@ export function AddPrivilegeForm({
               className="mt-1.5 w-full rounded-lg border border-cream-300 bg-cream-50 px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
             />
           </label>
+          <LocaleTextFields
+            className="sm:col-span-2"
+            label="Title"
+            {...translationProps("title")}
+          />
           <label className="block">
             <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">Discount label</span>
             <input
@@ -222,23 +256,38 @@ export function AddPrivilegeForm({
               )}
             </select>
           </label>
+          <LocaleTextFields
+            className="sm:col-span-2"
+            label="Discount label"
+            placeholder="15% OFF"
+            {...translationProps("discount_label")}
+          />
           <label className="block">
-            <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">Valid from</span>
+            <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">
+              Start date *
+            </span>
             <input
               type="date"
+              required
               value={form.validFrom ?? ""}
               onChange={(e) => set("validFrom", e.target.value)}
               className="mt-1.5 w-full rounded-lg border border-cream-300 bg-cream-50 px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
             />
+            <p className="text-[11px] text-ink-muted mt-1">Hidden from members until this date (Thailand).</p>
           </label>
           <label className="block">
-            <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">Valid until</span>
+            <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">
+              Expiry date
+            </span>
             <input
               type="date"
               value={form.validUntil ?? ""}
               onChange={(e) => set("validUntil", e.target.value)}
               className="mt-1.5 w-full rounded-lg border border-cream-300 bg-cream-50 px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
             />
+            <p className="text-[11px] text-ink-muted mt-1">
+              Optional. After this date the privilege is hidden from members. Leave blank for no end.
+            </p>
           </label>
           {!hideCover && (
             <div className="sm:col-span-2">
@@ -259,6 +308,11 @@ export function AddPrivilegeForm({
               className="mt-1.5 w-full rounded-lg border border-cream-300 bg-cream-50 px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
             />
           </label>
+          <LocaleTextFields
+            className="sm:col-span-2"
+            label="Summary"
+            {...translationProps("summary")}
+          />
           <label className="sm:col-span-2 block">
             <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">Description</span>
             <textarea
@@ -268,6 +322,13 @@ export function AddPrivilegeForm({
               className="mt-1.5 w-full rounded-lg border border-cream-300 bg-cream-50 px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
             />
           </label>
+          <LocaleTextFields
+            className="sm:col-span-2"
+            label="Description"
+            multiline
+            rows={3}
+            {...translationProps("description")}
+          />
           <label className="sm:col-span-2 block">
             <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">How to redeem</span>
             <textarea
@@ -278,6 +339,14 @@ export function AddPrivilegeForm({
               className="mt-1.5 w-full rounded-lg border border-cream-300 bg-cream-50 px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
             />
           </label>
+          <LocaleTextFields
+            className="sm:col-span-2"
+            label="How to redeem"
+            multiline
+            rows={3}
+            placeholder="One step per line"
+            {...translationProps("how_to_redeem")}
+          />
           <div className="sm:col-span-2 space-y-3">
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -343,18 +412,94 @@ export function AddPrivilegeForm({
               className="mt-1.5 w-full rounded-lg border border-cream-300 bg-cream-50 px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
             />
           </label>
+          <LocaleTextFields
+            className="sm:col-span-2"
+            label="Terms"
+            multiline
+            rows={3}
+            {...translationProps("terms")}
+          />
           {!hideCodeMode && (
             <label className="block">
               <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">Code mode</span>
               <select
                 value={form.codeMode ?? "shared"}
-                onChange={(e) => set("codeMode", e.target.value as CreatePrivilegeInput["codeMode"])}
+                onChange={(e) => {
+                  const next = e.target.value as CreatePrivilegeInput["codeMode"];
+                  setForm((prev) => ({
+                    ...prev,
+                    codeMode: next,
+                    ...(next === "unique_pool"
+                      ? { sharedRedeemLimit: null, sharedRedeemPeriod: null }
+                      : {}),
+                  }));
+                }}
                 className="mt-1.5 w-full rounded-lg border border-cream-300 bg-cream-50 px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
               >
                 <option value="shared">Shared code</option>
                 <option value="unique_pool">Unique pool</option>
               </select>
             </label>
+          )}
+          {(form.codeMode ?? "shared") === "shared" && (
+            <>
+              <label className="block">
+                <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">
+                  Shared redeem limit
+                </span>
+                <input
+                  type="number"
+                  min={1}
+                  step={1}
+                  placeholder="Unlimited"
+                  value={form.sharedRedeemLimit ?? ""}
+                  onChange={(e) => {
+                    const raw = e.target.value.trim();
+                    const nextLimit = raw === "" ? null : Number(raw);
+                    setForm((prev) => ({
+                      ...prev,
+                      sharedRedeemLimit:
+                        nextLimit != null && Number.isFinite(nextLimit) && nextLimit > 0
+                          ? Math.floor(nextLimit)
+                          : null,
+                      sharedRedeemPeriod:
+                        nextLimit != null && Number.isFinite(nextLimit) && nextLimit > 0
+                          ? (prev.sharedRedeemPeriod ?? "month")
+                          : null,
+                    }));
+                  }}
+                  className="mt-1.5 w-full rounded-lg border border-cream-300 bg-cream-50 px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
+                />
+                <span className="mt-1 block text-[11px] text-ink-muted">
+                  Max uses per member. Leave empty for unlimited.
+                </span>
+              </label>
+              <label className="block">
+                <span className="text-ink-muted text-xs font-semibold uppercase tracking-wide">
+                  Limit period
+                </span>
+                <select
+                  value={form.sharedRedeemPeriod ?? ""}
+                  disabled={form.sharedRedeemLimit == null}
+                  onChange={(e) =>
+                    set(
+                      "sharedRedeemPeriod",
+                      (e.target.value || null) as SharedRedeemPeriod | null
+                    )
+                  }
+                  className="mt-1.5 w-full rounded-lg border border-cream-300 bg-cream-50 px-3 py-2 text-sm text-forest focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:opacity-50"
+                >
+                  <option value="">—</option>
+                  <option value="day">Per day</option>
+                  <option value="week">Per week</option>
+                  <option value="month">Per month</option>
+                  <option value="year">Per year</option>
+                </select>
+                <span className="mt-1 block text-[11px] text-ink-muted">
+                  Calendar period in Asia/Bangkok time.
+                </span>
+              </label>
+            </>
           )}
           <ActiveToggle
             className={cn("self-end pb-2", hideCodeMode && "sm:col-span-2")}

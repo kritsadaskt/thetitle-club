@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { localizedLoginPath } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
 import { fetchAllPartners, fetchAllPrivileges } from "@/lib/supabase/data";
 import { mapProfileToMember, type ProfileRow } from "@/lib/supabase/mappers";
@@ -14,8 +15,9 @@ import Link from "next/link";
 import { PartnersTab } from "@/components/admin/partners-tab";
 import { CategoriesTab } from "@/components/admin/categories-tab";
 import { EventsTab } from "@/components/admin/events-tab";
+import { ProjectsTab } from "@/components/admin/projects-tab";
 
-type Tab = "members" | "partners" | "categories" | "events";
+type Tab = "members" | "partners" | "categories" | "events" | "projects";
 
 const MEMBER_PAGE_SIZE = 10;
 
@@ -159,7 +161,8 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
-    if (!isLoading && !isAdmin) router.replace("/login");
+    // Login lives under /[locale]/login — bare /login 404s after i18n routing
+    if (!isLoading && !isAdmin) router.replace(localizedLoginPath());
   }, [isAdmin, isLoading, router]);
 
   useEffect(() => {
@@ -268,7 +271,6 @@ export default function AdminPage() {
           {[
             { label: "Total Members", value: members.length, icon: Users, color: "bg-forest-50 text-forest-700" },
             { label: "Active", value: active.length, icon: CheckCircle, color: "bg-emerald-50 text-emerald-700" },
-            { label: "Pending review", value: pending.length, icon: Clock, color: "bg-amber-50 text-amber-700" },
             { label: "Partners", value: partnerCount, icon: Building2, color: "bg-sky-50 text-sky-700" },
             { label: "Privileges Active", value: activePrivilegeCount, icon: Gift, color: "bg-primary/10 text-primary-dark" },
           ].map(({ label, value, icon: Icon, color }) => (
@@ -285,7 +287,7 @@ export default function AdminPage() {
         </div>
 
         <div className="flex flex-wrap gap-1 mb-6 bg-white border border-cream-300 rounded-xl p-1 w-fit shadow-sm">
-          {(["members", "partners", "categories", "events"] as Tab[]).map((t) => (
+          {(["members", "partners", "categories", "events", "projects"] as Tab[]).map((t) => (
             <button
               key={t}
               type="button"
@@ -423,6 +425,8 @@ export default function AdminPage() {
         {tab === "categories" && <CategoriesTab />}
 
         {tab === "events" && <EventsTab />}
+
+        {tab === "projects" && <ProjectsTab />}
       </div>
     </div>
   );

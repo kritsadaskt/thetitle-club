@@ -40,8 +40,12 @@
   --color-ink-light: #4a6855;
   --color-ink-muted: #7a9080;
 
-  --font-sans: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  --font-serif: Georgia, Cambria, serif;
+  /* Literal family names — next/font registers these via body CSS variables.
+     Do not nest var(--font-noto-*) here; Tailwind @theme drops the whole stack.
+     Helvetica first is fine for Latin; th/ru pages override via .font-locale-* so
+     macOS Core Text does not cascade system Thai/Cyrillic before Noto. */
+  --font-sans: "Helvetica Neue", Helvetica, "Noto Sans", "Noto Sans Thai", Arial, sans-serif;
+  --font-serif: Georgia, Cambria, "Noto Serif", "Noto Serif Thai", serif;
 
   --background-image-primary-gradient: linear-gradient(
     135deg,
@@ -118,9 +122,25 @@
 /* ── Base ────────────────────────────────────── */
 * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 
+/* Scale rem-based type (Tailwind text-*) site-wide */
+html {
+  font-size: 110%;
+}
+
 body {
   background-color: var(--cream);
   color: var(--ink);
+}
+
+/* Locale stacks: Noto first so macOS does not cascade Helvetica/Georgia → system fonts.
+   Also reassign --font-serif so utilities like .font-serif inherit the right face. */
+.font-locale-th {
+  font-family: "Noto Sans Thai", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-serif: "Noto Serif Thai", Georgia, Cambria, serif;
+}
+.font-locale-ru {
+  font-family: "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-serif: "Noto Serif", Georgia, Cambria, serif;
 }
 
 /* ── Scrollbar ───────────────────────────────── */

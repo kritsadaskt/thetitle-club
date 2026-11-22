@@ -12,6 +12,7 @@ import type { User } from "@supabase/supabase-js";
 import type { MemberStatus } from "./types";
 import { Member } from "./types";
 import { safeInternalPath } from "./app-url";
+import { localizedLoginPath } from "./i18n";
 import { createClient } from "./supabase/client";
 import { mapProfileToMember, type ProfileRow } from "./supabase/mappers";
 
@@ -118,30 +119,27 @@ function isPasswordResetPath(): boolean {
   return window.location.pathname.endsWith("/reset-password");
 }
 
-/** Applies session to React state. Signs out if profile missing or member not allowed. */
-async function syncAuthState(
+/**
+ * Applies a known session user to React state.
+ * Does not sign out on transient profile fetch errors (that was kicking admins
+ * to /login after unrelated writes such as saving a survey question).
+ */
+async function applyUserSession(
   supabase: ReturnType<typeof createClient>,
+  user: User,
   setMember: (m: Member | null) => void,
-  setIsAdmin: (a: boolean) => void
+  setIsAdmin: (a: boolean) => void,
+  options?: { signOutIfUnauthorized?: boolean }
 ) {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (!session?.user) {
-    setMember(null);
-    setIsAdmin(false);
-    return;
-  }
   if (isPasswordResetPath()) {
     setMember(null);
     setIsAdmin(false);
     return;
   }
-  const loaded = await loadMemberFromUser(supabase, session.user);
+  const loaded = await loadMemberFromUser(supabase, user);
   if ("error" in loaded) {
-    await supabase.auth.signOut();
-    setMember(null);
-    setIsAdmin(false);
+    console.error("[auth] profile load failed:", loaded.error);
+    // Keep existing React auth state; a blip must not force logout.
     return;
   }
   if (loaded.isAdmin) {
@@ -150,7 +148,9 @@ async function syncAuthState(
     return;
   }
   if (!memberCanAccessMemberArea(loaded.member.status)) {
-    await supabase.auth.signOut();
+    if (options?.signOutIfUnauthorized !== false) {
+      await supabase.auth.signOut();
+    }
     setMember(null);
     setIsAdmin(false);
     return;
@@ -169,22 +169,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const supabase = createClient();
 
     async function init() {
-      await syncAuthState(supabase, setMember, setIsAdmin);
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.user) {
+        setMember(null);
+        setIsAdmin(false);
+      } else {
+        await applyUserSession(supabase, session.user, setMember, setIsAdmin);
+      }
       setIsLoading(false);
     }
     void init();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY") {
         setMember(null);
         setIsAdmin(false);
         setIsLoading(false);
         return;
       }
+      // Use the callback session — avoid getSession() races during TOKEN_REFRESHED
+      // that briefly look logged-out and bounce /admin → login.
+      if (event === "SIGNED_OUT" || !session?.user) {
+        setMember(null);
+        setIsAdmin(false);
+        setIsLoading(false);
+        return;
+      }
       void (async () => {
-        await syncAuthState(supabase, setMember, setIsAdmin);
+        await applyUserSession(supabase, session.user, setMember, setIsAdmin, {
+          signOutIfUnauthorized: event === "SIGNED_IN",
+        });
         setIsLoading(false);
       })();
     });
@@ -234,7 +252,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
     setMember(null);
     setIsAdmin(false);
-    router.push("/login");
+    // Login is under /[locale]/login — bare /login 404s with localePrefix: "always"
+    router.push(localizedLoginPath());
     router.refresh();
   };
 

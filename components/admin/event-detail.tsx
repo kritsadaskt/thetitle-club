@@ -1,14 +1,22 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ChevronLeft, ChevronRight, Download, Mail, Pencil } from "lucide-react";
-import { absoluteAppUrl } from "@/lib/app-url";
+import {
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Mail,
+  Pencil,
+  QrCode,
+} from "lucide-react";
 import {
   eventEarliestStartsAt,
   eventLatestEndsAt,
   eventLocationSummary,
   formatEventDateTime,
   formatEventSchedule,
+  surveyPublicPath,
   venuePublicPath,
 } from "@/lib/events";
 import {
@@ -27,7 +35,8 @@ import type {
 import { cn } from "@/lib/utils";
 import { ActiveToggle } from "./active-toggle";
 import { EventForm } from "./event-form";
-import { VenueQrCard } from "./venue-qr-card";
+import { VenueEditModal } from "./venue-edit-modal";
+import { VenueQrModal } from "./venue-qr-modal";
 
 type Props = {
   event: ClubEvent;
@@ -68,6 +77,11 @@ export function EventDetail({ event, onBack, onEventUpdated }: Props) {
   const [registrantPage, setRegistrantPage] = useState(1);
   const [historyPage, setHistoryPage] = useState(1);
   const [showAllLocations, setShowAllLocations] = useState(false);
+  const [editingVenue, setEditingVenue] = useState<EventVenue | null>(null);
+  const [qrModal, setQrModal] = useState<{
+    venue: EventVenue;
+    kind: "register" | "survey";
+  } | null>(null);
   const [resendTarget, setResendTarget] = useState<EventRegistrant | null>(null);
   const [resending, setResending] = useState(false);
   const [resendNotice, setResendNotice] = useState<string | null>(null);
@@ -340,51 +354,62 @@ export function EventDetail({ event, onBack, onEventUpdated }: Props) {
       </div>
 
       <h3 className="text-ink-muted text-xs tracking-[2px] uppercase font-semibold mb-3">
-        Locations &amp; QR ({event.venues.length})
+        Locations ({event.venues.length})
       </h3>
-      <div className="mb-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {(event.venues.length > 2 && !showAllLocations
-            ? event.venues.slice(0, 2)
-            : event.venues
-          ).map((venue) => {
-            const shareUrl = absoluteAppUrl(venuePublicPath(event.slug, venue.slug));
-            const count = countsByVenue.get(venue.id) ?? 0;
-            return (
-              <div
-                key={venue.id}
-                className="bg-white border border-cream-300 rounded-2xl p-4 shadow-card flex flex-col sm:flex-row gap-4"
-              >
-                <VenueQrCard
-                  value={shareUrl}
-                  title={venue.name}
-                  fileBaseName={`${event.slug}__${venue.slug}`}
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-forest font-medium text-sm">{venue.name}</p>
-                  <p className="text-ink-muted text-xs mt-1">
-                    {formatEventSchedule(venue.startsAt, venue.endsAt)}
-                  </p>
-                  {venue.location && (
-                    <p className="text-ink-light text-xs mt-1 truncate">{venue.location}</p>
-                  )}
-                  <p className="text-ink-muted text-xs mt-2">
-                    {count} registration{count === 1 ? "" : "s"}
-                  </p>
-                  <p className="text-[11px] text-ink-muted mt-2 break-all">{shareUrl}</p>
-                  <p className="text-[10px] text-ink-muted mt-2">
-                    Click the QR to open 1000×1000 in a new tab. Save PNG or copy image for print.
-                  </p>
-                </div>
+      <div className="mb-8 space-y-3">
+        {(event.venues.length > 2 && !showAllLocations
+          ? event.venues.slice(0, 2)
+          : event.venues
+        ).map((venue) => {
+          const count = countsByVenue.get(venue.id) ?? 0;
+          return (
+            <div
+              key={venue.id}
+              className="bg-white border border-cream-300 rounded-2xl p-4 shadow-card flex flex-col sm:flex-row sm:items-center gap-4"
+            >
+              <div className="flex-1 min-w-0">
+                <p className="text-forest font-medium text-sm break-words">{venue.name}</p>
+                <p className="text-ink-muted text-xs mt-1">
+                  {formatEventSchedule(venue.startsAt, venue.endsAt)}
+                </p>
+                {venue.location && (
+                  <p className="text-ink-light text-xs mt-1 truncate">{venue.location}</p>
+                )}
+                <p className="text-ink-muted text-xs mt-2">
+                  {count} registration{count === 1 ? "" : "s"}
+                </p>
               </div>
-            );
-          })}
-        </div>
+              <div className="flex flex-wrap sm:flex-col gap-2 shrink-0 sm:items-stretch">
+                <button
+                  type="button"
+                  onClick={() => setEditingVenue(venue)}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-cream-300 bg-white px-3 py-2 text-xs font-medium text-forest hover:bg-cream-100"
+                >
+                  <Pencil size={12} /> Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQrModal({ venue, kind: "register" })}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-cream-300 bg-white px-3 py-2 text-xs font-medium text-forest hover:bg-cream-100"
+                >
+                  <QrCode size={12} /> QR Register
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQrModal({ venue, kind: "survey" })}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-cream-300 bg-white px-3 py-2 text-xs font-medium text-forest hover:bg-cream-100"
+                >
+                  <QrCode size={12} /> QR Survey
+                </button>
+              </div>
+            </div>
+          );
+        })}
         {event.venues.length > 2 && (
           <button
             type="button"
             onClick={() => setShowAllLocations((open) => !open)}
-            className="mt-3 inline-flex items-center gap-1.5 rounded-xl border border-cream-300 bg-white px-4 py-2 text-xs font-medium text-forest hover:bg-cream-100"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-cream-300 bg-white px-4 py-2 text-xs font-medium text-forest hover:bg-cream-100"
           >
             {showAllLocations
               ? "Show less"
@@ -689,6 +714,42 @@ export function EventDetail({ event, onBack, onEventUpdated }: Props) {
         onClose={() => setShowEdit(false)}
         onSubmit={handleUpdate}
       />
+
+      {editingVenue && (
+        <VenueEditModal
+          open
+          event={event}
+          venue={event.venues.find((v) => v.id === editingVenue.id) ?? editingVenue}
+          onClose={() => setEditingVenue(null)}
+          onSaved={(next) => {
+            onEventUpdated(next);
+            const updated = next.venues.find((v) => v.id === editingVenue.id);
+            if (updated) setEditingVenue(updated);
+          }}
+        />
+      )}
+
+      {qrModal && (
+        <VenueQrModal
+          open
+          title={
+            qrModal.kind === "register"
+              ? `Register · ${qrModal.venue.name}`
+              : `Exit survey · ${qrModal.venue.name}`
+          }
+          path={
+            qrModal.kind === "register"
+              ? venuePublicPath(event.slug, qrModal.venue.slug)
+              : surveyPublicPath(event.slug, qrModal.venue.slug)
+          }
+          fileBaseName={
+            qrModal.kind === "register"
+              ? `${event.slug}__${qrModal.venue.slug}`
+              : `${event.slug}__${qrModal.venue.slug}__survey`
+          }
+          onClose={() => setQrModal(null)}
+        />
+      )}
 
       {resendTarget && (
         <div

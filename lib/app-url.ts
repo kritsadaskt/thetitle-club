@@ -3,8 +3,25 @@ export const APP_BASE_PATH = "/club";
 
 const PUBLIC_SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "";
 
-function isVercelPreviewHost(host: string): boolean {
+export function isVercelPreviewHost(host: string): boolean {
   return host.endsWith(".vercel.app");
+}
+
+/** True when the browser is on a Vercel Preview deployment host. */
+export function isBrowserVercelPreview(): boolean {
+  return typeof window !== "undefined" && isVercelPreviewHost(window.location.hostname);
+}
+
+function requestHost(request: Request): { host: string | null; proto: string } {
+  const url = new URL(request.url);
+  const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
+  const proto =
+    request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() ??
+    (url.protocol === "http:" ? "http" : "https");
+  return {
+    host: forwardedHost || request.headers.get("host") || url.host || null,
+    proto,
+  };
 }
 
 /** Canonical browser-facing origin (never the Vercel deployment host in production). */
@@ -17,32 +34,37 @@ export function getPublicSiteOrigin(): string | null {
   }
 }
 
-/** Client-only absolute URL inside the app (includes `/club`). */
+/**
+ * Client-only absolute URL inside the app (includes `/club`).
+ * On Vercel preview hosts, uses the current deployment origin so QR / test links
+ * hit this preview instead of production `NEXT_PUBLIC_SITE_URL`.
+ */
 export function absoluteAppUrl(pathAndQuery: string): string {
   const path = pathAndQuery.startsWith("/") ? pathAndQuery : `/${pathAndQuery}`;
-  // Prefer configured public site so auth emails never bake in *.vercel.app
-  const origin = getPublicSiteOrigin() ?? window.location.origin;
+  const browserOrigin = window.location.origin;
+  if (isVercelPreviewHost(window.location.hostname)) {
+    return `${browserOrigin}${APP_BASE_PATH}${path}`;
+  }
+  // Production / local: prefer configured public site so auth emails stay on the live domain
+  const origin = getPublicSiteOrigin() ?? browserOrigin;
   return `${origin}${APP_BASE_PATH}${path}`;
 }
 
 export function getRequestOrigin(request: Request): string {
+  const url = new URL(request.url);
+  const { host, proto } = requestHost(request);
+
+  // Preview deployments: keep links on this deployment (QR, emails) so they match the env under test
+  if (host && isVercelPreviewHost(host)) {
+    return `${proto}://${host}`;
+  }
+
   const configured = getPublicSiteOrigin();
   if (configured) return configured;
 
-  const url = new URL(request.url);
   if (process.env.NODE_ENV === "development") return url.origin;
 
-  const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
-  const proto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() ?? "https";
-
-  if (forwardedHost && !isVercelPreviewHost(forwardedHost)) {
-    return `${proto}://${forwardedHost}`;
-  }
-
-  const host = request.headers.get("host");
-  if (host && !isVercelPreviewHost(host)) {
-    return `${proto}://${host}`;
-  }
+  if (host) return `${proto}://${host}`;
 
   return url.origin;
 }

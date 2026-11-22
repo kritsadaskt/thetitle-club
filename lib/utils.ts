@@ -11,6 +11,31 @@ export function formatDate(dateStr: string) {
   });
 }
 
+/** Calendar date in Asia/Bangkok as `YYYY-MM-DD` (matches privileges.valid_* date columns). */
+export function bangkokTodayIsoDate(now = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Bangkok",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+}
+
+/** True when today (Bangkok) is within validFrom … validUntil (inclusive). Empty until = no end. */
+export function isPrivilegeInValidityWindow(
+  validFrom: string,
+  validUntil?: string | null,
+  today = bangkokTodayIsoDate()
+): boolean {
+  const from = validFrom.slice(0, 10);
+  if (from && from > today) return false;
+  if (validUntil) {
+    const until = validUntil.slice(0, 10);
+    if (until && until < today) return false;
+  }
+  return true;
+}
+
 import type { PrivilegeCategory } from "@/lib/types";
 
 export function categoryLabel(cat: Pick<PrivilegeCategory, "label">): string {

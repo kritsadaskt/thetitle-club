@@ -1,3 +1,5 @@
+import type { I18nLocaleMap } from "@/lib/i18n";
+
 export type MemberStatus =
   | "pending_verification"
   | "pending_approval"
@@ -7,15 +9,21 @@ export type MemberStatus =
 
 export type ResidentStatus = "owner" | "tenant";
 
+export type { I18nLocaleMap };
+
 export interface PrivilegeCategory {
   id: number;
   label: string;
   key: string;
   color: string;
   sortOrder?: number;
+  /** Raw th/ru map for admin editing; display fields are already resolved */
+  i18n?: I18nLocaleMap;
 }
 
 export type CodeMode = "shared" | "unique_pool";
+
+export type SharedRedeemPeriod = "day" | "week" | "month" | "year";
 
 export type PromoCodeStatus = "available" | "claimed" | "redeemed";
 
@@ -38,6 +46,20 @@ export interface Member {
   /** From profiles.is_admin — staff accounts are excluded from the approval queue */
   isAdmin?: boolean;
   password?: string; // hashed in real app; plain for mock
+}
+
+/** Project a resident can pick on the registration form. */
+export interface ResidenceProject {
+  id: string;
+  name: string;
+  sortOrder: number;
+  isActive: boolean;
+}
+
+export interface CreateResidenceProjectInput {
+  name: string;
+  sortOrder?: number;
+  isActive?: boolean;
 }
 
 export interface Privilege {
@@ -63,8 +85,13 @@ export interface Privilege {
   privilegeCode: string;
   /** shared = same code for all; unique_pool = codes from promo_codes table */
   codeMode: CodeMode;
+  /** Max shared redeems per member per period; null/undefined = unlimited */
+  sharedRedeemLimit?: number | null;
+  /** Calendar period for sharedRedeemLimit (Asia/Bangkok) */
+  sharedRedeemPeriod?: SharedRedeemPeriod | null;
   /** Store branches with Google Maps links (maps to privileges.map_locations) */
   mapLocations: PrivilegeMapLocation[];
+  i18n?: I18nLocaleMap;
 }
 
 /** One store branch for privilege directions */
@@ -107,6 +134,7 @@ export interface CommunityMoment {
   eventDate: string;
   isPublished: boolean;
   sortOrder: number;
+  i18n?: I18nLocaleMap;
 }
 
 export interface RedemptionLog {
@@ -127,6 +155,7 @@ export interface ShopPartner {
   sortOrder: number;
   createdAt: string;
   privilegeCount?: number;
+  i18n?: I18nLocaleMap;
 }
 
 export interface CreatePartnerInput {
@@ -136,6 +165,7 @@ export interface CreatePartnerInput {
   description?: string;
   isActive?: boolean;
   sortOrder?: number;
+  i18n?: I18nLocaleMap;
 }
 
 export interface CreatePrivilegeCategoryInput {
@@ -143,6 +173,7 @@ export interface CreatePrivilegeCategoryInput {
   key: string;
   color: string;
   sortOrder?: number;
+  i18n?: I18nLocaleMap;
 }
 
 export interface CreatePrivilegeInput {
@@ -159,7 +190,10 @@ export interface CreatePrivilegeInput {
   isActive?: boolean;
   sortOrder?: number;
   codeMode?: CodeMode;
+  sharedRedeemLimit?: number | null;
+  sharedRedeemPeriod?: SharedRedeemPeriod | null;
   mapLocations?: PrivilegeMapLocation[];
+  i18n?: I18nLocaleMap;
 }
 
 export interface Partner {
@@ -181,6 +215,7 @@ export interface EventVenue {
   endsAt?: string;
   sortOrder: number;
   createdAt: string;
+  i18n?: I18nLocaleMap;
 }
 
 export interface ClubEvent {
@@ -191,6 +226,7 @@ export interface ClubEvent {
   isActive: boolean;
   createdAt: string;
   venues: EventVenue[];
+  i18n?: I18nLocaleMap;
 }
 
 export interface CreateEventVenueInput {
@@ -204,6 +240,7 @@ export interface CreateEventVenueInput {
   startsAt: string;
   endsAt?: string | null;
   sortOrder?: number;
+  i18n?: I18nLocaleMap;
 }
 
 export interface CreateEventInput {
@@ -212,6 +249,7 @@ export interface CreateEventInput {
   description?: string;
   isActive?: boolean;
   venues: CreateEventVenueInput[];
+  i18n?: I18nLocaleMap;
 }
 
 export interface EventRegistration {
@@ -249,4 +287,121 @@ export interface EventRegistrationLog {
   fullName: string;
   action: EventRegistrationAction;
   occurredAt: string;
+}
+
+export type EventSurveyQuestionType = "rating" | "single" | "text" | "yesno";
+
+export interface EventSurveyOption {
+  id: string;
+  /** Localized label for the current viewer locale */
+  label: string;
+  /** Raw th/ru map for admin editing */
+  i18n?: I18nLocaleMap;
+}
+
+export interface EventVenueSurvey {
+  venueId: string;
+  eventId: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EventSurveyQuestion {
+  id: string;
+  venueId: string;
+  /** Localized prompt for the current viewer locale */
+  prompt: string;
+  questionType: EventSurveyQuestionType;
+  options: EventSurveyOption[];
+  required: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+  /** Raw th/ru map for admin editing */
+  i18n?: I18nLocaleMap;
+  /** True when at least one answer exists (admin UI locks type/delete) */
+  hasAnswers?: boolean;
+}
+
+export interface CreateEventSurveyQuestionInput {
+  prompt: string;
+  questionType: EventSurveyQuestionType;
+  options?: EventSurveyOptionInput[];
+  required?: boolean;
+  sortOrder?: number;
+  i18n?: I18nLocaleMap;
+}
+
+export interface EventSurveyOptionInput {
+  /** Preserve existing option id when editing */
+  id?: string;
+  label: string;
+  i18n?: I18nLocaleMap;
+}
+
+export interface UpdateEventSurveyQuestionInput {
+  prompt?: string;
+  questionType?: EventSurveyQuestionType;
+  options?: EventSurveyOptionInput[];
+  required?: boolean;
+  sortOrder?: number;
+  i18n?: I18nLocaleMap;
+}
+
+export interface EventSurveyAnswerInput {
+  questionId: string;
+  rating?: number;
+  optionId?: string;
+  yesno?: boolean;
+  text?: string;
+}
+
+export interface EventSurveyAnswer {
+  id: string;
+  responseId: string;
+  questionId: string;
+  questionType: EventSurveyQuestionType;
+  promptSnapshot: string;
+  ratingValue?: number;
+  optionId?: string;
+  optionLabelSnapshot?: string;
+  yesnoValue?: boolean;
+  textValue?: string;
+}
+
+export interface EventSurveyResponse {
+  id: string;
+  venueId: string;
+  eventId: string;
+  memberId: string;
+  registrationId: string;
+  submittedAt: string;
+  memberCode?: string;
+  fullName?: string;
+  email?: string;
+  answers: EventSurveyAnswer[];
+}
+
+export interface EventSurveyQuestionSummary {
+  questionId: string;
+  prompt: string;
+  questionType: EventSurveyQuestionType;
+  responseCount: number;
+  /** rating */
+  averageRating?: number;
+  ratingDistribution?: Record<1 | 2 | 3 | 4 | 5, number>;
+  /** single */
+  optionCounts?: { optionId: string; label: string; count: number }[];
+  /** yesno */
+  yesCount?: number;
+  noCount?: number;
+  /** text */
+  textAnswers?: { memberName: string; text: string; submittedAt: string }[];
+}
+
+export interface EventVenueSurveySummary {
+  venueId: string;
+  responseCount: number;
+  questions: EventSurveyQuestionSummary[];
 }
