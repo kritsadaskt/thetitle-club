@@ -16,6 +16,7 @@ import type {
   MemberPromoCode,
   Privilege,
   PrivilegeMapLocation,
+  ResidenceProject,
   PromoCode,
   PromoCodeStats,
   ShopPartner,
@@ -110,6 +111,22 @@ export type PartnerJoin = {
   website_url: string | null;
   is_active?: boolean;
 };
+
+export type ResidenceProjectRow = {
+  id: string;
+  name: string;
+  sort_order: number;
+  is_active: boolean;
+};
+
+export function mapResidenceProjectRow(row: ResidenceProjectRow): ResidenceProject {
+  return {
+    id: row.id,
+    name: row.name,
+    sortOrder: row.sort_order ?? 0,
+    isActive: row.is_active,
+  };
+}
 
 export type PrivilegeCategoryRow = {
   id: number;

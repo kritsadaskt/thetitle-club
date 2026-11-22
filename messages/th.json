@@ -207,7 +207,8 @@
       },
       "errors": {
         "registrationFailed": "สมัครสมาชิกไม่สำเร็จ กรุณาลองอีกครั้ง",
-        "confirmEmailEnabled": "ไม่สามารถสมัครสมาชิกให้เสร็จสมบูรณ์ได้ กรุณาปิด “Confirm email” ในการตั้งค่า Supabase Auth (Authentication → Providers → Email)"
+        "confirmEmailEnabled": "ไม่สามารถสมัครสมาชิกให้เสร็จสมบูรณ์ได้ กรุณาปิด “Confirm email” ในการตั้งค่า Supabase Auth (Authentication → Providers → Email)",
+        "projectsLoadFailed": "โหลดรายชื่อโครงการไม่สำเร็จ กรุณารีเฟรชหน้าแล้วลองอีกครั้ง"
       },
       "submit": "ส่งใบสมัคร",
       "submitting": "กำลังส่ง...",

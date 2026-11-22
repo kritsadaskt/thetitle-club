@@ -19,6 +19,8 @@ import type {
   MemberPromoCode,
   Privilege,
   PrivilegeCategory,
+  CreateResidenceProjectInput,
+  ResidenceProject,
   PromoCode,
   PromoCodeStats,
   SharedRedeemPeriod,
@@ -48,6 +50,7 @@ import {
   mapPartnerRow,
   mapPrivilegeCategoryRow,
   mapPrivilegeRow,
+  mapResidenceProjectRow,
   mapPromoCodeRow,
   mapPromoCodeStats,
   sanitizeMapLocations,
@@ -64,6 +67,7 @@ import {
   type PartnerRow,
   type PrivilegeCategoryRow,
   type PrivilegeRow,
+  type ResidenceProjectRow,
   type PromoCodeRow,
   type PromoCodeWithPrivilegeRow,
 } from "./mappers";
@@ -627,6 +631,100 @@ export async function updatePrivilegeCodeMode(
     .update({ code_mode: codeMode })
     .eq("id", privilegeId);
   if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
+function residenceProjectWriteError(message: string): string {
+  if (/residence_projects_name_lower_idx|duplicate key value/i.test(message)) {
+    return "A project with that name already exists.";
+  }
+  if (/residence_projects_name_trimmed/i.test(message)) {
+    return "Project name is required.";
+  }
+  if (/row-level security/i.test(message)) {
+    return "Only administrators can change projects.";
+  }
+  return message;
+}
+
+/** Active projects for the public registration form. Anonymous clients can read these. */
+export async function fetchActiveResidenceProjects(): Promise<{
+  projects: ResidenceProject[];
+  error: string | null;
+}> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("residence_projects")
+    .select("id, name, sort_order, is_active")
+    .eq("is_active", true)
+    .order("sort_order")
+    .order("name");
+  if (error) return { projects: [], error: error.message };
+  return {
+    projects: (data ?? []).map((row) => mapResidenceProjectRow(row as ResidenceProjectRow)),
+    error: null,
+  };
+}
+
+/** Every project, including inactive ones. Requires an admin session. */
+export async function fetchAllResidenceProjects(): Promise<{
+  projects: ResidenceProject[];
+  error: string | null;
+}> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("residence_projects")
+    .select("id, name, sort_order, is_active")
+    .order("sort_order")
+    .order("name");
+  if (error) return { projects: [], error: error.message };
+  return {
+    projects: (data ?? []).map((row) => mapResidenceProjectRow(row as ResidenceProjectRow)),
+    error: null,
+  };
+}
+
+export async function createResidenceProject(
+  input: CreateResidenceProjectInput
+): Promise<MutateResult<ResidenceProject>> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("residence_projects")
+    .insert({
+      name: input.name.trim(),
+      sort_order: input.sortOrder ?? 0,
+      is_active: input.isActive ?? true,
+    })
+    .select("id, name, sort_order, is_active")
+    .single();
+  if (error) return { ok: false, error: residenceProjectWriteError(error.message) };
+  return { ok: true, data: mapResidenceProjectRow(data as ResidenceProjectRow) };
+}
+
+export async function updateResidenceProject(
+  id: string,
+  input: Partial<CreateResidenceProjectInput>
+): Promise<MutateResult<ResidenceProject>> {
+  const supabase = createClient();
+  const patch: Record<string, unknown> = {};
+  if (input.name !== undefined) patch.name = input.name.trim();
+  if (input.sortOrder !== undefined) patch.sort_order = input.sortOrder;
+  if (input.isActive !== undefined) patch.is_active = input.isActive;
+
+  const { data, error } = await supabase
+    .from("residence_projects")
+    .update(patch)
+    .eq("id", id)
+    .select("id, name, sort_order, is_active")
+    .single();
+  if (error) return { ok: false, error: residenceProjectWriteError(error.message) };
+  return { ok: true, data: mapResidenceProjectRow(data as ResidenceProjectRow) };
+}
+
+export async function deleteResidenceProject(id: string): Promise<{ ok: boolean; error?: string }> {
+  const supabase = createClient();
+  const { error } = await supabase.from("residence_projects").delete().eq("id", id);
+  if (error) return { ok: false, error: residenceProjectWriteError(error.message) };
   return { ok: true };
 }
 

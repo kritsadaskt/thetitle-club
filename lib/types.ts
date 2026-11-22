@@ -48,6 +48,20 @@ export interface Member {
   password?: string; // hashed in real app; plain for mock
 }
 
+/** Project a resident can pick on the registration form. */
+export interface ResidenceProject {
+  id: string;
+  name: string;
+  sortOrder: number;
+  isActive: boolean;
+}
+
+export interface CreateResidenceProjectInput {
+  name: string;
+  sortOrder?: number;
+  isActive?: boolean;
+}
+
 export interface Privilege {
   id: string;
   partnerId: string;

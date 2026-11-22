@@ -207,7 +207,8 @@
       },
       "errors": {
         "registrationFailed": "Registration failed. Please try again.",
-        "confirmEmailEnabled": "Registration could not be completed. Disable “Confirm email” in Supabase Auth settings (Authentication → Providers → Email)."
+        "confirmEmailEnabled": "Registration could not be completed. Disable “Confirm email” in Supabase Auth settings (Authentication → Providers → Email).",
+        "projectsLoadFailed": "Could not load the project list. Refresh the page and try again."
       },
       "submit": "Submit Application",
       "submitting": "Submitting...",

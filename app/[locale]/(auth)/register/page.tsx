@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { CheckCircle, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { fetchActiveResidenceProjects } from "@/lib/supabase/data";
 import { clientWantsTestWebhook, withDevWebhookQuery } from "@/lib/n8n";
 import Select, { StylesConfig, GroupBase } from "react-select";
 
@@ -99,15 +100,8 @@ const selectStyles: StylesConfig<Opt, false, GroupBase<Opt>> = {
 };
 
 /* ── Data ── */
-// Project names are proper nouns (stored values); only "Other" is translated.
-const PROJECT_NAMES = [
-  "THE Title WEST WING rawai",
-  "THE TITLE V rawai",
-  "THE TITLE Residencies nai-yang",
-  "THE TITLE HALO 1 nai-yang",
-  "THE TITLE Legendary Bang-Tao",
-  "THE TITLE Serenity nai-yang",
-] as const;
+// Residence project names come from public.residence_projects.
+// "Other" stays a translated fallback for projects that are not listed yet.
 
 const NATIONALITY_VALUES = [
   "Thai",
@@ -199,14 +193,32 @@ export default function RegisterPage() {
   const [submitError, setSubmitError] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [showPw2, setShowPw2] = useState(false);
+  const [projectNames, setProjectNames] = useState<string[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(true);
+  const [projectsFailed, setProjectsFailed] = useState(false);
+  const projectsError = projectsFailed ? t("errors.projectsLoadFailed") : "";
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchActiveResidenceProjects().then((res) => {
+      if (cancelled) return;
+      setProjectNames(res.projects.map((project) => project.name));
+      setProjectsFailed(Boolean(res.error));
+      setProjectsLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Labels are built from t() so they update when the locale changes.
+  // Project names are proper nouns stored as-is; only "Other" is translated.
   const projectOptions = useMemo<Opt[]>(
     () => [
-      ...PROJECT_NAMES.map((name) => ({ value: name, label: name })),
+      ...projectNames.map((name) => ({ value: name, label: name })),
       { value: "Other", label: t("project.Other") },
     ],
-    [t]
+    [projectNames, t]
   );
   const nationalityOptions = useMemo<Opt[]>(
     () => NATIONALITY_VALUES.map((value) => ({ value, label: t(`nationality.${value}`) })),
@@ -549,7 +561,7 @@ export default function RegisterPage() {
                       isSearchable={false}
                     />
                   </Field>
-                  <Field label={t("fields.projectName")} error={errors.projectName} id="projectName">
+                  <Field label={t("fields.projectName")} error={errors.projectName || projectsError} id="projectName">
                     <Select<Opt>
                       instanceId="projectName"
                       inputId="projectName"
@@ -558,7 +570,9 @@ export default function RegisterPage() {
                       onChange={(opt) => set("projectName", opt?.value ?? "")}
                       placeholder={t("fields.selectPlaceholder")}
                       styles={selectStyles}
-                      isSearchable={false}
+                      isSearchable
+                      isLoading={projectsLoading}
+                      isDisabled={projectsLoading || Boolean(projectsError)}
                     />
                   </Field>
                   <div className="sm:col-span-2">
@@ -592,8 +606,11 @@ export default function RegisterPage() {
             <p className="text-red-600 text-sm text-center">{submitError}</p>
           )}
 
-          <button type="submit" disabled={loading}
-            className="btn-primary w-full flex items-center justify-center gap-2 py-4 text-base">
+          <button
+            type="submit"
+            disabled={loading || (form.accountType === "residence" && (projectsLoading || Boolean(projectsError)))}
+            className="btn-primary w-full flex items-center justify-center gap-2 py-4 text-base"
+          >
             {loading
               ? <span className="w-4 h-4 border-2 border-forest/30 border-t-forest rounded-full animate-spin" />
               : <ArrowRight size={16} />}

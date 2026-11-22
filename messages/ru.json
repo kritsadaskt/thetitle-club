@@ -207,7 +207,8 @@
       },
       "errors": {
         "registrationFailed": "Не удалось зарегистрироваться. Пожалуйста, попробуйте ещё раз.",
-        "confirmEmailEnabled": "Не удалось завершить регистрацию. Отключите «Confirm email» в настройках Supabase Auth (Authentication → Providers → Email)."
+        "confirmEmailEnabled": "Не удалось завершить регистрацию. Отключите «Confirm email» в настройках Supabase Auth (Authentication → Providers → Email).",
+        "projectsLoadFailed": "Не удалось загрузить список проектов. Обновите страницу и попробуйте снова."
       },
       "submit": "Отправить заявку",
       "submitting": "Отправка...",
