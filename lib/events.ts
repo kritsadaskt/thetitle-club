@@ -1,6 +1,25 @@
 import type { ClubEvent, EventVenue } from "@/lib/types";
+import { bangkokTodayIsoDate } from "@/lib/utils";
 
 const BANGKOK = "Asia/Bangkok";
+
+/** Bangkok calendar `YYYY-MM-DD` for an instant. */
+export function bangkokIsoDate(iso: string | Date): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: BANGKOK,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(typeof iso === "string" ? new Date(iso) : iso);
+}
+
+/**
+ * Exit surveys open for the whole event calendar day (Asia/Bangkok),
+ * not only after the exact starts_at time.
+ */
+export function isSurveyDayOpen(startsAt: string, now = new Date()): boolean {
+  return bangkokTodayIsoDate(now) >= bangkokIsoDate(startsAt);
+}
 
 /** URL slug from a title or a typed slug. Empty when the text has no latin characters. */
 export function slugifyEventTitle(value: string): string {

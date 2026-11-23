@@ -305,7 +305,9 @@ begin
     raise exception 'venue not found';
   end if;
 
-  if v_starts_at > now() then
+  -- Open for the whole Bangkok calendar day of the venue start (not only after starts_at)
+  if (timezone('Asia/Bangkok', v_starts_at))::date
+       > (timezone('Asia/Bangkok', now()))::date then
     raise exception 'survey is not open yet';
   end if;
 

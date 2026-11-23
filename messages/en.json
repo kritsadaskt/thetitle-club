@@ -483,7 +483,7 @@
       "signInPrompt": "Sign in to answer the survey",
       "notRegistered": "Only members registered at this location can answer this survey.",
       "membershipMustBeActive": "Your membership must be active before you can answer.",
-      "notOpenYet": "The survey opens when the event starts.",
+      "notOpenYet": "The survey opens on the day of the event.",
       "closed": "This survey is not open right now.",
       "noQuestions": "This survey has no questions yet.",
       "alreadySubmitted": "Thank you — you have already submitted this survey.",

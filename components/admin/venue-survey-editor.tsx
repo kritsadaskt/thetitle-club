@@ -183,7 +183,8 @@ export function VenueSurveyEditor({ event, venue }: Props) {
         <div>
           <h4 className="text-forest text-sm font-semibold">Exit survey</h4>
           <p className="text-[11px] text-ink-muted mt-0.5">
-            Opens after this location starts. Guests scan the survey QR when leaving.
+            Opens on the event day (Asia/Bangkok calendar), not only after the start time.
+            Guests scan the survey QR when leaving.
           </p>
         </div>
         <ActiveToggle
