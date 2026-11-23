@@ -8,7 +8,12 @@ import { Link } from "@/i18n/navigation";
 import type { AppLocale } from "@/i18n/routing";
 import { CheckCircle2, ClipboardList } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { formatEventSchedule, surveyPublicPath, venuePublicPath } from "@/lib/events";
+import {
+  formatEventSchedule,
+  isSurveyDayOpen,
+  surveyPublicPath,
+  venuePublicPath,
+} from "@/lib/events";
 import { localeToBcp47 } from "@/lib/i18n";
 import {
   fetchEventVenue,
@@ -178,8 +183,8 @@ export default function EventVenueSurveyPage() {
   const surveyPath = surveyPublicPath(eventSlug, venueSlug);
   const loginHref = `/login?next=${encodeURIComponent(surveyPath)}`;
   const membershipActive = member?.status === "active";
-  const started = venue ? new Date(venue.startsAt).getTime() <= Date.now() : false;
-  const surveyOpen = Boolean(survey?.isActive) && started && questions.length > 0;
+  const surveyDayOpen = venue ? isSurveyDayOpen(venue.startsAt) : false;
+  const surveyOpen = Boolean(survey?.isActive) && surveyDayOpen && questions.length > 0;
   const canSubmitForReal = Boolean(
     member && membershipActive && registeredHere && surveyOpen && !existing && !submitted
   );
@@ -398,7 +403,7 @@ export default function EventVenueSurveyPage() {
                   !loadingSurvey &&
                   !existing &&
                   !submitted &&
-                  !started && (
+                  !surveyDayOpen && (
                     <p className="text-ink-muted text-sm">{t("survey.notOpenYet")}</p>
                   )}
 
@@ -409,7 +414,7 @@ export default function EventVenueSurveyPage() {
                   !loadingSurvey &&
                   !existing &&
                   !submitted &&
-                  started &&
+                  surveyDayOpen &&
                   (!survey?.isActive || questions.length === 0) && (
                     <p className="text-ink-muted text-sm">
                       {questions.length === 0 ? t("survey.noQuestions") : t("survey.closed")}
