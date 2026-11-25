@@ -506,5 +506,112 @@
       "lowRatingFeedbackPlaceholder": "Please tell us which part of the event you were not satisfied with, or any suggestions we can use to improve the next one.",
       "lowRatingFeedbackRequired": "Please share feedback for ratings below 3."
     }
+  },
+  "loyKrathong": {
+    "eyebrow": "Event feedback",
+    "eventTitle": "Loy Krathong Event 2026",
+    "dateTime": "23 November 2026 · 17.00–20.00",
+    "multiHint": "You may select more than one answer.",
+    "positive": "Positive",
+    "improve": "Areas for improvement",
+    "otherPlaceholder": "Please specify",
+    "submit": "Submit feedback",
+    "submitting": "Submitting…",
+    "needOne": "Please select at least one option.",
+    "errorGeneric": "Something went wrong. Please try again.",
+    "thanksTitle": "Thank you",
+    "thanksMessage": "Thank you for your valuable feedback.",
+    "thanksSignoff": "THE TITLE CLUB – Customer Relations",
+    "notFoundTitle": "Page not found",
+    "notFoundMessage": "This feedback link is invalid or the location was removed.",
+    "sections": {
+      "food": {
+        "title": "Food & Beverages",
+        "question": "What do you think about the food and beverages at the event?"
+      },
+      "venue": {
+        "title": "Decorations, Venue & Suitability",
+        "question": "What do you think about the decoration, atmosphere and event venue?"
+      },
+      "activities": {
+        "title": "Activities",
+        "question": "What do you think about the activities and organization of the Loy Krathong Event?"
+      }
+    },
+    "options": {
+      "food": {
+        "positive": {
+          "taste": "Taste of food",
+          "sufficient": "Sufficient food",
+          "variety": "Menu variety",
+          "quality": "Food and beverage quality",
+          "cleanliness": "Cleanliness and hygiene",
+          "presentation": "Food presentation",
+          "service": "Food and beverage service",
+          "others": "Others"
+        },
+        "improve": {
+          "taste": "Taste of food",
+          "quantity": "Food and beverage quantity",
+          "variety": "Menu variety",
+          "temperature": "Food temperature",
+          "cleanliness": "Cleanliness",
+          "waiting": "Waiting time",
+          "dietary": "Children's meals and special dietary options",
+          "none": "No improvement needed",
+          "others": "Others"
+        }
+      },
+      "venue": {
+        "positive": {
+          "decorations": "Beautiful decorations",
+          "atmosphere": "Festive atmosphere",
+          "venue_size": "Suitable venue size",
+          "crowd": "Comfortable crowd size",
+          "seating": "Sufficient tables and seating",
+          "lighting_sound": "Appropriate lighting and sound",
+          "layout": "Convenient venue layout",
+          "cleanliness_safety": "Cleanliness and safety",
+          "others": "Others"
+        },
+        "improve": {
+          "decorations_atmosphere": "Decorations and atmosphere",
+          "venue_size": "Venue size",
+          "overcrowding": "Overcrowding",
+          "seating": "Tables and seating",
+          "lighting": "Lighting",
+          "music_volume": "Music volume",
+          "layout_access": "Layout and accessibility",
+          "cleanliness_safety": "Cleanliness and safety",
+          "none": "No improvement needed",
+          "others": "Others"
+        }
+      },
+      "activities": {
+        "positive": {
+          "diy_krathong": "DIY Krathong making",
+          "queen_contest": "Queen of Loy Krathong contest",
+          "dessert_workshop": "Thai dessert workshop",
+          "games_family": "Games and family activities",
+          "fun_engaging": "Fun and engaging activities",
+          "all_ages": "Activities suitable for all ages",
+          "duration": "Suitable activity duration",
+          "staff": "Friendly and attentive staff",
+          "others": "Others"
+        },
+        "improve": {
+          "variety": "Variety of activities",
+          "engagement": "Engagement and entertainment",
+          "materials": "Availability of activity materials",
+          "waiting": "Waiting time for activities",
+          "ages": "Activities for children and adults",
+          "schedule": "Activity schedule and duration",
+          "communication": "Communication and registration",
+          "staff": "Staff assistance and service",
+          "none": "No improvement needed",
+          "others": "Others"
+        }
+      }
+    }
   }
 }
