@@ -32,3 +32,10 @@ logs/
 .vscode/
 .idea/
 *.swp
+
+# Local Supabase / UAT working files
+supabase/.temp/
+supabase/.branches/
+supabase/seed.sql
+supabase/uat/.prod_*.sql
+.env.production.backup
