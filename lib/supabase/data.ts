@@ -34,6 +34,13 @@ import {
   isEventUpcomingOrOngoing,
 } from "@/lib/events";
 import { bangkokTodayIsoDate, isPrivilegeInValidityWindow } from "@/lib/utils";
+import {
+  mapLoyKrathongFeedbackRow,
+  type DbLoyKrathongFeedbackRow,
+  type LoyKrathongFeedbackPayload,
+  type LoyKrathongFeedbackRow,
+  type LoyKrathongLocationSlug,
+} from "@/lib/loy-krathong-feedback";
 import { createClient } from "./client";
 import { uploadPartnerLogo, uploadPrivilegeCover, uploadVenueBanner } from "./storage";
 import {
@@ -1535,4 +1542,59 @@ export async function fetchVenueSurveySummary(
     responseCount: rows.length,
     questions: questionSummaries,
   };
+}
+
+// ── Loy Krathong 2026 standalone feedback ───────────────────
+
+export async function submitLoyKrathongFeedback(
+  payload: LoyKrathongFeedbackPayload
+): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+  const supabase = createClient();
+  const { data, error } = await supabase.rpc("submit_loy_krathong_feedback", {
+    p_payload: payload,
+  });
+  if (error) {
+    const message = error.message || "Could not submit feedback.";
+    if (/at least one/i.test(message)) {
+      return { ok: false, error: "Select at least one option." };
+    }
+    if (/invalid location/i.test(message)) {
+      return { ok: false, error: "Invalid location." };
+    }
+    return { ok: false, error: message };
+  }
+  return { ok: true, id: String(data) };
+}
+
+const LOY_FEEDBACK_PAGE = 500;
+
+export async function fetchLoyKrathongFeedback(
+  locationSlug?: LoyKrathongLocationSlug | "all"
+): Promise<{ rows: LoyKrathongFeedbackRow[]; error: string | null }> {
+  const supabase = createClient();
+  const rows: LoyKrathongFeedbackRow[] = [];
+  let from = 0;
+
+  for (;;) {
+    let query = supabase
+      .from("loy_krathong_feedback")
+      .select("*")
+      .order("submitted_at", { ascending: false })
+      .range(from, from + LOY_FEEDBACK_PAGE - 1);
+
+    if (locationSlug && locationSlug !== "all") {
+      query = query.eq("location_slug", locationSlug);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      return { rows: [], error: error.message };
+    }
+    const batch = (data ?? []) as DbLoyKrathongFeedbackRow[];
+    rows.push(...batch.map(mapLoyKrathongFeedbackRow));
+    if (batch.length < LOY_FEEDBACK_PAGE) break;
+    from += LOY_FEEDBACK_PAGE;
+  }
+
+  return { rows, error: null };
 }
